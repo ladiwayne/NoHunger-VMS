@@ -31,7 +31,7 @@ const SKILLS = [
 
 const IMPACT_STATS = [
   { value: '18,500+', label: 'Meals served monthly' },
-  { value: '1,200', label: 'Active volunteers' },
+  { value: '1,200', label: 'Active Champions' },
   { value: '52', label: 'Communities reached' },
 ];
 
@@ -264,7 +264,7 @@ export default function SignUpLoginContent() {
       });
       setSignupLoading(false);
       setSignupSuccess(true);
-      toast.success('Account created! Welcome to the NoHunger family.', { duration: 4000 });
+      toast.success('Account created! Welcome to the Nohunger Initiative family.', { duration: 4000 });
       setTimeout(() => router.push('/onboarding'), 1500);
     } catch (err: any) {
       setSignupLoading(false);
@@ -306,8 +306,8 @@ export default function SignUpLoginContent() {
               <Heart size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-display font-700 text-xl text-white">NoHunger Food Bank</p>
-              <p className="text-[11px] text-green-100/80 uppercase tracking-widest">Volunteer Portal</p>
+              <p className="font-display font-700 text-xl text-white">Nohunger Initiative</p>
+              <p className="text-[11px] text-green-100/80 uppercase tracking-widest">Nohunger Champion Hub</p>
             </div>
           </div>
 
@@ -321,7 +321,7 @@ export default function SignUpLoginContent() {
               Feed a family.<br /><span className="text-green-200">Change a life.</span>
             </h1>
             <p className="text-green-100/90 text-[15px] leading-relaxed max-w-sm mb-8">
-              NoHunger Food Bank is dedicated to eliminating hunger in Nigeria by providing nutritious food to families in need — powered by passionate volunteers like you.
+              Nohunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious food to families in need, powered by caring Champions like you.
             </p>
 
             {/* Impact stats */}
@@ -357,7 +357,7 @@ export default function SignUpLoginContent() {
           {/* Testimonial */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/15">
             <p className="text-[13px] text-green-50 leading-relaxed italic mb-3">
-              &ldquo;Joining NoHunger has been the most rewarding decision of my life. Every weekend I help distribute food in Lagos, I know I&apos;m truly making a difference in my community.&rdquo;
+              &ldquo;Joining Nohunger Initiative has been one of my best decisions. Every weekend I help distribute food in Lagos, and I can feel the impact in my community.&rdquo;
             </p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center border border-white/20">
@@ -365,7 +365,7 @@ export default function SignUpLoginContent() {
               </div>
               <div>
                 <p className="text-[12px] font-700 text-white">Adaeze Okonkwo</p>
-                <p className="text-[10px] text-green-100/70">Volunteer since January 2024 · 112 hrs</p>
+                <p className="text-[10px] text-green-100/70">Nohunger Champion since January 2024 · 112 hrs</p>
               </div>
             </div>
           </div>
@@ -378,8 +378,8 @@ export default function SignUpLoginContent() {
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <AppLogo size={36} />
             <div>
-              <p className="font-display font-700 text-lg text-foreground">NoHunger Food Bank</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Volunteer Portal</p>
+              <p className="font-display font-700 text-lg text-foreground">Nohunger Initiative</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Nohunger Champion Hub</p>
             </div>
           </div>
 
@@ -462,7 +462,7 @@ export default function SignUpLoginContent() {
               <div className="mb-5 p-3 bg-[hsl(142,72%,96%)] border border-[hsl(142,72%,80%)] rounded-xl text-[12px]">
                 <p className="font-700 text-[hsl(142,72%,22%)] mb-1">Demo Accounts</p>
                 <p className="text-muted-foreground">Admin: <span className="font-600 text-foreground">admin@nohunger.org</span> / <span className="font-600 text-foreground">Admin@2026</span></p>
-                <p className="text-muted-foreground">Volunteer: <span className="font-600 text-foreground">chidi.obi@nohunger.org</span> / <span className="font-600 text-foreground">Volunteer@2026</span></p>
+                <p className="text-muted-foreground">Champion: <span className="font-600 text-foreground">chidi.obi@nohunger.org</span> / <span className="font-600 text-foreground">Volunteer@2026</span></p>
               </div>
 
               <div className="flex bg-muted rounded-xl p-1 mb-8">
@@ -482,7 +482,7 @@ export default function SignUpLoginContent() {
                 <div className="animate-slide-up">
                   <div className="mb-6">
                     <h2 className="text-2xl font-700 text-foreground">Welcome back</h2>
-                    <p className="text-[14px] text-muted-foreground mt-1">Sign in to your volunteer account</p>
+                    <p className="text-[14px] text-muted-foreground mt-1">Sign in to your Nohunger Champion account</p>
                   </div>
 
                   {loginError && (
@@ -582,8 +582,8 @@ export default function SignUpLoginContent() {
               {activeTab === 'signup' && (
                 <div className="animate-slide-up">
                   <div className="mb-6">
-                    <h2 className="text-2xl font-700 text-foreground">Join NoHunger</h2>
-                    <p className="text-[14px] text-muted-foreground mt-1">Create your volunteer account and start making a difference</p>
+                    <h2 className="text-2xl font-700 text-foreground">Join Nohunger Initiative</h2>
+                    <p className="text-[14px] text-muted-foreground mt-1">Create your Champion account and start making a difference</p>
                   </div>
 
                   <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4" noValidate>

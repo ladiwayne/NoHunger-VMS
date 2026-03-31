@@ -53,7 +53,7 @@ const adminNavGroups = [
     label: 'Management',
     items: [
       { label: 'Activities & Events', icon: CalendarDays, href: '/admin/activities', badge: null },
-      { label: 'Volunteers', icon: Users, href: '/admin/volunteers', badge: null },
+      { label: 'Champions', icon: Users, href: '/admin/volunteers', badge: null },
       { label: 'Check-in Requests', icon: CheckSquare, href: '/admin/checkins', badge: null, badgeVariant: 'warning' as const },
       { label: 'Tasks', icon: ClipboardList, href: '/admin/tasks', badge: null },
     ],
@@ -94,7 +94,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMob
           <div className="flex flex-col min-w-0">
             <span className="font-display font-700 text-[15px] text-foreground leading-tight">NoHunger</span>
             <span className="text-[10px] text-muted-foreground font-500 tracking-wide uppercase">
-              {isAdmin ? 'Admin Portal' : 'Volunteer Portal'}
+              {isAdmin ? 'Initiative Admin' : 'Champion Hub'}
             </span>
           </div>
         )}
@@ -159,9 +159,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMob
             <span className="text-[11px] font-600 text-[hsl(142,72%,22%)]">Your Impact</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            You&apos;ve logged <span className="font-700 text-foreground">{profile?.total_hours || 0} hrs</span> of service.
+            Nice work, Champion. You&apos;ve logged <span className="font-700 text-foreground">{profile?.total_hours || 0} hrs</span> of service.
           </p>
-          <p className="text-[10px] text-[hsl(142,72%,35%)] mt-1 font-500">nohungerfoodbank.org · Nigeria</p>
+          <p className="text-[10px] text-[hsl(142,72%,35%)] mt-1 font-500">Nohunger Initiative · Nigeria</p>
         </div>
       )}
 
@@ -173,7 +173,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMob
         {!collapsed && (
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-600 text-foreground truncate">{profile?.full_name || 'User'}</p>
-            <p className="text-[11px] text-muted-foreground truncate capitalize">{profile?.role || 'Volunteer'}</p>
+            <p className="text-[11px] text-muted-foreground truncate capitalize">{profile?.role === 'volunteer' ? 'Nohunger Champion' : profile?.role || 'Member'}</p>
           </div>
         )}
         {!collapsed && (
@@ -216,7 +216,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMob
             <AppLogo size={30} />
             <div>
               <span className="font-display font-700 text-[15px] text-foreground">NoHunger</span>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{isAdmin ? 'Admin Portal' : 'Volunteer Portal'}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{isAdmin ? 'Initiative Admin' : 'Champion Hub'}</p>
             </div>
           </div>
           <button onClick={onMobileClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">

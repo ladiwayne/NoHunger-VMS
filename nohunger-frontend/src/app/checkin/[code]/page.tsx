@@ -161,7 +161,7 @@ export default function CheckinPage() {
               <Clock size={28} className="text-warning" />
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Pending</h3>
-            <p className="text-[13px] text-muted-foreground">Your check-in request has been submitted. Waiting for admin approval.</p>
+            <p className="text-[13px] text-muted-foreground">Your check-in is in. We&apos;re waiting for the admin team to approve it.</p>
           </div>
         )}
 
@@ -182,7 +182,7 @@ export default function CheckinPage() {
               <LogOut size={28} className="text-primary" />
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Session Complete!</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">You've been checked out.</p>
+            <p className="text-[13px] text-muted-foreground mb-3">You&apos;re all checked out. Great job today.</p>
             <div className="text-3xl font-800 font-tabular text-primary mb-1">{checkinRecord.hours_spent || 0} hrs</div>
             <p className="text-[12px] text-muted-foreground">Hours logged for this event</p>
           </div>
@@ -192,7 +192,7 @@ export default function CheckinPage() {
           <div className="bg-destructive/8 border border-destructive/25 rounded-2xl p-6 text-center">
             <AlertTriangle size={32} className="text-destructive mx-auto mb-3" />
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Rejected</h3>
-            <p className="text-[13px] text-muted-foreground">Your check-in was not approved. Please contact the admin team.</p>
+            <p className="text-[13px] text-muted-foreground">Your check-in wasn&apos;t approved. Please reach out to the Nohunger Initiative team.</p>
           </div>
         )}
 

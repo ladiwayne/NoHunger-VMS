@@ -83,8 +83,8 @@ export default function ResetPasswordPage() {
         <div className="flex items-center gap-2.5 mb-8">
           <AppLogo size={36} />
           <div>
-            <p className="font-display font-700 text-lg text-foreground">NoHunger Food Bank</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Volunteer Portal</p>
+            <p className="font-display font-700 text-lg text-foreground">Nohunger Initiative</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Nohunger Champion Hub</p>
           </div>
         </div>
 

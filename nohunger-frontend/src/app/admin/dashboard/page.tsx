@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
   const completionRate = stats.totalActivities > 0 ? Math.round((stats.completedActivities / stats.totalActivities) * 100) : 0;
 
   const kpis = [
-    { label: 'Total Volunteers', value: stats.totalVolunteers, sub: `${approvalRate}% approved`, icon: Users, color: 'text-[hsl(142,72%,22%)]', bg: 'bg-[hsl(142,72%,92%)]', href: '/admin/volunteers', alert: false },
+    { label: 'Total Champions', value: stats.totalVolunteers, sub: `${approvalRate}% approved`, icon: Users, color: 'text-[hsl(142,72%,22%)]', bg: 'bg-[hsl(142,72%,92%)]', href: '/admin/volunteers', alert: false },
     { label: 'Pending Approvals', value: stats.pendingApprovals, sub: 'awaiting review', icon: UserCheck, color: 'text-warning', bg: 'bg-warning/10', href: '/admin/volunteers', alert: stats.pendingApprovals > 0 },
     { label: 'Total Activities', value: stats.totalActivities, sub: `${completionRate}% completed`, icon: CalendarDays, color: 'text-[hsl(142,72%,22%)]', bg: 'bg-[hsl(142,72%,92%)]', href: '/admin/activities', alert: false },
     { label: 'Pending Check-ins', value: stats.pendingCheckins, sub: 'need approval', icon: CheckSquare, color: 'text-warning', bg: 'bg-warning/10', href: '/admin/checkins', alert: stats.pendingCheckins > 0 },
@@ -193,7 +193,7 @@ export default function AdminDashboardPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Admin Analytics Dashboard</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} · NoHunger Nigeria
+              {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} · Nohunger Initiative
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-[13.5px] font-700 text-foreground">Send Message</p>
-              <p className="text-[11px] text-muted-foreground">Message a volunteer</p>
+              <p className="text-[11px] text-muted-foreground">Message a Champion</p>
             </div>
           </Link>
           <Link href="/admin/volunteers" className="flex items-center gap-3 p-4 bg-card border border-border rounded-2xl shadow-card hover:border-primary/30 hover:shadow-[0_4px_16px_0_rgba(22,101,52,0.10)] transition-all group">
@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-[13.5px] font-700 text-foreground">Bulk Approve</p>
-              <p className="text-[11px] text-muted-foreground">{stats.pendingApprovals} pending volunteers</p>
+              <p className="text-[11px] text-muted-foreground">{stats.pendingApprovals} pending Champions</p>
             </div>
           </Link>
           <Link href="/admin/checkins?panel=code-entry" className="flex items-center gap-3 p-4 bg-card border border-border rounded-2xl shadow-card hover:border-primary/30 hover:shadow-[0_4px_16px_0_rgba(22,101,52,0.10)] transition-all group">
@@ -268,12 +268,12 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        {/* Charts Row 1: Hours + Volunteer Growth */}
+        {/* Charts Row 1: Hours + Champion Growth */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Monthly hours chart */}
           <div className="bg-card border border-border rounded-2xl shadow-card p-5">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[15px] font-700 text-foreground">Volunteer Hours</h3>
+              <h3 className="text-[15px] font-700 text-foreground">Champion Hours</h3>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <BarChart2 size={13} />
                 <span>Monthly</span>
@@ -323,7 +323,7 @@ export default function AdminDashboardPage() {
               <MapPin size={14} className="text-primary" />
               <h3 className="text-[15px] font-700 text-foreground">Regional Breakdown</h3>
             </div>
-            <p className="text-[12px] text-muted-foreground mb-4">Volunteers by region</p>
+            <p className="text-[12px] text-muted-foreground mb-4">Champions by region</p>
             {regionData.length === 0 ? (
               <p className="text-[13px] text-muted-foreground text-center py-8">No data yet</p>
             ) : (
@@ -373,7 +373,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Award size={14} className="text-primary" />
-                <h3 className="text-[15px] font-700 text-foreground">Top Volunteers</h3>
+                <h3 className="text-[15px] font-700 text-foreground">Top Champions</h3>
               </div>
               <Link href="/admin/volunteers" className="text-[12px] text-primary font-600 hover:underline">View all</Link>
             </div>

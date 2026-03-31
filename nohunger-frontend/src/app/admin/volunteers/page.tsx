@@ -47,7 +47,7 @@ export default function AdminVolunteersPage() {
     setActionLoading(volunteerId);
     try {
       await approveVolunteer(volunteerId);
-      toast.success(`${volunteerName} approved!`);
+      toast.success(`${volunteerName} is now a Nohunger Champion!`);
       fetchVolunteers();
       if (selectedVol?.id === volunteerId) setSelectedVol((p: any) => ({ ...p, volunteer_status: 'approved' }));
     } catch (err: any) {
@@ -61,7 +61,7 @@ export default function AdminVolunteersPage() {
     setActionLoading(volunteerId);
     try {
       await rejectVolunteer(volunteerId);
-      toast.success(`${volunteerName}'s application rejected.`);
+      toast.success(`${volunteerName}'s Champion application was declined.`);
       fetchVolunteers();
     } catch (err: any) {
       toast.error(err.message || 'Failed to reject.');
@@ -72,12 +72,12 @@ export default function AdminVolunteersPage() {
 
   const handleBulkApprove = async () => {
     const pending = volunteers.filter(v => v.volunteer_status === 'pending');
-    if (pending.length === 0) { toast.error('No pending volunteers to approve.'); return; }
+    if (pending.length === 0) { toast.error('No pending Champions to approve right now.'); return; }
     setBulkApproving(true);
     try {
       await bulkApproveVolunteers(pending.map(v => v.id));
 
-      toast.success(`${pending.length} volunteers approved!`);
+      toast.success(`${pending.length} Nohunger Champions approved!`);
       fetchVolunteers();
     } catch (err: any) {
       toast.error(err.message || 'Bulk approve failed.');
@@ -92,7 +92,7 @@ export default function AdminVolunteersPage() {
     let recipientIds: string[] = [];
     if (messageScope === 'single') {
       if (!messageTarget) {
-        toast.error('Please select a volunteer.');
+        toast.error('Please pick a Champion first.');
         return;
       }
       recipientIds = [messageTarget.id];
@@ -123,7 +123,7 @@ export default function AdminVolunteersPage() {
         toast.success(`Message sent to ${messageTarget.full_name}!`);
       } else {
         await sendBulkMessageToVolunteers(recipientIds, messageText.trim());
-        toast.success(`Bulk message sent to ${recipientIds.length} volunteers.`);
+        toast.success(`Bulk message sent to ${recipientIds.length} Champions.`);
       }
       setMessageText('');
       setMessageTarget(null);
@@ -208,8 +208,8 @@ export default function AdminVolunteersPage() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Volunteer Management</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">Approve, review, and manage volunteer accounts</p>
+            <h1 className="text-2xl font-700 text-foreground">Nohunger Champions</h1>
+            <p className="text-[14px] text-muted-foreground mt-0.5">Approve, review, and support Champion accounts</p>
           </div>
           {counts.pending > 0 && (
             <button
@@ -218,7 +218,7 @@ export default function AdminVolunteersPage() {
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-white font-700 rounded-xl hover:bg-success/90 transition-all disabled:opacity-60 text-[13.5px]"
             >
               {bulkApproving ? <Loader2 size={15} className="animate-spin" /> : <CheckSquare size={15} />}
-              Approve All Pending ({counts.pending})
+              Approve All Pending Champions ({counts.pending})
             </button>
           )}
         </div>
@@ -226,7 +226,7 @@ export default function AdminVolunteersPage() {
         {/* Panel Tabs */}
         <div className="flex gap-2 border-b border-border">
           {[
-            { id: 'list' as Panel, label: 'Volunteer List', icon: Users },
+            { id: 'list' as Panel, label: 'Champion List', icon: Users },
             { id: 'message' as Panel, label: 'Send Message', icon: MessageSquare },
           ].map(p => {
             const Icon = p.icon;
@@ -259,18 +259,18 @@ export default function AdminVolunteersPage() {
                 }}
                 className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               >
-                <option value="single">Single volunteer</option>
-                <option value="filtered">All filtered volunteers ({filtered.length})</option>
-                <option value="approved">All approved volunteers ({counts.approved})</option>
-                <option value="pending">All pending volunteers ({counts.pending})</option>
-                <option value="all">All volunteers ({counts.all})</option>
+                <option value="single">Single Champion</option>
+                <option value="filtered">All filtered Champions ({filtered.length})</option>
+                <option value="approved">All approved Champions ({counts.approved})</option>
+                <option value="pending">All pending Champions ({counts.pending})</option>
+                <option value="all">All Champions ({counts.all})</option>
               </select>
             </div>
 
-            {/* Volunteer selector */}
+            {/* Champion selector */}
             {messageScope === 'single' && (
             <div className="mb-4">
-              <label className="block text-[13px] font-600 text-foreground mb-1.5">Select Volunteer</label>
+              <label className="block text-[13px] font-600 text-foreground mb-1.5">Select Champion</label>
               {messageTarget ? (
                 <div className="flex items-center gap-3 p-3 bg-primary/6 border border-primary/20 rounded-xl">
                   <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
@@ -316,7 +316,7 @@ export default function AdminVolunteersPage() {
                 value={messageText}
                 onChange={e => setMessageText(e.target.value)}
                 rows={4}
-                placeholder="Write your message to this volunteer…"
+                placeholder="Write your message to this Champion…"
                 className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
               />
             </div>
@@ -337,7 +337,7 @@ export default function AdminVolunteersPage() {
           </div>
         )}
 
-        {/* Volunteer List Panel */}
+        {/* Champion List Panel */}
         {activePanel === 'list' && (
           <>
             {/* Filters */}
@@ -358,7 +358,7 @@ export default function AdminVolunteersPage() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search volunteers…"
+                  placeholder="Search Champions…"
                   className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-xl text-[13.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
               </div>
@@ -415,7 +415,7 @@ export default function AdminVolunteersPage() {
               </div>
             </div>
 
-            {/* Volunteer detail panel */}
+            {/* Champion detail panel */}
             {selectedVol && (
               <div className="bg-card border border-border rounded-2xl shadow-card p-5">
                 <div className="flex items-start justify-between gap-4 mb-4">
@@ -474,7 +474,7 @@ export default function AdminVolunteersPage() {
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-2xl">
                 <Users size={40} className="text-muted-foreground mx-auto mb-3" />
-                <p className="text-[15px] font-600 text-foreground">No volunteers found</p>
+                <p className="text-[15px] font-600 text-foreground">No Champions found</p>
               </div>
             ) : (
               <div className="bg-card border border-border rounded-2xl shadow-card overflow-hidden">
@@ -482,7 +482,7 @@ export default function AdminVolunteersPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border bg-muted/50">
-                        {['Volunteer', 'Email', 'Region', 'Skills', 'Hours', 'Status', 'Actions'].map(h => (
+                        {['Champion', 'Email', 'Region', 'Skills', 'Hours', 'Status', 'Actions'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-[11px] font-700 text-muted-foreground uppercase tracking-wide">{h}</th>
                         ))}
                       </tr>

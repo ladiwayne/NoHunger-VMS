@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Next frontend",
+			"type": "shell",
+			"command": "npx.cmd",
+			"args": [
+				"next",
+				"dev",
+				"-p",
+				"4028"
+			],
+			"isBackground": true
+		}
+	]
+}

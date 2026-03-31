@@ -33,11 +33,6 @@ router.post('/checkin', auth, async (req, res) => {
   }
 });
 
-// Self-report completed hours - DISABLED
-router.post('/self-report', auth, async (req, res) => {
-  return res.status(403).json({ message: 'Self-reporting hours is disabled. Please check in to activities instead.' });
-});
-
 // Check out volunteer
 router.put('/:id/checkout', auth, async (req, res) => {
   try {

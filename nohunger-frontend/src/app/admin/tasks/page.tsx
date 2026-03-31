@@ -135,7 +135,7 @@ export default function AdminTasksPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-700 text-foreground">Tasks</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">Create and assign tasks to volunteers</p>
+            <p className="text-[14px] text-muted-foreground mt-0.5">Create and assign tasks to Nohunger Champions</p>
           </div>
           <button
             onClick={() => { setShowForm(true); setEditId(null); setForm(defaultForm); }}
@@ -178,7 +178,7 @@ export default function AdminTasksPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[13px] font-600 text-foreground mb-1.5">Assign to Volunteer</label>
+                    <label className="block text-[13px] font-600 text-foreground mb-1.5">Assign to Champion</label>
                     <select value={form.assigned_to} onChange={e => setForm(p => ({ ...p, assigned_to: e.target.value }))} className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
                       <option value="">Unassigned</option>
                       {volunteers.map(v => <option key={v.id} value={v.id}>{v.full_name}</option>)}

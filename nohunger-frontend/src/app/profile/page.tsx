@@ -234,7 +234,7 @@ export default function ProfilePage() {
                     value={form.bio}
                     onChange={e => setForm(p => ({ ...p, bio: e.target.value }))}
                     rows={3}
-                    placeholder="Tell us about yourself and why you volunteer…"
+                    placeholder="Tell us about yourself and your Nohunger Champion story…"
                     className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                   />
                 </div>

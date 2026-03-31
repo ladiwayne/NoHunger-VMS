@@ -29,8 +29,8 @@ export const emailService = {
           to,
           subject: `You're invited: ${activityTitle} — NoHunger Initiative`,
           type: 'invitation',html: emailWrapper('linear-gradient(135deg, #e8621a, #c44d0f)',
-            `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">❤️ NoHunger Initiative</h1>
-             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Volunteer Portal</p>`,
+            `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">❤️ Nohunger Initiative</h1>
+             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Nohunger Champion Hub</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Hi ${volunteerName},</h2>
              <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">You've been personally invited to join us for an upcoming volunteering activity!</p>
              ${message ? `<div style="background: #fef8f4; border-left: 4px solid #e8621a; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;"><p style="color: #6b5c4e; margin: 0; font-style: italic;">"${message}"</p></div>` : ''}
@@ -132,7 +132,7 @@ export const emailService = {
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">🌱 Welcome to NoHunger!</h1>
              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">You're now part of the family</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Hi ${volunteerName}, welcome aboard! 👋</h2>
-             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">Thank you for joining the NoHunger Food Bank volunteer community. Your commitment to fighting hunger in Nigeria means the world to us and to the families we serve.</p>
+             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">Thanks for joining the Nohunger Initiative Champion community. Your commitment to fighting hunger in Nigeria means a lot to us and to the families we serve.</p>
              <div style="background: #f0fdf4; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #bbf7d0;">
                <h3 style="color: #15803d; margin: 0 0 12px; font-size: 16px;">🚀 Getting Started</h3>
                <ul style="color: #6b5c4e; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
@@ -154,20 +154,20 @@ export const emailService = {
     }
   },
 
-  // ─── Volunteer Account Approved (new template) ────────────────────────────
+  // ─── Champion Account Approved (new template) ─────────────────────────────
   async sendVolunteerApproved(to: string, volunteerName: string) {
     try {
       await supabase.functions.invoke('send-email', {
         body: {
           to,
-          subject: `Your NoHunger volunteer account is approved! ✅`,
+          subject: `Your Nohunger Champion account is approved! ✅`,
           type: 'volunteer_approved',
           html: emailWrapper(
             'linear-gradient(135deg, #16a34a, #15803d)',
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">✅ Account Approved!</h1>
-             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">NoHunger Volunteer Portal</p>`,
+             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Nohunger Champion Hub</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Great news, ${volunteerName}!</h2>
-             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">Your volunteer account has been reviewed and approved by our admin team. You now have full access to browse activities, sign up, and start making a difference!</p>
+             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">Your Champion account has been reviewed and approved by our admin team. You now have full access to browse activities, sign up, and start making a difference!</p>
              <div style="background: #f0fdf4; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #bbf7d0;">
                <p style="color: #15803d; font-size: 14px; margin: 0; font-weight: 600;">🎉 You can now:</p>
                <ul style="color: #6b5c4e; font-size: 14px; line-height: 1.8; margin: 8px 0 0; padding-left: 20px;">
@@ -198,7 +198,7 @@ export const emailService = {
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">${milestoneEmoji} Milestone Reached!</h1>
              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">NoHunger Volunteer Achievement</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Amazing work, ${volunteerName}!</h2>
-             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">You've just crossed a major milestone — <strong>${hours} volunteer hours</strong> with NoHunger Food Bank. Your dedication is truly making a difference in the lives of families across Nigeria.</p>
+             <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">You've just crossed a major milestone — <strong>${hours} Champion hours</strong> with Nohunger Initiative. Your dedication is making a real difference for families across Nigeria.</p>
              <div style="background: #fffbeb; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #fde68a; text-align: center;">
                <p style="font-size: 48px; margin: 0 0 8px;">${milestoneEmoji}</p>
                <p style="color: #92400e; font-size: 28px; font-weight: 800; margin: 0;">${hours} Hours</p>
@@ -251,7 +251,7 @@ export const emailService = {
           html: emailWrapper(
             'linear-gradient(135deg, #7c3aed, #6d28d9)',
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">🔔 Activity Reminder</h1>
-             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">NoHunger Volunteer Portal</p>`,
+             <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Nohunger Champion Hub</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Hi ${volunteerName},</h2>
              <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">This is a friendly reminder that you're signed up for an upcoming activity. We're looking forward to seeing you!</p>
              <div style="background: #faf5ff; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e9d5ff;">

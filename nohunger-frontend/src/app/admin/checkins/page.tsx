@@ -137,7 +137,7 @@ export default function AdminCheckinsPage() {
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-700 text-foreground">Check-in Management</h1>
-          <p className="text-[14px] text-muted-foreground mt-0.5">Approve, reject, checkout volunteers, and look up by code</p>
+          <p className="text-[14px] text-muted-foreground mt-0.5">Approve, reject, and check out Champions, then look up by code</p>
         </div>
 
         {/* Panel Tabs */}
@@ -251,7 +251,7 @@ export default function AdminCheckinsPage() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search volunteer or event…"
+                  placeholder="Search Champion or event…"
                   className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-xl text-[13.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
               </div>
@@ -270,7 +270,7 @@ export default function AdminCheckinsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border bg-muted/50">
-                        {['Volunteer', 'Event', 'Check-in Time', 'Check-out Time', 'Hours', 'Status', 'Actions'].map(h => (
+                        {['Champion', 'Event', 'Check-in Time', 'Check-out Time', 'Hours', 'Status', 'Actions'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-[11px] font-700 text-muted-foreground uppercase tracking-wide">{h}</th>
                         ))}
                       </tr>

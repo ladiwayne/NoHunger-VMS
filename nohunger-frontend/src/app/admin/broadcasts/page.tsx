@@ -94,7 +94,7 @@ export default function AdminBroadcastsPage() {
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-700 text-foreground">Broadcasts</h1>
-          <p className="text-[14px] text-muted-foreground mt-0.5">Send messages to volunteers by group or activity</p>
+          <p className="text-[14px] text-muted-foreground mt-0.5">Send messages to Nohunger Champions by group or activity</p>
         </div>
 
         {/* Compose form */}
@@ -116,7 +116,7 @@ export default function AdminBroadcastsPage() {
                 value={form.message}
                 onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                 rows={4}
-                placeholder="Write your message to volunteers…"
+                placeholder="Write your message to Champions…"
                 className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
               />
             </div>
@@ -128,7 +128,7 @@ export default function AdminBroadcastsPage() {
                   onChange={e => setForm(p => ({ ...p, target_type: e.target.value, target_activity_id: '', target_group_id: '' }))}
                   className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 >
-                  <option value="all">All Volunteers</option>
+                  <option value="all">All Champions</option>
                   <option value="activity">By Activity</option>
                   <option value="group">By Group</option>
                 </select>
@@ -162,7 +162,7 @@ export default function AdminBroadcastsPage() {
             </div>
             <div className="flex items-center justify-between gap-4 pt-2">
               <p className="text-[12px] text-muted-foreground">
-                📧 Will send in-app notification + email to all matching volunteers
+                📧 Will send in-app notification + email to all matching Champions
               </p>
               <button
                 onClick={handleSend}

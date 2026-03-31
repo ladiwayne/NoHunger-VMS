@@ -40,16 +40,3 @@ export async function approveCheckout(checkinId: string, hoursSpent: number): Pr
 export async function rejectCheckin(checkinId: string): Promise<void> {
   await apiFetch(`/checkins/${checkinId}/reject`, { method: 'PUT' });
 }
-
-export async function selfReportHours(payload: {
-  activityId: string;
-  date: string;
-  hours: number;
-  notes?: string;
-}): Promise<any> {
-  const data = await apiFetch<any>('/checkins/self-report', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  return adaptCheckin(data.checkin || data);
-}

@@ -148,7 +148,7 @@ export default function AdminActivitiesPage() {
     setSendingInvites(activity.id);
     try {
       await sendInvitesForActivity(activity.id);
-      toast.success('Invitations sent to approved volunteers!');
+      toast.success('Invitations sent to approved Champions!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to send invitations.');
     } finally {
@@ -178,7 +178,7 @@ export default function AdminActivitiesPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-700 text-foreground">Activities & Events</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">Create and manage volunteering activities</p>
+            <p className="text-[14px] text-muted-foreground mt-0.5">Create and manage Nohunger Initiative activities for Champions</p>
           </div>
           <button
             onClick={() => { setShowForm(true); setEditId(null); setForm(defaultForm); setFormErrors({}); }}
@@ -247,7 +247,7 @@ export default function AdminActivitiesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Max Volunteers</label>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Max Champions</label>
                   <input type="number" value={form.max_volunteers} onChange={e => setForm(p => ({ ...p, max_volunteers: e.target.value }))} placeholder="e.g. 50" className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
                 </div>
               </div>
@@ -269,7 +269,7 @@ export default function AdminActivitiesPage() {
           <div className="text-center py-16 bg-card border border-border rounded-2xl">
             <Calendar size={40} className="text-muted-foreground mx-auto mb-3" />
             <p className="text-[15px] font-600 text-foreground">No activities yet</p>
-            <p className="text-[13px] text-muted-foreground mt-1">Create your first volunteering activity</p>
+            <p className="text-[13px] text-muted-foreground mt-1">Create your first activity for Nohunger Champions</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -8,17 +8,12 @@ import { Clock, CalendarCheck, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download } from 'lucide-react';
 
-
-type Panel = 'log';
-
 export default function HoursTrackingPage() {
   const { user, profile } = useAuth();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, thisMonth: 0, events: 0, avgPerEvent: 0 });
-  const [filter, setFilter] = useState('all');
-  const [activePanel, setActivePanel] = useState<Panel>('log');
 
   useEffect(() => {
     if (user) { fetchData(); }
@@ -89,7 +84,7 @@ export default function HoursTrackingPage() {
     a.click();
   };
 
-  const filtered = filter === 'all' ? sessions : sessions.filter(s => (s.activity?.activity_type || '') === filter);
+  const filtered = sessions;
 
   return (
     <AppLayout activePath="/hours-tracking">

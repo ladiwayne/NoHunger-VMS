@@ -135,7 +135,7 @@ export default function VolunteerDashboardPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">{greeting()}, {profile?.full_name?.split(' ')[0] || 'Volunteer'} 👋</h1>
+            <h1 className="text-2xl font-700 text-foreground">{greeting()}, {profile?.full_name?.split(' ')[0] || 'Champion'} 👋</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
               {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               {profile?.region ? ` · ${profile.region}` : ''}
@@ -144,7 +144,7 @@ export default function VolunteerDashboardPage() {
           {profile?.volunteer_status === 'pending' && (
             <div className="flex items-center gap-2 text-[12px] text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
               <AlertTriangle size={14} />
-              <span className="font-600">Pending admin approval</span>
+              <span className="font-600">Pending admin approval for Champion access</span>
             </div>
           )}
         </div>
@@ -225,7 +225,7 @@ export default function VolunteerDashboardPage() {
                 </div>
                 <div>
                   <p className="text-[14px] font-700 text-foreground">You're checked in!</p>
-                  <p className="text-[12px] text-muted-foreground">Session timer running</p>
+                  <p className="text-[12px] text-muted-foreground">Your Champion session timer is running</p>
                 </div>
               </div>
               <div className="text-right">
@@ -241,7 +241,7 @@ export default function VolunteerDashboardPage() {
           {/* Weekly chart */}
           <div className="lg:col-span-2 bg-card border border-border rounded-2xl shadow-card p-5">
             <h3 className="text-[15px] font-700 text-foreground mb-1">Weekly Hours</h3>
-            <p className="text-[12px] text-muted-foreground mb-5">Your volunteer hours over the last 7 days</p>
+            <p className="text-[12px] text-muted-foreground mb-5">Your Champion hours over the last 7 days</p>
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={weeklyData}>
                 <defs>
@@ -335,10 +335,10 @@ export default function VolunteerDashboardPage() {
         {/* NoHunger Mission Banner */}
         <div className="bg-gradient-to-r from-[hsl(142,72%,20%)] to-[hsl(158,64%,18%)] rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1">
-            <p className="text-[11px] font-700 text-green-200/80 uppercase tracking-widest mb-1">NoHunger Food Bank Nigeria</p>
+            <p className="text-[11px] font-700 text-green-200/80 uppercase tracking-widest mb-1">Nohunger Initiative Nigeria</p>
             <h3 className="text-[15px] font-700 text-white mb-1">Fighting hunger across Nigeria, one meal at a time.</h3>
             <p className="text-[12.5px] text-green-100/80 leading-relaxed">
-              NoHunger Food Bank has distributed over 1.5 million meals to families in need across 52 communities in Nigeria. Your volunteer hours directly fuel this mission.
+              Nohunger Initiative has distributed over 1.5 million meals to families in need across 52 communities in Nigeria. Your Champion hours help fuel this mission.
             </p>
           </div>
           <a

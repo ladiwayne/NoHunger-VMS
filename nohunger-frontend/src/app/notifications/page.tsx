@@ -119,7 +119,7 @@ export default function NotificationsPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-700 text-foreground">Notifications & Activity</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">Stay updated on your volunteer activity</p>
+            <p className="text-[14px] text-muted-foreground mt-0.5">Stay in the loop on your Nohunger Champion activity</p>
           </div>
           {unreadCount > 0 && (
             <button onClick={markAllRead} className="px-4 py-2 bg-card border border-border rounded-xl text-[13px] font-600 text-foreground hover:bg-muted transition-all">
@@ -212,7 +212,7 @@ export default function NotificationsPage() {
               <div className="text-center py-16 bg-card border border-border rounded-2xl">
                 <Activity size={40} className="text-muted-foreground mx-auto mb-3" />
                 <p className="text-[15px] font-600 text-foreground">No activity yet</p>
-                <p className="text-[13px] text-muted-foreground mt-1">Your volunteer activity will appear here</p>
+                <p className="text-[13px] text-muted-foreground mt-1">Your Champion activity will show up here</p>
               </div>
             ) : (
               <div className="bg-card border border-border rounded-2xl shadow-card overflow-hidden">

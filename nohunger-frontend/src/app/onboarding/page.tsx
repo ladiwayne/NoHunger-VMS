@@ -250,8 +250,8 @@ export default function OnboardingPage() {
           <div className="flex items-center gap-2.5">
             <AppLogo size={32} />
             <div>
-              <p className="font-display font-700 text-sm sm:text-base text-foreground">NoHunger Food Bank</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:block">Volunteer Portal</p>
+              <p className="font-display font-700 text-sm sm:text-base text-foreground">Nohunger Initiative</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:block">Champion Onboarding</p>
             </div>
           </div>
           {step !== 'pending' && (
@@ -283,16 +283,16 @@ export default function OnboardingPage() {
               <div className="w-20 h-20 rounded-2xl bg-[hsl(142,72%,92%)] flex items-center justify-center mx-auto mb-6 shadow-sm">
                 <Heart size={36} className="text-[hsl(142,72%,22%)]" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-800 text-foreground mb-3">Welcome to NoHunger!</h1>
+              <h1 className="text-2xl sm:text-3xl font-800 text-foreground mb-3">Welcome to Nohunger Initiative!</h1>
               <p className="text-muted-foreground text-[14px] sm:text-[15px] max-w-md mx-auto mb-8 leading-relaxed">
-                Thank you for joining our mission to eliminate hunger in Nigeria. Let's set up your volunteer profile so we can match you with the right opportunities.
+                Thanks for joining our mission to end hunger in Nigeria. Let&apos;s set up your Champion profile so we can match you with the best opportunities.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
                 {[
                   { icon: User, title: 'Complete Profile', desc: 'Tell us about yourself and your location' },
                   { icon: Star, title: 'Select Skills', desc: 'Choose your areas of expertise' },
-                  { icon: Shield, title: 'Start Volunteering', desc: 'Get matched and join upcoming activities immediately' },
+                  { icon: Shield, title: 'Start as a Champion', desc: 'Get matched and join upcoming activities immediately' },
                 ].map(item => {
                   const ItemIcon = item.icon;
                   return (
@@ -630,19 +630,19 @@ export default function OnboardingPage() {
                 {/* Section: Why Volunteer */}
                 <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                   <h3 className="text-[13px] font-700 text-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <MessageSquare size={14} className="text-[hsl(142,72%,29%)]" /> About Your Volunteering
+                    <MessageSquare size={14} className="text-[hsl(142,72%,29%)]" /> About Your Champion Journey
                   </h3>
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-[13px] font-600 text-foreground">
-                        Why do you want to volunteer with us? <span className="text-destructive">*</span>
+                        Why do you want to join as a Nohunger Champion? <span className="text-destructive">*</span>
                       </label>
                       <span className={`text-[11px] ${form.whyVolunteer.length > 480 ? 'text-amber-500' : 'text-muted-foreground'}`}>
                         {form.whyVolunteer.length}/500
                       </span>
                     </div>
                     <textarea
-                      placeholder="Tell us what motivates you to volunteer and what you hope to contribute..."
+                      placeholder="Tell us what motivates you to be a Nohunger Champion and what you hope to contribute..."
                       value={form.whyVolunteer}
                       onChange={e => setField('whyVolunteer', e.target.value.slice(0, 500))}
                       rows={5}
@@ -756,7 +756,7 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-2xl font-800 text-foreground mb-3">Awaiting Approval</h2>
               <p className="text-muted-foreground text-[15px] max-w-md mx-auto mb-8 leading-relaxed">
-                Your volunteer profile has been submitted and is under review by our admin team. You'll receive an email notification once your account is approved.
+                Your Champion profile has been submitted and is under review by our admin team. You&apos;ll get an email as soon as you&apos;re approved.
               </p>
 
               <div className="bg-card border border-border rounded-2xl p-6 max-w-md mx-auto mb-8 text-left space-y-4">
@@ -764,7 +764,7 @@ export default function OnboardingPage() {
                 {[
                   { icon: CheckCircle2, color: 'text-[hsl(142,72%,29%)]', bg: 'bg-[hsl(142,72%,92%)]', title: 'Profile Review', desc: 'Our team reviews your skills and location' },
                   { icon: Bell, color: 'text-blue-600', bg: 'bg-blue-50', title: 'Email Notification', desc: "You'll get an email when approved" },
-                  { icon: Heart, color: 'text-rose-600', bg: 'bg-rose-50', title: 'Start Volunteering', desc: 'Access activities and events across Nigeria' },
+                  { icon: Heart, color: 'text-rose-600', bg: 'bg-rose-50', title: 'Start Your Champion Journey', desc: 'Access activities and events across Nigeria' },
                 ].map(item => {
                   const ItemIcon = item.icon;
                   return (
@@ -783,8 +783,8 @@ export default function OnboardingPage() {
 
               <p className="text-[13px] text-muted-foreground">
                 Questions? Contact us at{' '}
-                <a href="mailto:volunteer@nohungerfoodbank.org" className="text-[hsl(142,72%,29%)] font-600 hover:underline">
-                  volunteer@nohungerfoodbank.org
+                <a href="mailto:champions@nohungerfoodbank.org" className="text-[hsl(142,72%,29%)] font-600 hover:underline">
+                  champions@nohungerfoodbank.org
                 </a>
               </p>
             </div>

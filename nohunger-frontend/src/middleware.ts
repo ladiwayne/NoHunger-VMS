@@ -1,12 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Public paths that don't require authentication
-const publicPaths = [
-  '/sign-up-login-screen',
-  '/reset-password',
-  '/auth/callback',
-  '/onboarding',
-];
+const publicPaths = ['/sign-up-login-screen', '/reset-password', '/auth/callback', '/onboarding'];
 
 function isPublicPath(pathname: string): boolean {
   return publicPaths.some(
@@ -31,7 +26,11 @@ function getPayloadFromCookie(request: NextRequest): JwtPayload | null {
       Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8')
     );
     if (!payload?.id && !payload?.sub) return null;
-    return { id: payload.id || payload.sub, role: payload.role || 'volunteer', exp: payload.exp ?? 0 };
+    return {
+      id: payload.id || payload.sub,
+      role: payload.role || 'volunteer',
+      exp: payload.exp ?? 0,
+    };
   } catch {
     return null;
   }
@@ -46,8 +45,13 @@ export function middleware(request: NextRequest) {
 
   const adminPaths = ['/admin'];
   const volunteerPaths = [
-    '/volunteer-dashboard', '/hours-tracking', '/activities',
-    '/invitations', '/checkin', '/profile', '/notifications',
+    '/volunteer-dashboard',
+    '/hours-tracking',
+    '/activities',
+    '/invitations',
+    '/checkin',
+    '/profile',
+    '/notifications',
   ];
 
   const isAdminPath = adminPaths.some((p) => pathname.startsWith(p));
@@ -89,7 +93,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };

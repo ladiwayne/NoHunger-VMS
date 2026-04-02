@@ -5,7 +5,6 @@ import { Clock, CalendarCheck, TrendingUp, Bell, Flame, AlertTriangle } from 'lu
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 
-
 const kpiCards = [
   {
     id: 'total-hours',
@@ -107,16 +106,20 @@ export default function DashboardKPIGrid() {
               </div>
             )}
             <div className="flex items-start justify-between gap-3">
-              <div className={`w-9 h-9 rounded-xl ${card?.iconBg} flex items-center justify-center flex-shrink-0`}>
+              <div
+                className={`w-9 h-9 rounded-xl ${card?.iconBg} flex items-center justify-center flex-shrink-0`}
+              >
                 <Icon size={18} className={card?.iconColor} />
               </div>
             </div>
             <div className="mt-4">
               <div className={`flex items-baseline gap-1.5 ${card?.hero ? 'mt-1' : ''}`}>
-                <span className={`
+                <span
+                  className={`
                   font-700 font-tabular text-foreground
                   ${card?.hero ? 'text-4xl' : 'text-3xl'}
-                `}>
+                `}
+                >
                   {card?.value}
                 </span>
                 <span className="text-[13px] font-500 text-muted-foreground">{card?.unit}</span>
@@ -125,10 +128,12 @@ export default function DashboardKPIGrid() {
                 {card?.label}
               </p>
             </div>
-            <div className={`
+            <div
+              className={`
               mt-3 flex items-center gap-1.5 text-[12px] font-500
               ${card?.trendWarning ? 'text-warning' : card?.trendUp ? 'text-success' : 'text-muted-foreground'}
-            `}>
+            `}
+            >
               {card?.trendWarning ? (
                 <AlertTriangle size={11} />
               ) : card?.trendUp ? (

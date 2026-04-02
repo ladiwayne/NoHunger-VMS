@@ -16,17 +16,20 @@ export async function getVolunteer(id: string): Promise<any | null> {
   }
 }
 
-export async function updateVolunteerProfile(id: string, payload: {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  gender?: string;
-  bio?: string;
-  skills?: string[];
-  availability?: string[];
-  region?: string;
-  onboardingCompleted?: boolean;
-}): Promise<any> {
+export async function updateVolunteerProfile(
+  id: string,
+  payload: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    gender?: string;
+    bio?: string;
+    skills?: string[];
+    availability?: string[];
+    region?: string;
+    onboardingCompleted?: boolean;
+  }
+): Promise<any> {
   const data = await apiFetch<any>(`/volunteers/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
@@ -43,7 +46,7 @@ export async function rejectVolunteer(id: string): Promise<void> {
 }
 
 export async function bulkApproveVolunteers(ids: string[]): Promise<void> {
-  await Promise.all(ids.map(id => approveVolunteer(id)));
+  await Promise.all(ids.map((id) => approveVolunteer(id)));
 }
 
 export async function sendMessageToVolunteer(volunteerId: string, message: string): Promise<void> {
@@ -53,7 +56,10 @@ export async function sendMessageToVolunteer(volunteerId: string, message: strin
   });
 }
 
-export async function sendBulkMessageToVolunteers(volunteerIds: string[], message: string): Promise<void> {
+export async function sendBulkMessageToVolunteers(
+  volunteerIds: string[],
+  message: string
+): Promise<void> {
   await apiFetch('/admin/broadcasts', {
     method: 'POST',
     body: JSON.stringify({ recipientIds: volunteerIds, message, type: 'broadcast' }),

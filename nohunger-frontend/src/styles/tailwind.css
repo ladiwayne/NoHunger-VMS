@@ -49,33 +49,58 @@
 
   .font-tabular {
     font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
+    font-feature-settings: 'tnum';
   }
 }
 
 @layer utilities {
-  .text-primary { color: hsl(var(--primary)); }
-  .text-secondary { color: hsl(var(--secondary)); }
-  .text-muted-foreground { color: hsl(var(--muted-foreground)); }
-  .bg-primary { background-color: hsl(var(--primary)); }
-  .bg-primary-light { background-color: hsl(var(--primary-light)); }
-  .bg-secondary { background-color: hsl(var(--secondary)); }
-  .bg-muted { background-color: hsl(var(--muted)); }
-  .bg-card { background-color: hsl(var(--card)); }
-  .border-border { border-color: hsl(var(--border)); }
-  .ring-primary { --tw-ring-color: hsl(var(--primary)); }
+  .text-primary {
+    color: hsl(var(--primary));
+  }
+  .text-secondary {
+    color: hsl(var(--secondary));
+  }
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+  }
+  .bg-primary {
+    background-color: hsl(var(--primary));
+  }
+  .bg-primary-light {
+    background-color: hsl(var(--primary-light));
+  }
+  .bg-secondary {
+    background-color: hsl(var(--secondary));
+  }
+  .bg-muted {
+    background-color: hsl(var(--muted));
+  }
+  .bg-card {
+    background-color: hsl(var(--card));
+  }
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+  .ring-primary {
+    --tw-ring-color: hsl(var(--primary));
+  }
 
   /* Green hover states for buttons */
   .btn-green {
     background-color: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    transition:
+      background-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.1s ease;
   }
   .btn-green:hover {
     background-color: hsl(142, 72%, 22%);
-    box-shadow: 0 4px 14px 0 rgba(22,101,52,0.30);
+    box-shadow: 0 4px 14px 0 rgba(22, 101, 52, 0.3);
   }
-  .btn-green:active { transform: scale(0.98); }
+  .btn-green:active {
+    transform: scale(0.98);
+  }
 
   /* Green input focus */
   .input-green:focus {
@@ -92,7 +117,9 @@
   }
 
   /* Green icon accent */
-  .icon-green { color: hsl(var(--primary)); }
+  .icon-green {
+    color: hsl(var(--primary));
+  }
   .icon-green-bg {
     background-color: hsl(142, 72%, 94%);
     color: hsl(142, 72%, 22%);
@@ -100,19 +127,36 @@
   }
 
   /* Green border accent */
-  .border-green-accent { border-color: hsl(142, 72%, 70%); }
-  .border-green-soft { border-color: hsl(142, 72%, 85%); }
+  .border-green-accent {
+    border-color: hsl(142, 72%, 70%);
+  }
+  .border-green-soft {
+    border-color: hsl(142, 72%, 85%);
+  }
 
   /* Card hover with green shadow */
   .card-hover-green:hover {
-    box-shadow: 0 4px 16px 0 rgba(22,101,52,0.12), 0 2px 6px -1px rgba(22,101,52,0.08);
+    box-shadow:
+      0 4px 16px 0 rgba(22, 101, 52, 0.12),
+      0 2px 6px -1px rgba(22, 101, 52, 0.08);
     border-color: hsl(142, 72%, 78%);
   }
 
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: hsl(var(--muted)); border-radius: 2px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 2px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
 
   .animate-fade-in {
     animation: fadeIn 0.2s ease-out forwards;
@@ -128,16 +172,32 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

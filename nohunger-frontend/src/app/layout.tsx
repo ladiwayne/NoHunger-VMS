@@ -5,11 +5,13 @@ import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Nohunger Initiative — Champion Hub',
-  description: 'The friendly home for Nohunger Champions to join activities, track hours, and make impact across Nigeria.',
+  description:
+    'The friendly home for Nohunger Champions to join activities, track hours, and make impact across Nigeria.',
   icons: { icon: '/favicon.ico' },
   openGraph: {
     title: 'Nohunger Initiative — Champion Hub',
-    description: 'Join Nohunger Champions fighting hunger across Nigeria. Track events, log hours, and do good together.',
+    description:
+      'Join Nohunger Champions fighting hunger across Nigeria. Track events, log hours, and do good together.',
     url: 'https://volunteer.nohungerfoodbank.org',
     siteName: 'Nohunger Initiative',
     locale: 'en_NG',
@@ -43,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             richColors
           />
         </AuthProvider>
-</body>
+      </body>
     </html>
   );
 }

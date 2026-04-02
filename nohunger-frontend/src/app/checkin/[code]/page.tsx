@@ -6,7 +6,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getActivityByCode } from '@/lib/api/activities';
 import { getMyCheckins, checkinWithCode } from '@/lib/api/checkins';
 
-import { CheckCircle2, Clock, MapPin, Calendar, Loader2, AlertTriangle, LogOut } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Calendar,
+  Loader2,
+  AlertTriangle,
+  LogOut,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
 
@@ -32,7 +40,9 @@ export default function CheckinPage() {
     let interval: any;
     if (checkinRecord?.status === 'approved' && checkinRecord?.checkin_time) {
       interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - new Date(checkinRecord.checkin_time).getTime()) / 1000);
+        const elapsed = Math.floor(
+          (Date.now() - new Date(checkinRecord.checkin_time).getTime()) / 1000
+        );
         setTimer(elapsed);
       }, 1000);
     }
@@ -93,8 +103,13 @@ export default function CheckinPage() {
         <div className="text-center max-w-sm">
           <AlertTriangle size={48} className="text-warning mx-auto mb-4" />
           <h2 className="text-xl font-700 text-foreground mb-2">Invalid Check-in Link</h2>
-          <p className="text-[14px] text-muted-foreground mb-6">This check-in link is not valid or has expired.</p>
-          <button onClick={() => router.push('/volunteer-dashboard')} className="px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all">
+          <p className="text-[14px] text-muted-foreground mb-6">
+            This check-in link is not valid or has expired.
+          </p>
+          <button
+            onClick={() => router.push('/volunteer-dashboard')}
+            className="px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all"
+          >
             Go to Dashboard
           </button>
         </div>
@@ -110,7 +125,9 @@ export default function CheckinPage() {
           <AppLogo size={36} />
           <div>
             <p className="font-display font-700 text-lg text-foreground">NoHunger</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Event Check-in</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              Event Check-in
+            </p>
           </div>
         </div>
 
@@ -120,7 +137,14 @@ export default function CheckinPage() {
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
               <Calendar size={14} />
-                <span>{new Date(activity.start_date || activity.startDate).toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <span>
+                {new Date(activity.start_date || activity.startDate).toLocaleDateString('en', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
             </div>
             {activity.location && (
               <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
@@ -143,14 +167,21 @@ export default function CheckinPage() {
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Ready to check in?</h3>
             <p className="text-[13px] text-muted-foreground mb-6">
-              Hi {profile?.full_name?.split(' ')[0]}! Tap the button below to submit your check-in request.
+              Hi {profile?.full_name?.split(' ')[0]}! Tap the button below to submit your check-in
+              request.
             </p>
             <button
               onClick={handleCheckin}
               disabled={actionLoading}
               className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[15px]"
             >
-              {actionLoading ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Check In Now</>}
+              {actionLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <CheckCircle2 size={18} /> Check In Now
+                </>
+              )}
             </button>
           </div>
         )}
@@ -161,7 +192,9 @@ export default function CheckinPage() {
               <Clock size={28} className="text-warning" />
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Pending</h3>
-            <p className="text-[13px] text-muted-foreground">Your check-in is in. We&apos;re waiting for the admin team to approve it.</p>
+            <p className="text-[13px] text-muted-foreground">
+              Your check-in is in. We&apos;re waiting for the admin team to approve it.
+            </p>
           </div>
         )}
 
@@ -171,8 +204,12 @@ export default function CheckinPage() {
               <CheckCircle2 size={28} className="text-success" />
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">You're checked in! ✅</h3>
-            <div className="text-4xl font-800 font-tabular text-success mb-2">{formatTimer(timer)}</div>
-            <p className="text-[12px] text-muted-foreground">Session timer · Admin will check you out after the event</p>
+            <div className="text-4xl font-800 font-tabular text-success mb-2">
+              {formatTimer(timer)}
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              Session timer · Admin will check you out after the event
+            </p>
           </div>
         )}
 
@@ -182,8 +219,12 @@ export default function CheckinPage() {
               <LogOut size={28} className="text-primary" />
             </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Session Complete!</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">You&apos;re all checked out. Great job today.</p>
-            <div className="text-3xl font-800 font-tabular text-primary mb-1">{checkinRecord.hours_spent || 0} hrs</div>
+            <p className="text-[13px] text-muted-foreground mb-3">
+              You&apos;re all checked out. Great job today.
+            </p>
+            <div className="text-3xl font-800 font-tabular text-primary mb-1">
+              {checkinRecord.hours_spent || 0} hrs
+            </div>
             <p className="text-[12px] text-muted-foreground">Hours logged for this event</p>
           </div>
         )}
@@ -192,11 +233,16 @@ export default function CheckinPage() {
           <div className="bg-destructive/8 border border-destructive/25 rounded-2xl p-6 text-center">
             <AlertTriangle size={32} className="text-destructive mx-auto mb-3" />
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Rejected</h3>
-            <p className="text-[13px] text-muted-foreground">Your check-in wasn&apos;t approved. Please reach out to the Nohunger Initiative team.</p>
+            <p className="text-[13px] text-muted-foreground">
+              Your check-in wasn&apos;t approved. Please reach out to the Nohunger Initiative team.
+            </p>
           </div>
         )}
 
-        <button onClick={() => router.push('/volunteer-dashboard')} className="w-full mt-4 py-2.5 text-[13px] font-600 text-muted-foreground hover:text-foreground transition-colors">
+        <button
+          onClick={() => router.push('/volunteer-dashboard')}
+          className="w-full mt-4 py-2.5 text-[13px] font-600 text-muted-foreground hover:text-foreground transition-colors"
+        >
           ← Back to Dashboard
         </button>
       </div>

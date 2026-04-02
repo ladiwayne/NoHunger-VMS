@@ -8,7 +8,9 @@ export function adaptUser(u: any) {
   if (!u) return null;
   return {
     id: u._id || u.id,
-    full_name: u.full_name || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName || ''),
+    full_name:
+      u.full_name ||
+      (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName || ''),
     email: u.email,
     gender: u.gender || '',
     role: u.role,
@@ -23,8 +25,10 @@ export function adaptUser(u: any) {
     appliedActivities: u.appliedActivities || [],
     availability: u.availability || [],
     onboarding_completed: u.onboardingCompleted || u.onboarding_completed || false,
-    event_confirmation_status: u.eventConfirmationStatus || u.event_confirmation_status || 'no_invitations',
-    invitation_stats: u.invitationStats || u.invitation_stats || { total: 0, accepted: 0, pending: 0, rejected: 0 },
+    event_confirmation_status:
+      u.eventConfirmationStatus || u.event_confirmation_status || 'no_invitations',
+    invitation_stats: u.invitationStats ||
+      u.invitation_stats || { total: 0, accepted: 0, pending: 0, rejected: 0 },
   };
 }
 
@@ -85,8 +89,12 @@ export function adaptInvitation(i: any) {
     responded_at: i.responded_at || i.respondedAt || null,
     created_at: i.createdAt || i.created_at || new Date().toISOString(),
     // Joined data
-    activities: i.activities || (i.activityId && typeof i.activityId === 'object' ? adaptActivity(i.activityId) : null),
-    volunteer: i.volunteer || (i.volunteerId && typeof i.volunteerId === 'object' ? adaptUser(i.volunteerId) : null),
+    activities:
+      i.activities ||
+      (i.activityId && typeof i.activityId === 'object' ? adaptActivity(i.activityId) : null),
+    volunteer:
+      i.volunteer ||
+      (i.volunteerId && typeof i.volunteerId === 'object' ? adaptUser(i.volunteerId) : null),
   };
 }
 

@@ -78,17 +78,23 @@ export default function ActiveCheckInWidget() {
   };
 
   return (
-    <div className={`
+    <div
+      className={`
       bg-card border rounded-2xl shadow-card overflow-hidden
       ${checkInState === 'checked-in' ? 'border-success/30' : 'border-border'}
-    `}>
+    `}
+    >
       {/* Header bar */}
-      <div className={`
+      <div
+        className={`
         px-5 py-3 flex items-center justify-between
         ${checkInState === 'checked-in' ? 'bg-success/6 border-b border-success/15' : 'bg-primary/4 border-b border-primary/10'}
-      `}>
+      `}
+      >
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${checkInState === 'checked-in' ? 'bg-success animate-pulse' : 'bg-primary'}`} />
+          <div
+            className={`w-2 h-2 rounded-full ${checkInState === 'checked-in' ? 'bg-success animate-pulse' : 'bg-primary'}`}
+          />
           <span className="text-[12.5px] font-700 uppercase tracking-wide text-muted-foreground">
             {checkInState === 'not-started' && 'Active Event Today'}
             {checkInState === 'checked-in' && 'Currently Checked In'}
@@ -96,7 +102,13 @@ export default function ActiveCheckInWidget() {
           </span>
         </div>
         <StatusBadge
-          variant={checkInState === 'checked-in' ? 'checked-in' : checkInState === 'checked-out' ? 'checked-out' : 'active'}
+          variant={
+            checkInState === 'checked-in'
+              ? 'checked-in'
+              : checkInState === 'checked-out'
+                ? 'checked-out'
+                : 'active'
+          }
         />
       </div>
 
@@ -110,7 +122,9 @@ export default function ActiveCheckInWidget() {
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-[12px] font-600 text-muted-foreground uppercase tracking-wide">Your Role</p>
+            <p className="text-[12px] font-600 text-muted-foreground uppercase tracking-wide">
+              Your Role
+            </p>
             <p className="text-[13px] font-700 text-primary mt-0.5">{ACTIVE_EVENT.role}</p>
           </div>
         </div>
@@ -118,18 +132,28 @@ export default function ActiveCheckInWidget() {
         {/* Event details row */}
         <div className="grid grid-cols-3 gap-3 mb-5">
           <div className="bg-muted rounded-xl p-3">
-            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">Time</p>
+            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
+              Time
+            </p>
             <p className="text-[13px] font-700 text-foreground">{ACTIVE_EVENT.startTime}</p>
             <p className="text-[11px] text-muted-foreground">– {ACTIVE_EVENT.endTime}</p>
           </div>
           <div className="bg-muted rounded-xl p-3">
-            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">Volunteers</p>
-            <p className="text-[13px] font-700 text-foreground font-tabular">{ACTIVE_EVENT.volunteersCheckedIn}/{ACTIVE_EVENT.totalSlots}</p>
+            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
+              Volunteers
+            </p>
+            <p className="text-[13px] font-700 text-foreground font-tabular">
+              {ACTIVE_EVENT.volunteersCheckedIn}/{ACTIVE_EVENT.totalSlots}
+            </p>
             <p className="text-[11px] text-muted-foreground">checked in</p>
           </div>
           <div className="bg-muted rounded-xl p-3">
-            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">Coordinator</p>
-            <p className="text-[13px] font-700 text-foreground truncate">{ACTIVE_EVENT.coordinator}</p>
+            <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
+              Coordinator
+            </p>
+            <p className="text-[13px] font-700 text-foreground truncate">
+              {ACTIVE_EVENT.coordinator}
+            </p>
             <p className="text-[11px] text-muted-foreground">Lead</p>
           </div>
         </div>
@@ -138,8 +162,12 @@ export default function ActiveCheckInWidget() {
         {checkInState === 'checked-in' && (
           <div className="bg-success/8 border border-success/20 rounded-xl p-4 mb-4 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-600 uppercase tracking-wide text-success mb-1">Time in session</p>
-              <p className="text-3xl font-800 text-success font-tabular">{formatElapsed(elapsedSeconds)}</p>
+              <p className="text-[11px] font-600 uppercase tracking-wide text-success mb-1">
+                Time in session
+              </p>
+              <p className="text-3xl font-800 text-success font-tabular">
+                {formatElapsed(elapsedSeconds)}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-[11px] text-muted-foreground">Checked in at</p>
@@ -191,9 +219,13 @@ export default function ActiveCheckInWidget() {
               transition-all duration-150 shadow-sm"
           >
             {loading ? (
-              <><Loader2 size={16} className="animate-spin" /> Checking in…</>
+              <>
+                <Loader2 size={16} className="animate-spin" /> Checking in…
+              </>
             ) : (
-              <><LogIn size={16} /> Check In to Event</>
+              <>
+                <LogIn size={16} /> Check In to Event
+              </>
             )}
           </button>
         )}
@@ -209,9 +241,13 @@ export default function ActiveCheckInWidget() {
               transition-all duration-150 shadow-sm"
           >
             {loading ? (
-              <><Loader2 size={16} className="animate-spin" /> Checking out…</>
+              <>
+                <Loader2 size={16} className="animate-spin" /> Checking out…
+              </>
             ) : (
-              <><LogOut size={16} /> Check Out of Event</>
+              <>
+                <LogOut size={16} /> Check Out of Event
+              </>
             )}
           </button>
         )}

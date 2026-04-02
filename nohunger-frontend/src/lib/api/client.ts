@@ -3,8 +3,7 @@
  * Replaces all Supabase client usage.
  */
 
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -25,14 +24,11 @@ export function clearToken(): void {
   document.cookie = 'auth-token=; Path=/; Max-Age=0; SameSite=Lax';
 }
 
-export async function apiFetch<T = any>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 

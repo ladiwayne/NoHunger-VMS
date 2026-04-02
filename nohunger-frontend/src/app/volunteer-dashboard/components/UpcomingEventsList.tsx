@@ -3,7 +3,6 @@
 import React from 'react';
 import { MapPin, Clock, Users, ChevronRight, CalendarDays } from 'lucide-react';
 
-
 // TODO: Backend — GET /api/volunteers/:id/events?status=accepted&upcoming=true
 const upcomingEvents = [
   {
@@ -65,11 +64,15 @@ export default function UpcomingEventsList() {
                 <div className="flex items-center gap-3 mt-1.5 flex-wrap gap-y-1">
                   <div className="flex items-center gap-1">
                     <Clock size={11} className="text-muted-foreground" />
-                    <span className="text-[11.5px] text-muted-foreground">{event.date} · {event.time}</span>
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {event.date} · {event.time}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin size={11} className="text-muted-foreground" />
-                    <span className="text-[11.5px] text-muted-foreground truncate max-w-[120px]">{event.location}</span>
+                    <span className="text-[11.5px] text-muted-foreground truncate max-w-[120px]">
+                      {event.location}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
@@ -78,13 +81,18 @@ export default function UpcomingEventsList() {
                   </span>
                   <div className="flex items-center gap-1">
                     <Users size={10} className="text-muted-foreground" />
-                    <span className={`text-[11px] font-500 ${event.slotsLeft <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
+                    <span
+                      className={`text-[11px] font-500 ${event.slotsLeft <= 3 ? 'text-warning' : 'text-muted-foreground'}`}
+                    >
                       {event.slotsLeft} slots left
                     </span>
                   </div>
                 </div>
               </div>
-              <ChevronRight size={15} className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
+              <ChevronRight
+                size={15}
+                className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1"
+              />
             </div>
           </div>
         ))}

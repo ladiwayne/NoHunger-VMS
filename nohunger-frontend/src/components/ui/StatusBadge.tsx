@@ -1,7 +1,17 @@
 import React from 'react';
 
 type BadgeVariant =
-  | 'active' |'upcoming' |'completed' |'cancelled' |'pending' |'accepted' |'declined' |'checked-in' |'checked-out' |'in-progress' |'logged';
+  | 'active'
+  | 'upcoming'
+  | 'completed'
+  | 'cancelled'
+  | 'pending'
+  | 'accepted'
+  | 'declined'
+  | 'checked-in'
+  | 'checked-out'
+  | 'in-progress'
+  | 'logged';
 
 interface StatusBadgeProps {
   variant: BadgeVariant;
@@ -53,13 +63,16 @@ const dotColors: Record<BadgeVariant, string> = {
 
 export default function StatusBadge({ variant, label, size = 'md' }: StatusBadgeProps) {
   const displayLabel = label || defaultLabels[variant];
-  const sizeClass = size === 'sm' ? 'text-[10px] px-1.5 py-0.5 gap-1' : 'text-[11px] px-2 py-1 gap-1.5';
+  const sizeClass =
+    size === 'sm' ? 'text-[10px] px-1.5 py-0.5 gap-1' : 'text-[11px] px-2 py-1 gap-1.5';
 
   return (
-    <span className={`
+    <span
+      className={`
       inline-flex items-center rounded-full border font-600 whitespace-nowrap
       ${variantStyles[variant]} ${sizeClass}
-    `}>
+    `}
+    >
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColors[variant]}`} />
       {displayLabel}
     </span>

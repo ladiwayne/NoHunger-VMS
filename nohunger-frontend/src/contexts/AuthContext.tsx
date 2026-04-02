@@ -2,7 +2,12 @@
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { login as apiLogin, register as apiRegister, getMe, logout as apiLogout } from '@/lib/api/auth';
+import {
+  login as apiLogin,
+  register as apiRegister,
+  getMe,
+  logout as apiLogout,
+} from '@/lib/api/auth';
 import { getToken } from '@/lib/api/client';
 
 const AuthContext = createContext<any>({});
@@ -25,7 +30,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const warnRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userRef = useRef<any>(null);
 
-  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const clearTimers = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -80,11 +87,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
     const handler = () => resetActivityTimer();
-    events.forEach(e => window.addEventListener(e, handler, { passive: true }));
+    events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
 
     return () => {
       clearTimers();
-      events.forEach(e => window.removeEventListener(e, handler));
+      events.forEach((e) => window.removeEventListener(e, handler));
     };
   }, [user, startSessionTimer, resetActivityTimer, clearTimers]);
 
@@ -108,7 +115,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
         }
-      } catch { /* continue */ }
+      } catch {
+        /* continue */
+      }
 
       // Restore from localStorage then refresh
       try {

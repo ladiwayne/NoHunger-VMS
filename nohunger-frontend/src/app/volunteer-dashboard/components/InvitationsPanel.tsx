@@ -64,7 +64,7 @@ export default function InvitationsPanel() {
     await new Promise((r) => setTimeout(r, 900));
 
     setInvitations((prev) =>
-      prev.map((inv) => inv.id === id ? { ...inv, status: response } : inv)
+      prev.map((inv) => (inv.id === id ? { ...inv, status: response } : inv))
     );
     setLoadingId(null);
 
@@ -118,19 +118,21 @@ export default function InvitationsPanel() {
 
               <div className="flex items-start justify-between gap-2 mb-2">
                 <p className="text-[13px] font-700 text-foreground leading-snug">{inv.eventName}</p>
-                {inv.status !== 'pending' && (
-                  <StatusBadge variant={inv.status} size="sm" />
-                )}
+                {inv.status !== 'pending' && <StatusBadge variant={inv.status} size="sm" />}
               </div>
 
               <div className="flex items-center gap-3 mb-3 flex-wrap gap-y-1">
                 <div className="flex items-center gap-1">
                   <Clock size={10} className="text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">{inv.date} · {inv.time}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {inv.date} · {inv.time}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin size={10} className="text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground truncate max-w-[130px]">{inv.location}</span>
+                  <span className="text-[11px] text-muted-foreground truncate max-w-[130px]">
+                    {inv.location}
+                  </span>
                 </div>
               </div>
 

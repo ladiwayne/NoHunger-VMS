@@ -4,8 +4,6 @@ import React from 'react';
 import { Clock, CalendarCheck, TrendingUp, Award } from 'lucide-react';
 import Icon from '@/components/ui/AppIcon';
 
-
-
 const summaryCards = [
   {
     label: 'Total Hours Logged',
@@ -62,14 +60,20 @@ export default function HoursSummaryCards() {
               ${card?.highlight ? 'border-primary/20 bg-primary/3' : 'border-border'}
             `}
           >
-            <div className={`w-9 h-9 rounded-xl ${card?.iconBg} flex items-center justify-center mb-4`}>
+            <div
+              className={`w-9 h-9 rounded-xl ${card?.iconBg} flex items-center justify-center mb-4`}
+            >
               <Icon size={18} className={card?.iconColor} />
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-3xl font-800 text-foreground font-tabular">{card?.value}</span>
-              {card?.unit && <span className="text-[13px] font-500 text-muted-foreground">{card?.unit}</span>}
+              {card?.unit && (
+                <span className="text-[13px] font-500 text-muted-foreground">{card?.unit}</span>
+              )}
             </div>
-            <p className="text-[12px] font-600 uppercase tracking-wide text-muted-foreground mt-0.5">{card?.label}</p>
+            <p className="text-[12px] font-600 uppercase tracking-wide text-muted-foreground mt-0.5">
+              {card?.label}
+            </p>
             <p className="text-[11.5px] text-muted-foreground mt-1.5">{card?.sub}</p>
           </div>
         );

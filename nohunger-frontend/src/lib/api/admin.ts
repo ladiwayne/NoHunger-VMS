@@ -27,9 +27,14 @@ export async function getAdminStats(): Promise<AdminStats> {
     };
   } catch {
     return {
-      totalVolunteers: 0, pendingApprovals: 0, approvedVolunteers: 0,
-      totalActivities: 0, completedActivities: 0, pendingCheckins: 0,
-      totalCheckins: 0, totalHours: 0,
+      totalVolunteers: 0,
+      pendingApprovals: 0,
+      approvedVolunteers: 0,
+      totalActivities: 0,
+      completedActivities: 0,
+      pendingCheckins: 0,
+      totalCheckins: 0,
+      totalHours: 0,
     };
   }
 }
@@ -56,9 +61,7 @@ export async function getTopVolunteers(limit = 5): Promise<any[]> {
   } catch {
     // Fallback: get all volunteers and sort by hours
     const vols = await apiFetch<any[]>('/volunteers');
-    return (Array.isArray(vols) ? vols : [])
-      .map(adaptUser)
-      .sort((a, b) => (b.total_hours || 0) - (a.total_hours || 0))
-      .slice(0, limit);
+    const adapted = (Array.isArray(vols) ? vols : []).map(adaptUser).filter(Boolean) as any[];
+    return adapted.sort((a, b) => (b?.total_hours || 0) - (a?.total_hours || 0)).slice(0, limit);
   }
 }

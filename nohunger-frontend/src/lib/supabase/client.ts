@@ -4,7 +4,7 @@
  * The returned object is a no-op stub.
  */
 export function createClient() {
-  const noOp = () => Promise.resolve({ data: null, error: null, count: 0 });
+  const noOp = (..._args: any[]) => Promise.resolve({ data: null, error: null, count: 0 });
   const builder: any = {
     select: () => builder,
     insert: () => builder,
@@ -18,10 +18,14 @@ export function createClient() {
     order: () => builder,
     limit: () => builder,
     single: () => Promise.resolve({ data: null, error: null }),
-    then: (resolve: (v: any) => any) => Promise.resolve({ data: [], error: null, count: 0 }).then(resolve),
+    then: (resolve: (v: any) => any) =>
+      Promise.resolve({ data: [], error: null, count: 0 }).then(resolve),
   };
   return {
     from: (_table: string) => ({ ...builder }),
+    functions: {
+      invoke: noOp,
+    },
     auth: {
       resetPasswordForEmail: noOp,
       signOut: noOp,

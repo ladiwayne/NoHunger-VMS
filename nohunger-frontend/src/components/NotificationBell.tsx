@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/api/notifications';
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/lib/api/notifications';
 import { Bell, X, Loader2 } from 'lucide-react';
 
 export default function NotificationBell() {
@@ -45,7 +49,7 @@ export default function NotificationBell() {
   const markAllRead = async () => {
     try {
       await markAllNotificationsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.log('Mark read error:', err);
     }
@@ -54,13 +58,13 @@ export default function NotificationBell() {
   const markRead = async (id: string) => {
     try {
       await markNotificationRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     } catch (err) {
       console.log('Mark read error:', err);
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const typeIcon = (type: string) => {
     const icons: Record<string, string> = {
@@ -97,13 +101,23 @@ export default function NotificationBell() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div>
               <p className="text-[14px] font-700 text-foreground">Notifications</p>
-              {unreadCount > 0 && <p className="text-[11px] text-muted-foreground">{unreadCount} unread</p>}
+              {unreadCount > 0 && (
+                <p className="text-[11px] text-muted-foreground">{unreadCount} unread</p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-[11px] font-600 text-primary hover:underline">Mark all read</button>
+                <button
+                  onClick={markAllRead}
+                  className="text-[11px] font-600 text-primary hover:underline"
+                >
+                  Mark all read
+                </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+              >
                 <X size={14} />
               </button>
             </div>
@@ -120,21 +134,36 @@ export default function NotificationBell() {
                 <p className="text-[13px] text-muted-foreground">No notifications yet</p>
               </div>
             ) : (
-              notifications.map(n => (
+              notifications.map((n) => (
                 <div
                   key={n.id}
                   onClick={() => !n.read && markRead(n.id)}
                   className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors ${!n.read ? 'bg-primary/4' : ''}`}
                 >
-                  <span className="text-[16px] flex-shrink-0 mt-0.5">{typeIcon(n.notification_type)}</span>
+                  <span className="text-[16px] flex-shrink-0 mt-0.5">
+                    {typeIcon(n.notification_type)}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[13px] leading-snug ${!n.read ? 'font-700 text-foreground' : 'font-500 text-foreground'}`}>{n.title}</p>
-                    <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{n.message}</p>
+                    <p
+                      className={`text-[13px] leading-snug ${!n.read ? 'font-700 text-foreground' : 'font-500 text-foreground'}`}
+                    >
+                      {n.title}
+                    </p>
+                    <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                      {n.message}
+                    </p>
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {new Date(n.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(n.created_at).toLocaleDateString('en', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </p>
                   </div>
-                  {!n.read && <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />}
+                  {!n.read && (
+                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                  )}
                 </div>
               ))
             )}

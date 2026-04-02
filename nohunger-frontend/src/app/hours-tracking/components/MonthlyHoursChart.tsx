@@ -38,7 +38,9 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-xl shadow-dropdown p-3.5 min-w-[150px]">
-      <p className="text-[11px] font-600 uppercase tracking-wide text-muted-foreground mb-2">{label} 2025–26</p>
+      <p className="text-[11px] font-600 uppercase tracking-wide text-muted-foreground mb-2">
+        {label} 2025–26
+      </p>
       <div className="flex items-baseline gap-1.5">
         <span className="text-[24px] font-800 text-primary font-tabular">{payload[0].value}</span>
         <span className="text-[12px] text-muted-foreground">hrs</span>
@@ -56,13 +58,19 @@ export default function MonthlyHoursChart() {
           <p className="text-[12px] text-muted-foreground mt-0.5">Oct 2025 – Mar 2026</p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-600">6-month total</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-600">
+            6-month total
+          </p>
           <p className="text-[20px] font-800 text-foreground font-tabular">124.5 hrs</p>
         </div>
       </div>
 
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={32}>
+        <BarChart
+          data={monthlyData}
+          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+          barSize={32}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 15%, 88%)" vertical={false} />
           <XAxis
             dataKey="month"
@@ -75,16 +83,14 @@ export default function MonthlyHoursChart() {
             tick={{ fontSize: 11, fill: 'hsl(25, 10%, 48%)', fontFamily: 'DM Sans' }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(v) => `${v}h`}
+            tickFormatter={(v: number | string) => `${v}h`}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(30, 12%, 94%)', radius: 6 }} />
           <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
             {monthlyData.map((entry) => (
               <Cell
                 key={entry.month}
-                fill={entry.month === CURRENT_MONTH
-                  ? 'hsl(24, 83%, 52%)'
-                  : 'hsl(24, 83%, 80%)'}
+                fill={entry.month === CURRENT_MONTH ? 'hsl(24, 83%, 52%)' : 'hsl(24, 83%, 80%)'}
               />
             ))}
           </Bar>

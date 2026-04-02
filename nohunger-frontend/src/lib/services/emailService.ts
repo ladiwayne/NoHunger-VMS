@@ -22,13 +22,22 @@ const ctaButton = (href: string, label: string, color = '#e8621a') =>
 
 export const emailService = {
   // ─── Invitation ───────────────────────────────────────────────────────────
-  async sendInvitation(to: string, volunteerName: string, activityTitle: string, activityDate: string, activityLocation: string, message?: string) {
+  async sendInvitation(
+    to: string,
+    volunteerName: string,
+    activityTitle: string,
+    activityDate: string,
+    activityLocation: string,
+    message?: string
+  ) {
     try {
       await supabase.functions.invoke('send-email', {
         body: {
           to,
           subject: `You're invited: ${activityTitle} — NoHunger Initiative`,
-          type: 'invitation',html: emailWrapper('linear-gradient(135deg, #e8621a, #c44d0f)',
+          type: 'invitation',
+          html: emailWrapper(
+            'linear-gradient(135deg, #e8621a, #c44d0f)',
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">❤️ Nohunger Initiative</h1>
              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Nohunger Champion Hub</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Hi ${volunteerName},</h2>
@@ -41,8 +50,8 @@ export const emailService = {
              </div>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/invitations', 'View Invitation & Respond')}
              <p style="color: #9e8e82; font-size: 13px; margin-top: 24px;">This invitation will expire soon. Please respond at your earliest convenience.</p>`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -50,7 +59,12 @@ export const emailService = {
   },
 
   // ─── Check-in Confirmation ────────────────────────────────────────────────
-  async sendCheckinConfirmation(to: string, volunteerName: string, activityTitle: string, checkinTime: string) {
+  async sendCheckinConfirmation(
+    to: string,
+    volunteerName: string,
+    activityTitle: string,
+    checkinTime: string
+  ) {
     try {
       await supabase.functions.invoke('send-email', {
         body: {
@@ -63,8 +77,8 @@ export const emailService = {
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Hi ${volunteerName}!</h2>
              <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6;">Your check-in for <strong>${activityTitle}</strong> has been approved at <strong>${checkinTime}</strong>. Thank you for showing up!</p>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/volunteer-dashboard', 'View Dashboard')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -89,8 +103,8 @@ export const emailService = {
              </div>
              <p style="color: #9e8e82; font-size: 13px;">Sent by <strong>${senderName}</strong> · NoHunger Initiative</p>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/volunteer-dashboard', 'Open Portal')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -111,8 +125,8 @@ export const emailService = {
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Congratulations, ${volunteerName}!</h2>
              <p style="color: #6b5c4e; font-size: 15px; line-height: 1.6;">Your application to volunteer at <strong>${activityTitle}</strong> has been approved. We look forward to seeing you there!</p>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/activities', 'View Activity', '#16a34a')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -146,8 +160,8 @@ export const emailService = {
                <p style="color: #3d2e22; font-size: 14px; margin: 0; line-height: 1.6;"><strong>Your account is pending admin approval.</strong> You'll receive another email once approved and ready to join activities.</p>
              </div>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/volunteer-dashboard', 'Go to Your Dashboard', '#16a34a')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -178,8 +192,8 @@ export const emailService = {
                </ul>
              </div>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/activities', 'Browse Activities', '#16a34a')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -194,7 +208,9 @@ export const emailService = {
         body: {
           to,
           subject: `${milestoneEmoji} You've reached ${hours} volunteer hours! — NoHunger`,
-          type: 'hours_milestone',html: emailWrapper('linear-gradient(135deg, #d97706, #b45309)',
+          type: 'hours_milestone',
+          html: emailWrapper(
+            'linear-gradient(135deg, #d97706, #b45309)',
             `<h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">${milestoneEmoji} Milestone Reached!</h1>
              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">NoHunger Volunteer Achievement</p>`,
             `<h2 style="color: #1e1208; font-size: 20px; margin: 0 0 16px;">Amazing work, ${volunteerName}!</h2>
@@ -206,8 +222,8 @@ export const emailService = {
              </div>
              <p style="color: #6b5c4e; font-size: 14px; line-height: 1.6;">A certificate of achievement is available for download in your volunteer profile. Keep up the incredible work!</p>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/profile', 'View Your Achievements', '#d97706')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -215,7 +231,13 @@ export const emailService = {
   },
 
   // ─── Custom Message from Admin (new template) ─────────────────────────────
-  async sendCustomMessage(to: string, volunteerName: string, subject: string, message: string, adminName: string) {
+  async sendCustomMessage(
+    to: string,
+    volunteerName: string,
+    subject: string,
+    message: string,
+    adminName: string
+  ) {
     try {
       await supabase.functions.invoke('send-email', {
         body: {
@@ -232,8 +254,8 @@ export const emailService = {
              </div>
              <p style="color: #9e8e82; font-size: 13px;">Sent by <strong>${adminName}</strong> · NoHunger Admin Team</p>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/volunteer-dashboard', 'Open Portal', '#1d4ed8')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);
@@ -241,7 +263,14 @@ export const emailService = {
   },
 
   // ─── Activity Reminder (new template) ────────────────────────────────────
-  async sendActivityReminder(to: string, volunteerName: string, activityTitle: string, activityDate: string, activityLocation: string, checkinCode: string) {
+  async sendActivityReminder(
+    to: string,
+    volunteerName: string,
+    activityTitle: string,
+    activityDate: string,
+    activityLocation: string,
+    checkinCode: string
+  ) {
     try {
       await supabase.functions.invoke('send-email', {
         body: {
@@ -264,8 +293,8 @@ export const emailService = {
                </div>
              </div>
              ${ctaButton('https://nohunger5912.builtwithrocket.new/activities', 'View Activity Details', '#7c3aed')}`
-          )
-        }
+          ),
+        },
       });
     } catch (err) {
       console.log('Email send error:', err);

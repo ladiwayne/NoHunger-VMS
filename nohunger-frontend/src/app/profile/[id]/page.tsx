@@ -4,11 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api/client';
 import AppLogo from '@/components/ui/AppLogo';
-import { MapPin, Clock, CalendarCheck, Share2, CheckCircle2, Loader2, Award, Copy, Check } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  CalendarCheck,
+  Share2,
+  CheckCircle2,
+  Loader2,
+  Award,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-
 
 export default function PublicProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -79,7 +88,12 @@ export default function PublicProfilePage() {
   };
 
   const initials = profile?.full_name
-    ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    ? profile.full_name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
     : 'V';
 
   const achievementBadges = [
@@ -91,11 +105,12 @@ export default function PublicProfilePage() {
     { label: '10 Events', icon: '🎖️', threshold: 10, unit: 'events', value: stats.eventsAttended },
   ];
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 size={32} className="animate-spin text-primary" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
 
   if (!profile) return null;
 
@@ -122,7 +137,11 @@ export default function PublicProfilePage() {
           <div className="flex items-start gap-5">
             <div className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center flex-shrink-0">
               {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full rounded-2xl object-cover" />
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name}
+                  className="w-full h-full rounded-2xl object-cover"
+                />
               ) : (
                 <span className="text-2xl font-800 text-primary">{initials}</span>
               )}
@@ -143,10 +162,16 @@ export default function PublicProfilePage() {
                 </div>
               )}
               {profile.bio && (
-                <p className="text-[13.5px] text-muted-foreground mt-2 leading-relaxed">{profile.bio}</p>
+                <p className="text-[13.5px] text-muted-foreground mt-2 leading-relaxed">
+                  {profile.bio}
+                </p>
               )}
               <p className="text-[11px] text-muted-foreground mt-2">
-                Volunteer since {new Date(profile.created_at).toLocaleDateString('en', { month: 'long', year: 'numeric' })}
+                Volunteer since{' '}
+                {new Date(profile.created_at).toLocaleDateString('en', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
               </p>
             </div>
           </div>
@@ -154,10 +179,15 @@ export default function PublicProfilePage() {
           {/* Skills */}
           {profile.skills?.length > 0 && (
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-[11px] font-700 text-muted-foreground uppercase tracking-wide mb-2">Skills</p>
+              <p className="text-[11px] font-700 text-muted-foreground uppercase tracking-wide mb-2">
+                Skills
+              </p>
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((s: string) => (
-                  <span key={s} className="px-2.5 py-1 bg-primary/8 text-primary text-[12px] font-600 rounded-full capitalize">
+                  <span
+                    key={s}
+                    className="px-2.5 py-1 bg-primary/8 text-primary text-[12px] font-600 rounded-full capitalize"
+                  >
                     {s.replace(/-/g, ' ')}
                   </span>
                 ))}
@@ -170,18 +200,33 @@ export default function PublicProfilePage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             { label: 'Hours Volunteered', value: stats.totalHours, unit: 'hrs', icon: Clock },
-            { label: 'Events Attended', value: stats.eventsAttended, unit: 'events', icon: CalendarCheck },
-            { label: 'Achievements', value: achievementBadges.filter(b => b.value >= b.threshold).length, unit: 'earned', icon: Award },
-          ].map(stat => {
+            {
+              label: 'Events Attended',
+              value: stats.eventsAttended,
+              unit: 'events',
+              icon: CalendarCheck,
+            },
+            {
+              label: 'Achievements',
+              value: achievementBadges.filter((b) => b.value >= b.threshold).length,
+              unit: 'earned',
+              icon: Award,
+            },
+          ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="bg-card border border-border rounded-2xl p-4 text-center shadow-card">
+              <div
+                key={stat.label}
+                className="bg-card border border-border rounded-2xl p-4 text-center shadow-card"
+              >
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
                   <Icon size={18} className="text-primary" />
                 </div>
                 <div className="text-2xl font-800 font-tabular text-foreground">{stat.value}</div>
                 <div className="text-[11px] text-muted-foreground font-500">{stat.unit}</div>
-                <div className="text-[10px] font-600 text-muted-foreground uppercase tracking-wide mt-0.5">{stat.label}</div>
+                <div className="text-[10px] font-600 text-muted-foreground uppercase tracking-wide mt-0.5">
+                  {stat.label}
+                </div>
               </div>
             );
           })}
@@ -191,12 +236,17 @@ export default function PublicProfilePage() {
         <div className="bg-card border border-border rounded-2xl shadow-card p-5">
           <h2 className="text-[15px] font-700 text-foreground mb-4">Achievements</h2>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {achievementBadges.map(badge => {
+            {achievementBadges.map((badge) => {
               const earned = badge.value >= badge.threshold;
               return (
-                <div key={badge.label} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${earned ? 'bg-primary/6 border-primary/20' : 'bg-muted/50 border-border opacity-40'}`}>
+                <div
+                  key={badge.label}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${earned ? 'bg-primary/6 border-primary/20' : 'bg-muted/50 border-border opacity-40'}`}
+                >
                   <span className="text-2xl">{badge.icon}</span>
-                  <span className="text-[10px] font-600 text-center text-foreground leading-tight">{badge.label}</span>
+                  <span className="text-[10px] font-600 text-center text-foreground leading-tight">
+                    {badge.label}
+                  </span>
                   {earned && <span className="text-[9px] text-success font-700">Earned</span>}
                 </div>
               );
@@ -210,19 +260,30 @@ export default function PublicProfilePage() {
             <h2 className="text-[15px] font-700 text-foreground mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {recentActivity.map((c: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 py-2 border-b border-border last:border-0"
+                >
                   <div className="w-8 h-8 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
                     <CalendarCheck size={15} className="text-success" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-600 text-foreground truncate">{c.activities?.title || 'Event'}</p>
+                    <p className="text-[13px] font-600 text-foreground truncate">
+                      {c.activities?.title || 'Event'}
+                    </p>
                     {c.activities?.start_date && (
                       <p className="text-[11px] text-muted-foreground">
-                        {new Date(c.activities.start_date).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {new Date(c.activities.start_date).toLocaleDateString('en', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </p>
                     )}
                   </div>
-                  <span className="text-[13px] font-700 text-primary font-tabular">{c.hours_spent} hrs</span>
+                  <span className="text-[13px] font-700 text-primary font-tabular">
+                    {c.hours_spent} hrs
+                  </span>
                 </div>
               ))}
             </div>
@@ -232,7 +293,9 @@ export default function PublicProfilePage() {
         {/* Share CTA */}
         <div className="bg-[hsl(142,72%,94%)] border border-[hsl(142,72%,78%)] rounded-2xl p-5 text-center">
           <p className="text-[14px] font-700 text-[hsl(142,72%,22%)] mb-1">Share this profile</p>
-          <p className="text-[12px] text-muted-foreground mb-3">Let others see {profile.full_name.split(' ')[0]}'s volunteer impact</p>
+          <p className="text-[12px] text-muted-foreground mb-3">
+            Let others see {profile.full_name.split(' ')[0]}'s volunteer impact
+          </p>
           <button
             onClick={handleShare}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-[13px] font-600 hover:bg-primary-dark transition-all mx-auto"

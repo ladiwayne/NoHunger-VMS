@@ -3,12 +3,30 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getVolunteers, approveVolunteer, rejectVolunteer, bulkApproveVolunteers, sendMessageToVolunteer, sendBulkMessageToVolunteers } from '@/lib/api/volunteers';
-import { Users, XCircle, Search, Loader2, UserCheck, UserX, Eye, CheckSquare, MessageSquare, Send, X } from 'lucide-react';
+import {
+  getVolunteers,
+  approveVolunteer,
+  rejectVolunteer,
+  bulkApproveVolunteers,
+  sendMessageToVolunteer,
+  sendBulkMessageToVolunteers,
+} from '@/lib/api/volunteers';
+import {
+  Users,
+  XCircle,
+  Search,
+  Loader2,
+  UserCheck,
+  UserX,
+  Eye,
+  CheckSquare,
+  MessageSquare,
+  Send,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-
 
 type Panel = 'list' | 'message';
 
@@ -25,7 +43,9 @@ export default function AdminVolunteersPage() {
   const [messageTarget, setMessageTarget] = useState<any>(null);
   const [messageText, setMessageText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [messageScope, setMessageScope] = useState<'single' | 'filtered' | 'approved' | 'pending' | 'all'>('single');
+  const [messageScope, setMessageScope] = useState<
+    'single' | 'filtered' | 'approved' | 'pending' | 'all'
+  >('single');
 
   useEffect(() => {
     fetchVolunteers();
@@ -49,7 +69,8 @@ export default function AdminVolunteersPage() {
       await approveVolunteer(volunteerId);
       toast.success(`${volunteerName} is now a Nohunger Champion!`);
       fetchVolunteers();
-      if (selectedVol?.id === volunteerId) setSelectedVol((p: any) => ({ ...p, volunteer_status: 'approved' }));
+      if (selectedVol?.id === volunteerId)
+        setSelectedVol((p: any) => ({ ...p, volunteer_status: 'approved' }));
     } catch (err: any) {
       toast.error(err.message || 'Failed to approve.');
     } finally {
@@ -71,11 +92,14 @@ export default function AdminVolunteersPage() {
   };
 
   const handleBulkApprove = async () => {
-    const pending = volunteers.filter(v => v.volunteer_status === 'pending');
-    if (pending.length === 0) { toast.error('No pending Champions to approve right now.'); return; }
+    const pending = volunteers.filter((v) => v.volunteer_status === 'pending');
+    if (pending.length === 0) {
+      toast.error('No pending Champions to approve right now.');
+      return;
+    }
     setBulkApproving(true);
     try {
-      await bulkApproveVolunteers(pending.map(v => v.id));
+      await bulkApproveVolunteers(pending.map((v) => v.id));
 
       toast.success(`${pending.length} Nohunger Champions approved!`);
       fetchVolunteers();
@@ -87,7 +111,10 @@ export default function AdminVolunteersPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim()) { toast.error('Please enter a message.'); return; }
+    if (!messageText.trim()) {
+      toast.error('Please enter a message.');
+      return;
+    }
 
     let recipientIds: string[] = [];
     if (messageScope === 'single') {
@@ -99,16 +126,16 @@ export default function AdminVolunteersPage() {
     }
 
     if (messageScope === 'filtered') {
-      recipientIds = filtered.map(v => v.id);
+      recipientIds = filtered.map((v) => v.id);
     }
     if (messageScope === 'approved') {
-      recipientIds = volunteers.filter(v => v.volunteer_status === 'approved').map(v => v.id);
+      recipientIds = volunteers.filter((v) => v.volunteer_status === 'approved').map((v) => v.id);
     }
     if (messageScope === 'pending') {
-      recipientIds = volunteers.filter(v => v.volunteer_status === 'pending').map(v => v.id);
+      recipientIds = volunteers.filter((v) => v.volunteer_status === 'pending').map((v) => v.id);
     }
     if (messageScope === 'all') {
-      recipientIds = volunteers.map(v => v.id);
+      recipientIds = volunteers.map((v) => v.id);
     }
 
     if (recipientIds.length === 0) {
@@ -142,17 +169,20 @@ export default function AdminVolunteersPage() {
     setActivePanel('message');
   };
 
-  const filtered = volunteers.filter(v => {
+  const filtered = volunteers.filter((v) => {
     const matchFilter = filter === 'all' || v.volunteer_status === filter;
-    const matchSearch = !search || v.full_name?.toLowerCase().includes(search.toLowerCase()) || v.email?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      !search ||
+      v.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      v.email?.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
   const counts = {
     all: volunteers.length,
-    pending: volunteers.filter(v => v.volunteer_status === 'pending').length,
-    approved: volunteers.filter(v => v.volunteer_status === 'approved').length,
-    rejected: volunteers.filter(v => v.volunteer_status === 'rejected').length,
+    pending: volunteers.filter((v) => v.volunteer_status === 'pending').length,
+    approved: volunteers.filter((v) => v.volunteer_status === 'approved').length,
+    rejected: volunteers.filter((v) => v.volunteer_status === 'rejected').length,
   };
 
   const groupCount = (items: any[], keyFn: (item: any) => string) => {
@@ -181,7 +211,10 @@ export default function AdminVolunteersPage() {
   });
 
   const byLocation = groupCount(filtered, (v) => {
-    const region = (v.region || '').split(',').map((p: string) => p.trim()).filter(Boolean);
+    const region = (v.region || '')
+      .split(',')
+      .map((p: string) => p.trim())
+      .filter(Boolean);
     return region.length > 0 ? region[region.length - 1] : 'Unspecified';
   });
 
@@ -190,8 +223,12 @@ export default function AdminVolunteersPage() {
     return v.skills.map((s: string) => s.replace('-', ' ')).join(', ');
   });
 
-  const sortedLocationGroups = Object.entries(byLocation).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const sortedSkillGroups = Object.entries(bySkillAreas).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const sortedLocationGroups = Object.entries(byLocation)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const sortedSkillGroups = Object.entries(bySkillAreas)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -209,7 +246,9 @@ export default function AdminVolunteersPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-700 text-foreground">Nohunger Champions</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">Approve, review, and support Champion accounts</p>
+            <p className="text-[14px] text-muted-foreground mt-0.5">
+              Approve, review, and support Champion accounts
+            </p>
           </div>
           {counts.pending > 0 && (
             <button
@@ -217,7 +256,11 @@ export default function AdminVolunteersPage() {
               disabled={bulkApproving}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-white font-700 rounded-xl hover:bg-success/90 transition-all disabled:opacity-60 text-[13.5px]"
             >
-              {bulkApproving ? <Loader2 size={15} className="animate-spin" /> : <CheckSquare size={15} />}
+              {bulkApproving ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <CheckSquare size={15} />
+              )}
               Approve All Pending Champions ({counts.pending})
             </button>
           )}
@@ -228,7 +271,7 @@ export default function AdminVolunteersPage() {
           {[
             { id: 'list' as Panel, label: 'Champion List', icon: Users },
             { id: 'message' as Panel, label: 'Send Message', icon: MessageSquare },
-          ].map(p => {
+          ].map((p) => {
             const Icon = p.icon;
             return (
               <button
@@ -269,52 +312,71 @@ export default function AdminVolunteersPage() {
 
             {/* Champion selector */}
             {messageScope === 'single' && (
-            <div className="mb-4">
-              <label className="block text-[13px] font-600 text-foreground mb-1.5">Select Champion</label>
-              {messageTarget ? (
-                <div className="flex items-center gap-3 p-3 bg-primary/6 border border-primary/20 rounded-xl">
-                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[11px] font-700 text-primary">
-                      {messageTarget.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-600 text-foreground">{messageTarget.full_name}</p>
-                    <p className="text-[11px] text-muted-foreground">{messageTarget.email}</p>
-                  </div>
-                  <button onClick={() => setMessageTarget(null)} className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-xl">
-                  {volunteers.filter(v => v.volunteer_status === 'approved').map(vol => (
+              <div className="mb-4">
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Select Champion
+                </label>
+                {messageTarget ? (
+                  <div className="flex items-center gap-3 p-3 bg-primary/6 border border-primary/20 rounded-xl">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[11px] font-700 text-primary">
+                        {messageTarget.full_name
+                          ?.split(' ')
+                          .map((n: string) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-600 text-foreground">
+                        {messageTarget.full_name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">{messageTarget.email}</p>
+                    </div>
                     <button
-                      key={vol.id}
-                      onClick={() => setMessageTarget(vol)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                      onClick={() => setMessageTarget(null)}
+                      className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
                     >
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-700 text-primary">
-                          {vol.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-600 text-foreground">{vol.full_name}</p>
-                        <p className="text-[11px] text-muted-foreground">{vol.email}</p>
-                      </div>
+                      <X size={14} />
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-xl">
+                    {volunteers
+                      .filter((v) => v.volunteer_status === 'approved')
+                      .map((vol) => (
+                        <button
+                          key={vol.id}
+                          onClick={() => setMessageTarget(vol)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-700 text-primary">
+                              {vol.full_name
+                                ?.split(' ')
+                                .map((n: string) => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-600 text-foreground">{vol.full_name}</p>
+                            <p className="text-[11px] text-muted-foreground">{vol.email}</p>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
             )}
 
             <div className="mb-4">
               <label className="block text-[13px] font-600 text-foreground mb-1.5">Message</label>
               <textarea
                 value={messageText}
-                onChange={e => setMessageText(e.target.value)}
+                onChange={(e) => setMessageText(e.target.value)}
                 rows={4}
                 placeholder="Write your message to this Champion…"
                 className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
@@ -324,13 +386,28 @@ export default function AdminVolunteersPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSendMessage}
-                disabled={sendingMessage || (messageScope === 'single' && !messageTarget) || !messageText.trim()}
+                disabled={
+                  sendingMessage ||
+                  (messageScope === 'single' && !messageTarget) ||
+                  !messageText.trim()
+                }
                 className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[13.5px]"
               >
-                {sendingMessage ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                {sendingMessage ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
                 Send Message
               </button>
-              <button onClick={() => { setActivePanel('list'); setMessageTarget(null); setMessageText(''); }} className="px-4 py-2.5 bg-card border border-border rounded-xl text-[13.5px] font-600 text-muted-foreground hover:bg-muted transition-all">
+              <button
+                onClick={() => {
+                  setActivePanel('list');
+                  setMessageTarget(null);
+                  setMessageText('');
+                }}
+                className="px-4 py-2.5 bg-card border border-border rounded-xl text-[13.5px] font-600 text-muted-foreground hover:bg-muted transition-all"
+              >
                 Cancel
               </button>
             </div>
@@ -343,7 +420,7 @@ export default function AdminVolunteersPage() {
             {/* Filters */}
             <div className="flex flex-wrap gap-3 items-center">
               <div className="flex gap-2 flex-wrap">
-                {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
+                {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
@@ -354,10 +431,13 @@ export default function AdminVolunteersPage() {
                 ))}
               </div>
               <div className="relative flex-1 min-w-[200px] max-w-xs">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search Champions…"
                   className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-xl text-[13.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
@@ -367,31 +447,41 @@ export default function AdminVolunteersPage() {
             {/* Grouped summaries */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">By Gender</p>
+                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">
+                  By Gender
+                </p>
                 <div className="space-y-1.5">
-                  {Object.entries(byGender).sort((a, b) => b[1] - a[1]).map(([key, count]) => (
-                    <div key={key} className="flex items-center justify-between text-[12.5px]">
-                      <span className="text-muted-foreground">{key}</span>
-                      <span className="font-700 text-foreground">{count}</span>
-                    </div>
-                  ))}
+                  {Object.entries(byGender)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, count]) => (
+                      <div key={key} className="flex items-center justify-between text-[12.5px]">
+                        <span className="text-muted-foreground">{key}</span>
+                        <span className="font-700 text-foreground">{count}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">By Event Confirmation</p>
+                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">
+                  By Event Confirmation
+                </p>
                 <div className="space-y-1.5">
-                  {Object.entries(byEventConfirmation).sort((a, b) => b[1] - a[1]).map(([key, count]) => (
-                    <div key={key} className="flex items-center justify-between text-[12.5px]">
-                      <span className="text-muted-foreground">{key}</span>
-                      <span className="font-700 text-foreground">{count}</span>
-                    </div>
-                  ))}
+                  {Object.entries(byEventConfirmation)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, count]) => (
+                      <div key={key} className="flex items-center justify-between text-[12.5px]">
+                        <span className="text-muted-foreground">{key}</span>
+                        <span className="font-700 text-foreground">{count}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">Top Locations</p>
+                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">
+                  Top Locations
+                </p>
                 <div className="space-y-1.5">
                   {sortedLocationGroups.map(([key, count]) => (
                     <div key={key} className="flex items-center justify-between text-[12.5px]">
@@ -403,7 +493,9 @@ export default function AdminVolunteersPage() {
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-4">
-                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">By Skill Areas</p>
+                <p className="text-[12px] font-700 text-foreground uppercase tracking-wide mb-2">
+                  By Skill Areas
+                </p>
                 <div className="space-y-1.5">
                   {sortedSkillGroups.map(([key, count]) => (
                     <div key={key} className="flex items-center justify-between text-[12.5px]">
@@ -422,25 +514,42 @@ export default function AdminVolunteersPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
                       <span className="text-[16px] font-700 text-primary">
-                        {selectedVol.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                        {selectedVol.full_name
+                          ?.split(' ')
+                          .map((n: string) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-[16px] font-700 text-foreground">{selectedVol.full_name}</h3>
+                      <h3 className="text-[16px] font-700 text-foreground">
+                        {selectedVol.full_name}
+                      </h3>
                       <p className="text-[13px] text-muted-foreground">{selectedVol.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/profile/${selectedVol.id}`} target="_blank" className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground rounded-lg text-[12px] font-600 hover:text-foreground transition-colors">
+                    <Link
+                      href={`/profile/${selectedVol.id}`}
+                      target="_blank"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-muted text-muted-foreground rounded-lg text-[12px] font-600 hover:text-foreground transition-colors"
+                    >
                       <Eye size={13} /> View Public Profile
                     </Link>
                     <button
-                      onClick={() => { setMessageTarget(selectedVol); setActivePanel('message'); }}
+                      onClick={() => {
+                        setMessageTarget(selectedVol);
+                        setActivePanel('message');
+                      }}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[12px] font-600 hover:bg-primary/20 transition-colors"
                     >
                       <MessageSquare size={13} /> Message
                     </button>
-                    <button onClick={() => setSelectedVol(null)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+                    <button
+                      onClick={() => setSelectedVol(null)}
+                      className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                    >
                       <XCircle size={18} />
                     </button>
                   </div>
@@ -451,17 +560,26 @@ export default function AdminVolunteersPage() {
                     { label: 'Phone', value: selectedVol.phone || '—' },
                     { label: 'Total Hours', value: `${selectedVol.total_hours || 0} hrs` },
                     { label: 'Status', value: selectedVol.volunteer_status },
-                  ].map(item => (
+                  ].map((item) => (
                     <div key={item.label} className="bg-muted rounded-xl p-3">
-                      <p className="text-[11px] font-600 text-muted-foreground uppercase tracking-wide mb-0.5">{item.label}</p>
-                      <p className="text-[13px] font-700 text-foreground capitalize">{item.value}</p>
+                      <p className="text-[11px] font-600 text-muted-foreground uppercase tracking-wide mb-0.5">
+                        {item.label}
+                      </p>
+                      <p className="text-[13px] font-700 text-foreground capitalize">
+                        {item.value}
+                      </p>
                     </div>
                   ))}
                 </div>
                 {selectedVol.skills?.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selectedVol.skills.map((s: string) => (
-                      <span key={s} className="px-2.5 py-1 bg-primary/8 text-primary text-[11px] font-600 rounded-full capitalize">{s.replace('-', ' ')}</span>
+                      <span
+                        key={s}
+                        className="px-2.5 py-1 bg-primary/8 text-primary text-[11px] font-600 rounded-full capitalize"
+                      >
+                        {s.replace('-', ' ')}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -470,7 +588,14 @@ export default function AdminVolunteersPage() {
 
             {/* Table */}
             {loading ? (
-              <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-16 bg-card border border-border rounded-xl animate-pulse" />)}</div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-16 bg-card border border-border rounded-xl animate-pulse"
+                  />
+                ))}
+              </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border rounded-2xl">
                 <Users size={40} className="text-muted-foreground mx-auto mb-3" />
@@ -482,46 +607,94 @@ export default function AdminVolunteersPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border bg-muted/50">
-                        {['Champion', 'Email', 'Region', 'Skills', 'Hours', 'Status', 'Actions'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[11px] font-700 text-muted-foreground uppercase tracking-wide">{h}</th>
+                        {[
+                          'Champion',
+                          'Email',
+                          'Region',
+                          'Skills',
+                          'Hours',
+                          'Status',
+                          'Actions',
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-[11px] font-700 text-muted-foreground uppercase tracking-wide"
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map(vol => (
-                        <tr key={vol.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                      {filtered.map((vol) => (
+                        <tr
+                          key={vol.id}
+                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                        >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-[11px] font-700 text-primary">
-                                  {vol.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                  {vol.full_name
+                                    ?.split(' ')
+                                    .map((n: string) => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2)}
                                 </span>
                               </div>
-                              <span className="text-[13px] font-600 text-foreground">{vol.full_name}</span>
+                              <span className="text-[13px] font-600 text-foreground">
+                                {vol.full_name}
+                              </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-[12.5px] text-muted-foreground">{vol.email}</td>
-                          <td className="px-4 py-3 text-[12.5px] text-muted-foreground max-w-[120px] truncate">{vol.region || '—'}</td>
+                          <td className="px-4 py-3 text-[12.5px] text-muted-foreground">
+                            {vol.email}
+                          </td>
+                          <td className="px-4 py-3 text-[12.5px] text-muted-foreground max-w-[120px] truncate">
+                            {vol.region || '—'}
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
                               {vol.skills?.slice(0, 2).map((s: string) => (
-                                <span key={s} className="px-1.5 py-0.5 bg-primary/8 text-primary text-[10px] font-600 rounded-full capitalize">{s.replace('-', ' ')}</span>
+                                <span
+                                  key={s}
+                                  className="px-1.5 py-0.5 bg-primary/8 text-primary text-[10px] font-600 rounded-full capitalize"
+                                >
+                                  {s.replace('-', ' ')}
+                                </span>
                               ))}
-                              {vol.skills?.length > 2 && <span className="text-[10px] text-muted-foreground">+{vol.skills.length - 2}</span>}
+                              {vol.skills?.length > 2 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  +{vol.skills.length - 2}
+                                </span>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-[13px] font-700 text-primary font-tabular">{vol.total_hours || 0} hrs</td>
+                          <td className="px-4 py-3 text-[13px] font-700 text-primary font-tabular">
+                            {vol.total_hours || 0} hrs
+                          </td>
                           <td className="px-4 py-3">
-                            <span className={`text-[11px] font-700 px-2.5 py-1 rounded-full border uppercase tracking-wide ${statusBadge(vol.volunteer_status)}`}>
+                            <span
+                              className={`text-[11px] font-700 px-2.5 py-1 rounded-full border uppercase tracking-wide ${statusBadge(vol.volunteer_status)}`}
+                            >
                               {vol.volunteer_status}
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1.5">
-                              <button onClick={() => setSelectedVol(vol)} className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors" title="View details">
+                              <button
+                                onClick={() => setSelectedVol(vol)}
+                                className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                title="View details"
+                              >
                                 <Eye size={14} />
                               </button>
-                              <button onClick={() => openMessage(vol)} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Send message">
+                              <button
+                                onClick={() => openMessage(vol)}
+                                className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                title="Send message"
+                              >
                                 <MessageSquare size={14} />
                               </button>
                               {vol.volunteer_status === 'pending' && (
@@ -532,7 +705,11 @@ export default function AdminVolunteersPage() {
                                     className="p-1.5 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors disabled:opacity-60"
                                     title="Approve"
                                   >
-                                    {actionLoading === vol.id ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
+                                    {actionLoading === vol.id ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <UserCheck size={14} />
+                                    )}
                                   </button>
                                   <button
                                     onClick={() => handleReject(vol.id, vol.full_name)}

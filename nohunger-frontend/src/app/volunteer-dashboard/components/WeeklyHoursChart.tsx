@@ -81,7 +81,9 @@ export default function WeeklyHoursChart() {
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-8 h-0.5 border-t-2 border-dashed border-muted-foreground/40" />
-          <span className="text-[11.5px] text-muted-foreground font-500">8-week avg ({avgHours.toFixed(1)} hrs)</span>
+          <span className="text-[11.5px] text-muted-foreground font-500">
+            8-week avg ({avgHours.toFixed(1)} hrs)
+          </span>
         </div>
       </div>
 
@@ -106,7 +108,7 @@ export default function WeeklyHoursChart() {
             tick={{ fontSize: 11, fill: 'hsl(25, 10%, 48%)', fontFamily: 'DM Sans' }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(v) => `${v}h`}
+            tickFormatter={(v: number | string) => `${v}h`}
           />
           <ReferenceLine
             y={avgHours}
@@ -115,7 +117,10 @@ export default function WeeklyHoursChart() {
             strokeOpacity={0.5}
             strokeWidth={1.5}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(24, 83%, 52%)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: 'hsl(24, 83%, 52%)', strokeWidth: 1.5, strokeDasharray: '4 4' }}
+          />
           <Area
             type="monotone"
             dataKey="hours"

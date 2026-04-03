@@ -60,22 +60,16 @@ const SKILLS = [
 
 const IMPACT_STATS = [
   { value: '18,500+', label: 'Meals served monthly' },
-  { value: '1,200', label: 'Active Champions' },
+  { value: '1,200', label: 'Registered Champions' },
   { value: '52', label: 'Communities reached' },
 ];
 
 const PROGRAMS = [
-  { icon: Package, label: 'Food Pantry', desc: 'Weekly food distribution to families in need' },
-  {
-    icon: HandHeart,
-    label: 'Community Outreach',
-    desc: 'Reaching underserved communities across Nigeria',
-  },
-  {
-    icon: Leaf,
-    label: 'Nutrition Education',
-    desc: 'Teaching healthy eating and food sustainability',
-  },
+  { icon: Leaf, label: 'Vertical Backyard Farming', desc: 'Growing food for family nutritional needs' },
+  { icon: ChefHat, label: 'Community Breakfast', desc: 'Serving hot meals to communities every morning' },
+  { icon: Users, label: 'Support A Girl Child Back To School', desc: 'Education and nutrition for girls across Nigeria' },
+  { icon: Package, label: 'Temporary Food Assistance (TFAP)', desc: 'Emergency food support for vulnerable families' },
+  { icon: Globe, label: 'Research and Innovation', desc: 'Pioneering solutions to end hunger in Nigeria' },
 ];
 
 // Password strength checker
@@ -324,7 +318,16 @@ export default function SignUpLoginContent() {
       toast.success('Account created! Welcome to the Nohunger Initiative family.', {
         duration: 4000,
       });
-      setTimeout(() => router.push('/onboarding'), 1500);
+      setTimeout(() => {
+        router.push('/volunteer-dashboard');
+        setTimeout(() => {
+          toast('Complete your profile to get the most out of your Champion experience!', {
+            duration: 8000,
+            icon: '👤',
+            action: { label: 'Complete Profile', onClick: () => router.push('/profile') },
+          });
+        }, 1000);
+      }, 1500);
     } catch (err: any) {
       setSignupLoading(false);
       if (isRateLimitError(err)) {
@@ -376,12 +379,7 @@ export default function SignUpLoginContent() {
 
           {/* Hero copy */}
           <div className="flex-1 flex flex-col justify-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1.5 mb-5 w-fit">
-              <Globe size={12} className="text-green-200" />
-              <span className="text-[11px] text-green-100/80 font-600 tracking-wide">
-                nohungerfoodbank.org
-              </span>
-            </div>
+
             <h1 className="text-4xl xl:text-5xl font-800 text-white leading-tight mb-5">
               Feed a family.
               <br />
@@ -427,27 +425,19 @@ export default function SignUpLoginContent() {
                   </div>
                 );
               })}
+              <a
+                href="https://www.nohungerfoodbank.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 mt-2 py-2 rounded-xl border border-white/20 text-[12px] font-600 text-green-100 hover:bg-white/10 transition-colors"
+              >
+                View More Programs
+                <ArrowRight size={12} />
+              </a>
             </div>
           </div>
 
-          {/* Testimonial */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/15">
-            <p className="text-[13px] text-green-50 leading-relaxed italic mb-3">
-              &ldquo;Joining Nohunger Initiative has been one of my best decisions. Every weekend I
-              help distribute food in Lagos, and I can feel the impact in my community.&rdquo;
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center border border-white/20">
-                <span className="text-[11px] font-700 text-white">AO</span>
-              </div>
-              <div>
-                <p className="text-[12px] font-700 text-white">Adaeze Okonkwo</p>
-                <p className="text-[10px] text-green-100/70">
-                  Nohunger Champion since January 2024 · 112 hrs
-                </p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
 
@@ -569,19 +559,6 @@ export default function SignUpLoginContent() {
             </div>
           ) : (
             <>
-              {/* Demo credentials */}
-              <div className="mb-5 p-3 bg-[hsl(142,72%,96%)] border border-[hsl(142,72%,80%)] rounded-xl text-[12px]">
-                <p className="font-700 text-[hsl(142,72%,22%)] mb-1">Demo Accounts</p>
-                <p className="text-muted-foreground">
-                  Admin: <span className="font-600 text-foreground">admin@nohunger.org</span> /{' '}
-                  <span className="font-600 text-foreground">Admin@2026</span>
-                </p>
-                <p className="text-muted-foreground">
-                  Champion: <span className="font-600 text-foreground">chidi.obi@nohunger.org</span>{' '}
-                  / <span className="font-600 text-foreground">Volunteer@2026</span>
-                </p>
-              </div>
-
               <div className="flex bg-muted rounded-xl p-1 mb-8">
                 {(['login', 'signup'] as const).map((tab) => (
                   <button

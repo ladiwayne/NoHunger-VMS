@@ -223,7 +223,7 @@ export default function VolunteerDashboardPage() {
           </div>
         )}
 
-        {/* KPI Cards */}}
+        {/* KPI Cards */}
         {dataLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (

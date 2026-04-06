@@ -1,4 +1,4 @@
-import { apiFetch, setToken, clearToken } from './client';
+import { setToken, clearToken } from './client';
 import { adaptUser } from './adapters';
 
 export interface LoginResult {
@@ -15,22 +15,31 @@ export interface SignUpOptions {
   skills?: string[];
 }
 
+/** Helper for calling the Next.js auth API routes (same-origin, httpOnly cookie handling). */
+async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...((options.headers as Record<string, string>) || {}) },
+    credentials: 'include',
+  });
+  const data = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+  if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+  return data;
+}
+
 export async function login(email: string, password: string): Promise<LoginResult | null> {
-  try {
-    const data = await apiFetch<any>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    if (data.token && data.user) {
-      setToken(data.token);
-      const profile = adaptUser(data.user);
-      localStorage.setItem('auth-user', JSON.stringify(profile));
-      return { user: data.user, profile, token: data.token };
-    }
-    return null;
-  } catch {
-    return null;
+  // Let errors propagate so callers can show the backend's message
+  const data = await authFetch<any>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  if (data.token && data.user) {
+    setToken(data.token); // store in memory only
+    const profile = adaptUser(data.user);
+    localStorage.setItem('auth-user', JSON.stringify(profile));
+    return { user: data.user, profile, token: data.token };
   }
+  return null;
 }
 
 export async function register(
@@ -42,7 +51,7 @@ export async function register(
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
 
-  const data = await apiFetch<any>('/auth/register', {
+  const data = await authFetch<any>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({
       email,
@@ -57,7 +66,7 @@ export async function register(
   });
 
   if (data.token && data.user) {
-    setToken(data.token);
+    setToken(data.token); // store in memory only
     const profile = adaptUser(data.user);
     localStorage.setItem('auth-user', JSON.stringify(profile));
     return { user: data.user, profile, token: data.token };
@@ -67,13 +76,18 @@ export async function register(
 
 export async function getMe(): Promise<any | null> {
   try {
-    const data = await apiFetch<any>('/auth/me');
-    return adaptUser(data.user || data);
+    // Calls the Next.js API route which reads the httpOnly cookie server-side
+    const data = await authFetch<any>('/api/auth/me');
+    if (data.user) {
+      setToken(data.token); // restore token to memory from cookie session
+      return adaptUser(data.user);
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 export function logout(): void {
-  clearToken();
+  clearToken(); // clears memory + localStorage profile + fires cookie clear
 }

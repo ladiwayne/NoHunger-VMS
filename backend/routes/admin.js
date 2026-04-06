@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
+const superAdminAuth = require('../middleware/superAdminAuth');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const Event = require('../models/Event');
@@ -10,6 +12,18 @@ const Notification = require('../models/Notification');
 // Dashboard stats
 router.get('/dashboard/stats', adminAuth, async (req, res) => {
   try {
+    const fromDate = req.query.from ? new Date(req.query.from) : null;
+    const toDate = req.query.to ? new Date(req.query.to) : null;
+
+    const periodFilter = {};
+    if (fromDate && !Number.isNaN(fromDate.getTime())) periodFilter.$gte = fromDate;
+    if (toDate && !Number.isNaN(toDate.getTime())) periodFilter.$lte = toDate;
+    const hasPeriod = Object.keys(periodFilter).length > 0;
+
+    const checkinPeriodMatch = hasPeriod
+      ? { checkOutStatus: 'completed', createdAt: periodFilter }
+      : { checkOutStatus: 'completed' };
+
     const totalVolunteers = await User.countDocuments({ role: 'volunteer' });
     const pendingApprovals = await User.countDocuments({ role: 'volunteer', status: 'pending' });
     const approvedVolunteers = await User.countDocuments({ role: 'volunteer', status: 'approved' });
@@ -17,9 +31,9 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
     const completedActivities = await Activity.countDocuments({ status: 'completed' });
     const totalEvents = await Event.countDocuments();
     const pendingCheckins = await CheckIn.countDocuments({ checkInStatus: 'pending' });
-    const totalCheckins = await CheckIn.countDocuments({ checkOutStatus: 'completed' });
+    const totalCheckins = await CheckIn.countDocuments(checkinPeriodMatch);
     const totalHours = await CheckIn.aggregate([
-      { $match: { checkOutStatus: 'completed' } },
+      { $match: checkinPeriodMatch },
       { $group: { _id: null, totalHours: { $sum: '$hoursSpent' } } },
     ]);
 
@@ -118,12 +132,17 @@ router.get('/top-volunteers', adminAuth, async (req, res) => {
 });
 
 // Create broadcast/direct message
-router.post('/broadcasts', adminAuth, async (req, res) => {
+router.post('/broadcasts', adminAuth, [
+  body('message').trim().isLength({ min: 1, max: 2000 }).withMessage('Message is required (max 2000 chars)'),
+  body('subject').optional().trim().isLength({ max: 200 }),
+  body('recipientType').optional().trim(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
   try {
     const { message, subject, recipientType = 'all', recipientIds = [], type = 'broadcast' } = req.body;
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ message: 'Message is required' });
-    }
 
     let users = [];
     if (Array.isArray(recipientIds) && recipientIds.length > 0) {
@@ -164,6 +183,112 @@ router.get('/broadcasts', adminAuth, async (req, res) => {
     res.status(200).json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching broadcasts', error: error.message });
+  }
+});
+
+// ─── Super Admin: Admin Account Management ───────────────────────────────────
+
+// Get all pending admin access requests
+router.get('/pending-admins', superAdminAuth, async (req, res) => {
+  try {
+    const pendingAdmins = await User.find({ role: 'admin', status: 'pending' })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.status(200).json(pendingAdmins);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending admins', error: error.message });
+  }
+});
+
+// Get all admins (admin + super_admin)
+router.get('/all-admins', superAdminAuth, async (req, res) => {
+  try {
+    const admins = await User.find({ role: { $in: ['admin', 'super_admin'] } })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.status(200).json(admins);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching admins', error: error.message });
+  }
+});
+
+// Approve an admin access request
+router.put('/approve-admin/:id', superAdminAuth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.params.id);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({ message: 'Admin request not found' });
+    }
+    admin.status = 'approved';
+    admin.approvedBy = req.user.id;
+    await admin.save();
+    res.status(200).json({
+      message: 'Admin approved',
+      admin: {
+        id: admin._id, firstName: admin.firstName, lastName: admin.lastName,
+        email: admin.email, status: admin.status,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving admin', error: error.message });
+  }
+});
+
+// Reject an admin access request
+router.put('/reject-admin/:id', superAdminAuth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.params.id);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({ message: 'Admin request not found' });
+    }
+    admin.status = 'rejected';
+    admin.approvedBy = req.user.id;
+    await admin.save();
+    res.status(200).json({ message: 'Admin request rejected' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting admin', error: error.message });
+  }
+});
+
+// Revoke admin access (demotes to volunteer)
+router.delete('/revoke-admin/:id', superAdminAuth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.params.id);
+    if (!admin || admin.role !== 'admin') {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+    admin.role = 'volunteer';
+    admin.status = 'approved';
+    await admin.save();
+    res.status(200).json({ message: 'Admin access revoked' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error revoking admin access', error: error.message });
+  }
+});
+
+// Promote a volunteer to admin
+router.put('/promote-to-admin/:id', superAdminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user.role !== 'volunteer') {
+      return res.status(400).json({ message: 'User is not a volunteer' });
+    }
+    user.role = 'admin';
+    user.status = 'approved';
+    user.approvedBy = req.user.id;
+    await user.save();
+    res.status(200).json({
+      message: `${user.firstName} ${user.lastName} has been promoted to admin`,
+      user: {
+        id: user._id, firstName: user.firstName, lastName: user.lastName,
+        email: user.email, role: user.role, status: user.status,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error promoting user to admin', error: error.message });
   }
 });
 

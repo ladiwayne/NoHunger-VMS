@@ -1,10 +1,25 @@
 import { apiFetch } from './client';
 import { adaptUser } from './adapters';
 
-export async function getVolunteers(filters?: { status?: string }): Promise<any[]> {
-  const params = filters?.status ? `?status=${filters.status}` : '';
-  const data = await apiFetch<any[]>(`/volunteers${params}`);
-  return (Array.isArray(data) ? data : []).map(adaptUser);
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export async function getVolunteers(
+  filters?: { status?: string; page?: number; limit?: number }
+): Promise<any[]> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.page)   params.set('page',   String(filters.page));
+  if (filters?.limit)  params.set('limit',  String(filters.limit));
+  const query = params.toString() ? `?${params}` : '';
+  const res = await apiFetch<any>(`/volunteers${query}`);
+  // Handle both paginated { data, pagination } and legacy array responses
+  const raw = Array.isArray(res) ? res : (res?.data ?? []);
+  return raw.map(adaptUser);
 }
 
 export async function getVolunteer(id: string): Promise<any | null> {

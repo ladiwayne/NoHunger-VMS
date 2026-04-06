@@ -46,6 +46,7 @@ export function adaptActivity(a: any) {
     max_volunteers: a.max_volunteers ?? a.volunteersNeeded ?? 0,
     status: a.status || 'draft',
     check_in_code: a.check_in_code || a.checkInCode || '',
+    checkin_link: a.checkin_link || a.checkInLink || '',
     created_at: a.createdAt || a.created_at || new Date().toISOString(),
     coordinator: a.coordinatorId || a.coordinator || null,
   };

@@ -45,7 +45,6 @@ type SignupFormData = {
   agreeTerms: boolean;
 };
 type ForgotFormData = { email: string };
-
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
 
@@ -211,7 +210,6 @@ export default function SignUpLoginContent() {
 
   const watchedPassword = signupForm.watch('password');
   const passwordStrength = getPasswordStrength(watchedPassword);
-
   const toggleSkill = (skillId: string) => {
     setSelectedSkills((prev) => {
       const next = prev.includes(skillId) ? prev.filter((s) => s !== skillId) : [...prev, skillId];
@@ -234,7 +232,7 @@ export default function SignUpLoginContent() {
         toast.success('Welcome back! Redirecting…', { duration: 2000, icon: '👋' });
         setLoginAttempts(0);
         setLoginLoading(false);
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'super_admin') {
           router.push('/admin/dashboard');
         } else {
           router.push('/onboarding');
@@ -284,21 +282,9 @@ export default function SignUpLoginContent() {
 
   const handleForgotPassword = async (data: ForgotFormData) => {
     setForgotError('');
-    setForgotLoading(true);
-    try {
-      // Backend password reset endpoint is not implemented yet in Mongo mode.
-      // Keep UX flow intact with a clear message.
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setForgotSent(true);
-    } catch (err: any) {
-      if (isRateLimitError(err)) {
-        setForgotError(getRateLimitMessage());
-      } else {
-        setForgotError(err?.message || 'Failed to send reset email. Please try again.');
-      }
-    } finally {
-      setForgotLoading(false);
-    }
+    setForgotError(
+      'Password reset via email is not available. Please contact an administrator to reset your password.'
+    );
   };
 
   const handleSignup = async (data: SignupFormData) => {

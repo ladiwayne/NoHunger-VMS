@@ -2,10 +2,18 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const { body, validationResult } = require('express-validator');
 const Task = require('../models/Task');
 
 // Create task
-router.post('/', adminAuth, async (req, res) => {
+router.post('/', adminAuth, [
+  body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
+  body('description').optional().trim().isLength({ max: 1000 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
   try {
     const { title, description, assignedTo, activityId, eventId, priority, dueDate } = req.body;
 

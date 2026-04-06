@@ -10,7 +10,19 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4028,http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow server-to-server requests (no origin) and listed frontend origins
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,9 +50,43 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+/** Creates the super admin account on first startup if none exists yet. */
+const seedSuperAdmin = async () => {
+  try {
+    const User = require('./models/User');
+    const existing = await User.findOne({ role: 'super_admin' });
+    if (existing) return; // already seeded
+
+    const email = process.env.SUPER_ADMIN_EMAIL;
+    const password = process.env.SUPER_ADMIN_PASSWORD;
+    const firstName = process.env.SUPER_ADMIN_FIRST_NAME || 'Super';
+    const lastName = process.env.SUPER_ADMIN_LAST_NAME || 'Admin';
+
+    if (!email || !password) {
+      console.warn('[seed] SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD not set — skipping super admin seed.');
+      return;
+    }
+
+    const superAdmin = new User({
+      firstName,
+      lastName,
+      email,
+      password,
+      role: 'super_admin',
+      status: 'approved',
+    });
+
+    await superAdmin.save();
+    console.log(`[seed] Super admin account created: ${email}`);
+  } catch (err) {
+    console.error('[seed] Failed to seed super admin:', err.message);
+  }
+};
+
 const startServer = async () => {
   try {
     await connectDB();
+    await seedSuperAdmin();
 
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

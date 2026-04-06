@@ -1,10 +1,19 @@
 import { apiFetch } from './client';
 import { adaptActivity } from './adapters';
 
-export async function getActivities(filters?: { status?: string }): Promise<any[]> {
-  const params = filters?.status ? `?status=${filters.status}` : '';
-  const data = await apiFetch<any[]>(`/activities${params}`);
-  return (Array.isArray(data) ? data : []).map(adaptActivity);
+export async function getActivities(
+  filters?: { status?: string; category?: string; page?: number; limit?: number }
+): Promise<any[]> {
+  const params = new URLSearchParams();
+  if (filters?.status)   params.set('status',   filters.status);
+  if (filters?.category) params.set('category', filters.category);
+  if (filters?.page)     params.set('page',     String(filters.page));
+  if (filters?.limit)    params.set('limit',    String(filters.limit));
+  const query = params.toString() ? `?${params}` : '';
+  const res = await apiFetch<any>(`/activities${query}`);
+  // Handle both paginated { data, pagination } and legacy array responses
+  const raw = Array.isArray(res) ? res : (res?.data ?? []);
+  return raw.map(adaptActivity);
 }
 
 export async function getActivity(id: string): Promise<any | null> {
@@ -70,6 +79,11 @@ export async function updateActivity(id: string, payload: any): Promise<any> {
 
 export async function deleteActivity(id: string): Promise<void> {
   await apiFetch(`/activities/${id}`, { method: 'DELETE' });
+}
+
+export async function resetCheckinCode(id: string): Promise<any> {
+  const data = await apiFetch<any>(`/activities/${id}/reset-checkin-code`, { method: 'PUT' });
+  return adaptActivity(data.activity || data);
 }
 
 export async function sendInvitesForActivity(activityId: string): Promise<void> {

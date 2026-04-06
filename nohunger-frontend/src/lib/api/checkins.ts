@@ -6,9 +6,19 @@ export async function getMyCheckins(): Promise<any[]> {
   return (Array.isArray(data) ? data : []).map(adaptCheckin);
 }
 
-export async function getAllCheckins(): Promise<any[]> {
-  const data = await apiFetch<any[]>('/checkins');
-  return (Array.isArray(data) ? data : []).map(adaptCheckin);
+export async function getAllCheckins(
+  filters?: { status?: string; activityId?: string; page?: number; limit?: number }
+): Promise<any[]> {
+  const params = new URLSearchParams();
+  if (filters?.status)     params.set('status',     filters.status);
+  if (filters?.activityId) params.set('activityId', filters.activityId);
+  if (filters?.page)       params.set('page',       String(filters.page));
+  if (filters?.limit)      params.set('limit',      String(filters.limit));
+  const query = params.toString() ? `?${params}` : '';
+  const res = await apiFetch<any>(`/checkins${query}`);
+  // Handle both paginated { data, pagination } and legacy array responses
+  const raw = Array.isArray(res) ? res : (res?.data ?? []);
+  return raw.map(adaptCheckin);
 }
 
 export async function checkinWithCode(code: string, activityId?: string): Promise<any> {

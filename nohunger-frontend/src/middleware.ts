@@ -82,10 +82,10 @@ export function middleware(request: NextRequest) {
 
   const role = payload.role;
 
-  if (role === 'admin' && isVolunteerPath) {
+  if ((role === 'admin' || role === 'super_admin') && isVolunteerPath) {
     return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
-  if (role !== 'admin' && isAdminPath) {
+  if (role !== 'admin' && role !== 'super_admin' && isAdminPath) {
     return NextResponse.redirect(new URL('/volunteer-dashboard', request.url));
   }
 

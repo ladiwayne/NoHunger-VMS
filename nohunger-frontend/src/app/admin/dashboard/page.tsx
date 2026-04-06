@@ -96,7 +96,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (profile?.role !== 'admin') {
+      if (!profile) return; // still loading profile, don't redirect yet
+      if (profile.role !== 'admin' && profile.role !== 'super_admin') {
         router.push('/volunteer-dashboard');
         return;
       }
@@ -113,11 +114,12 @@ export default function AdminDashboardPage() {
     setLoading(true);
     try {
       const monthsBack = getMonthsBack();
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - monthsBack);
+      const to = new Date();
+      const from = new Date();
+      from.setMonth(from.getMonth() - monthsBack);
 
       const [statsData, checkins, volunteers, activities, topVols] = await Promise.all([
-        getAdminStats(),
+        getAdminStats({ from: from.toISOString(), to: to.toISOString() }),
         getAdminCheckins(),
         getAdminVolunteers(),
         getAdminActivities(),
@@ -126,7 +128,7 @@ export default function AdminDashboardPage() {
 
       const completedCheckins = checkins.filter((c) => c.status === 'checked_out');
       const dateFiltered = completedCheckins.filter(
-        (c) => c.checkin_time && new Date(c.checkin_time) >= startDate
+        (c) => c.checkin_time && new Date(c.checkin_time) >= from
       );
       const totalHours = dateFiltered.reduce((s, c) => s + (c.hours_spent || 0), 0);
 
@@ -228,7 +230,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 size={32} className="animate-spin text-primary" />

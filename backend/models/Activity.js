@@ -12,8 +12,8 @@ const activitySchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['outreach', 'event', 'project', 'training'],
-      default: 'outreach',
+      enum: ['general_event', 'community_outreach', 'food_bank', 'training_education', 'agriculture', 'health'],
+      default: 'general_event',
     },
     startDate: {
       type: Date,
@@ -58,7 +58,7 @@ const activitySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['draft', 'published', 'ongoing', 'completed'],
+      enum: ['draft', 'published', 'ongoing', 'completed', 'cancelled'],
       default: 'draft',
     },
     image: {

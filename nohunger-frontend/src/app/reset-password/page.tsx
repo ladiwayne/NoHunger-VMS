@@ -51,23 +51,10 @@ export default function ResetPasswordPage() {
   const watchedPassword = watch('password');
   const passwordStrength = getPasswordStrength(watchedPassword);
 
-  useEffect(() => {
-    // Password reset endpoint is not yet implemented for Mongo mode.
-  }, []);
-
-  const onSubmit = async (data: ResetFormData) => {
-    setError('');
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      setError(
-        'Password reset via email token is not configured in MongoDB mode yet. Please contact an administrator to reset your password.'
-      );
-    } catch (err: any) {
-      setError(err?.message || 'Failed to update password. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = async (_data: ResetFormData) => {
+    setError(
+      'Password reset via email is not available. Please contact an administrator to reset your password.'
+    );
   };
 
   if (success) {

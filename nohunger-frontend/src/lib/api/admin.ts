@@ -43,28 +43,28 @@ export async function getAdminStats(params?: { from?: string; to?: string }): Pr
 }
 
 export async function getAdminVolunteers(): Promise<any[]> {
-  const data = await apiFetch<any[]>('/volunteers');
-  return (Array.isArray(data) ? data : []).map(adaptUser);
+  const data = await apiFetch<any>('/volunteers?limit=20');
+  return (data?.data ?? (Array.isArray(data) ? data : [])).map(adaptUser);
 }
 
 export async function getAdminActivities(): Promise<any[]> {
-  const data = await apiFetch<any[]>('/activities');
-  return (Array.isArray(data) ? data : []).map(adaptActivity);
+  const data = await apiFetch<any>('/activities?limit=500');
+  return (data?.data ?? (Array.isArray(data) ? data : [])).map(adaptActivity);
 }
 
 export async function getAdminCheckins(): Promise<any[]> {
-  const data = await apiFetch<any[]>('/checkins');
-  return (Array.isArray(data) ? data : []).map(adaptCheckin);
+  const data = await apiFetch<any>('/checkins?limit=500');
+  return (data?.data ?? (Array.isArray(data) ? data : [])).map(adaptCheckin);
 }
 
 export async function getTopVolunteers(limit = 5): Promise<any[]> {
   try {
-    const data = await apiFetch<any[]>(`/admin/top-volunteers?limit=${limit}`);
-    return (Array.isArray(data) ? data : []).map(adaptUser);
+    const data = await apiFetch<any>(`/admin/top-volunteers?limit=${limit}`);
+    return (data?.data ?? (Array.isArray(data) ? data : [])).map(adaptUser);
   } catch {
     // Fallback: get all volunteers and sort by hours
-    const vols = await apiFetch<any[]>('/volunteers');
-    const adapted = (Array.isArray(vols) ? vols : []).map(adaptUser).filter(Boolean) as any[];
+    const vols = await apiFetch<any>('/volunteers?limit=500');
+    const adapted = (vols?.data ?? (Array.isArray(vols) ? vols : [])).map(adaptUser).filter(Boolean) as any[];
     return adapted.sort((a, b) => (b?.total_hours || 0) - (a?.total_hours || 0)).slice(0, limit);
   }
 }

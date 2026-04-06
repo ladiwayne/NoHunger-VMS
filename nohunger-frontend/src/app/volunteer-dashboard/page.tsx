@@ -18,6 +18,7 @@ import {
   Calendar,
   KeyRound,
   ArrowRight,
+  HandHeart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ export default function VolunteerDashboardPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [timer, setTimer] = useState(0);
   const [checkinCode, setCheckinCode] = useState('');
+  const [checkinCodeError, setCheckinCodeError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -145,9 +147,10 @@ export default function VolunteerDashboardPage() {
   const handleCheckinCode = () => {
     const code = checkinCode.trim().toUpperCase();
     if (!code) {
-      toast.error('Please enter a check-in code.');
+      setCheckinCodeError('Please enter a check-in code.');
       return;
     }
+    setCheckinCodeError('');
     router.push(`/checkin/${code}`);
   };
 
@@ -199,7 +202,28 @@ export default function VolunteerDashboardPage() {
           )}
         </div>
 
-        {/* KPI Cards */}
+        {/* New-user welcome banner */}
+        {!dataLoading && stats.totalHours === 0 && stats.eventsAttended === 0 && stats.pendingInvitations === 0 && (
+          <div className="flex items-start gap-4 p-5 bg-primary/6 border border-primary/20 rounded-2xl">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <HandHeart size={20} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-700 text-foreground">Welcome to the Nohunger Initiative! 🎉</p>
+              <p className="text-[13px] text-muted-foreground mt-1">
+                You&apos;re all set as a Champion. Browse available activities and start making an impact in your community.
+              </p>
+              <Link
+                href="/activities"
+                className="inline-flex items-center gap-1.5 mt-3 text-[13px] font-700 text-primary hover:underline"
+              >
+                Browse activities <ArrowRight size={13} />
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* KPI Cards */}}
         {dataLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
@@ -274,10 +298,17 @@ export default function VolunteerDashboardPage() {
           <div className="flex gap-2">
             <input
               value={checkinCode}
-              onChange={(e) => setCheckinCode(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setCheckinCode(e.target.value.toUpperCase());
+                if (checkinCodeError) setCheckinCodeError('');
+              }}
               onKeyDown={(e) => e.key === 'Enter' && handleCheckinCode()}
               placeholder="Enter code (e.g. ABC123)"
-              className="flex-1 px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] font-700 text-foreground tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              className={`flex-1 px-3.5 py-2.5 bg-muted border rounded-xl text-[14px] font-700 text-foreground tracking-widest uppercase focus:outline-none focus:ring-2 transition-all ${
+                checkinCodeError
+                  ? 'border-destructive/60 focus:ring-destructive/20 focus:border-destructive'
+                  : 'border-border focus:ring-primary/30 focus:border-primary'
+              }`}
             />
             <button
               onClick={handleCheckinCode}
@@ -286,6 +317,12 @@ export default function VolunteerDashboardPage() {
               Check In <ArrowRight size={14} />
             </button>
           </div>
+          {checkinCodeError && (
+            <p className="flex items-center gap-1.5 text-[12px] text-destructive mt-2">
+              <XCircle size={13} />
+              {checkinCodeError}
+            </p>
+          )}
         </div>
 
         {/* Active Check-in Widget */}

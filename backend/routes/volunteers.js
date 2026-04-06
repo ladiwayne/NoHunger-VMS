@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const CheckIn = require('../models/CheckIn');
@@ -9,10 +10,22 @@ const Invitation = require('../models/Invitation');
 // Get all volunteers
 router.get('/', async (req, res) => {
   try {
-    const volunteers = await User.find({ role: 'volunteer' })
-      .select('-password')
-      .populate('appliedActivities')
-      .populate('approvedBy', 'firstName lastName email');
+    const query = { role: 'volunteer' };
+    if (req.query.status) query.status = req.query.status;
+
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+    const skip  = (page - 1) * limit;
+
+    const [total, volunteers] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query)
+        .select('-password')
+        .skip(skip)
+        .limit(limit)
+        .populate('appliedActivities')
+        .populate('approvedBy', 'firstName lastName email'),
+    ]);
 
     const volunteerIds = volunteers.map((v) => v._id);
     const invitationStats = await Invitation.aggregate([
@@ -64,7 +77,10 @@ router.get('/', async (req, res) => {
       };
     });
 
-    res.status(200).json(enriched);
+    res.status(200).json({
+      data: enriched,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching volunteers', error: error.message });
   }
@@ -114,7 +130,17 @@ router.get('/public-profile/:id', async (req, res) => {
 });
 
 // Update volunteer profile
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, [
+  body('firstName').optional().trim().isLength({ min: 1, max: 50 }),
+  body('lastName').optional().trim().isLength({ max: 50 }),
+  body('phone').optional().trim().isLength({ max: 20 }),
+  body('bio').optional().trim().isLength({ max: 500 }),
+  body('region').optional().trim().isLength({ max: 100 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
   try {
     const { firstName, lastName, phone, bio, skills, profilePicture, region, gender, availability, onboardingCompleted } = req.body;
 

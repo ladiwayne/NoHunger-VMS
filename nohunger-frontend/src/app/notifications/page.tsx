@@ -25,24 +25,28 @@ export default function NotificationsPage() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      fetchActivityFeed();
-    }
-  }, [user]);
-
-  const fetchNotifications = async () => {
-    setLoading(true);
+  const fetchNotifications = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await getNotifications();
       setNotifications(data || []);
     } catch (err) {
       console.log('Notifications error:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      fetchActivityFeed();
+      const interval = setInterval(() => {
+        fetchNotifications(true);
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const fetchActivityFeed = async () => {
     try {
@@ -52,7 +56,7 @@ export default function NotificationsPage() {
         ...(checkins || []).map((c) => ({
           id: c.id,
           type: 'checkin',
-          title: `Check-in: ${c.activities?.title || 'Event'}`,
+          title: `Check-in: ${c.activity?.title || 'Event'}`,
           description: `Status: ${c.status.replace('_', ' ')} · ${c.hours_spent ? `${c.hours_spent} hrs` : 'In progress'}`,
           date: c.created_at || c.checkin_time,
           icon: CheckCircle2,

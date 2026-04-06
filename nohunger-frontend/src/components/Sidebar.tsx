@@ -23,6 +23,7 @@ import {
   Activity,
   ShieldCheck,
   Award,
+  UserCog,
 } from 'lucide-react';
 import Icon from '@/components/ui/AppIcon';
 
@@ -93,6 +94,11 @@ const adminNavGroups = [
   },
 ];
 
+const superAdminExtraGroup = {
+  label: 'System',
+  items: [{ label: 'Manage Admins', icon: UserCog, href: '/admin/manage-admins', badge: null }],
+};
+
 export default function Sidebar({
   collapsed,
   onToggleCollapse,
@@ -104,8 +110,13 @@ export default function Sidebar({
   const currentPath = activePath || pathname;
   const { profile, signOut } = useAuth();
   const router = useRouter();
-  const isAdmin = profile?.role === 'admin';
-  const navGroups = isAdmin ? adminNavGroups : volunteerNavGroups;
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const navGroups = isAdmin
+    ? isSuperAdmin
+      ? [...adminNavGroups, superAdminExtraGroup]
+      : adminNavGroups
+    : volunteerNavGroups;
 
   const isActive = (href: string) => currentPath === href || currentPath.startsWith(href + '/');
 
@@ -147,7 +158,7 @@ export default function Sidebar({
         <div className="mx-3 mt-3 px-3 py-1.5 bg-primary/10 rounded-lg flex items-center gap-2">
           <ShieldCheck size={13} className="text-primary" />
           <span className="text-[11px] font-700 text-primary uppercase tracking-wide">
-            Admin Access
+            {isSuperAdmin ? 'Super Admin' : 'Admin Access'}
           </span>
         </div>
       )}
@@ -233,7 +244,13 @@ export default function Sidebar({
               {profile?.full_name || 'User'}
             </p>
             <p className="text-[11px] text-muted-foreground truncate capitalize">
-              {profile?.role === 'volunteer' ? 'Nohunger Champion' : profile?.role || 'Member'}
+              {profile?.role === 'volunteer'
+                ? 'Nohunger Champion'
+                : profile?.role === 'super_admin'
+                ? 'Super Administrator'
+                : profile?.role === 'admin'
+                ? 'Administrator'
+                : profile?.role || 'Member'}
             </p>
           </div>
         )}

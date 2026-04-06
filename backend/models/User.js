@@ -35,8 +35,12 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['volunteer', 'admin'],
+      enum: ['volunteer', 'admin', 'super_admin'],
       default: 'volunteer',
+    },
+    adminRequestReason: {
+      type: String,
+      default: '',
     },
     status: {
       type: String,

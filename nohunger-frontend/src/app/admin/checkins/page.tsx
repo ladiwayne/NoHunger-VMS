@@ -5,7 +5,7 @@ import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllCheckins, approveCheckin, rejectCheckin, approveCheckout } from '@/lib/api/checkins';
 import { getActivityByCode } from '@/lib/api/activities';
-import { CheckCircle2, XCircle, LogOut, Loader2, Search, QrCode, KeyRound } from 'lucide-react';
+import { CheckCircle2, XCircle, LogOut, Loader2, Search, QrCode, KeyRound, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
@@ -135,6 +135,29 @@ export default function AdminCheckinsPage() {
     rejected: checkins.filter((c) => c.status === 'rejected').length,
   };
 
+  const exportCSV = () => {
+    const headers = ['Volunteer', 'Email', 'Activity', 'Status', 'Check-in Time', 'Check-out Time', 'Hours Spent'];
+    const rows = filtered.map((c) => [
+      c.volunteer?.full_name || '',
+      c.volunteer?.email || '',
+      c.activity?.title || '',
+      c.status || '',
+      c.checkin_time ? new Date(c.checkin_time).toLocaleString() : '',
+      c.checkout_time ? new Date(c.checkout_time).toLocaleString() : '',
+      c.hours_spent ?? '',
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `checkins-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       pending: 'bg-warning/10 text-warning border-warning/25',
@@ -153,11 +176,22 @@ export default function AdminCheckinsPage() {
   return (
     <AppLayout activePath="/admin/checkins">
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-700 text-foreground">Check-in Management</h1>
-          <p className="text-[14px] text-muted-foreground mt-0.5">
-            Approve, reject, and check out Champions, then look up by code
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-700 text-foreground">Check-in Management</h1>
+            <p className="text-[14px] text-muted-foreground mt-0.5">
+              Approve, reject, and check out Champions, then look up by code
+            </p>
+          </div>
+          {checkins.length > 0 && (
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 bg-muted text-foreground border border-border font-600 rounded-xl hover:bg-border transition-all text-[13.5px]"
+            >
+              <Download size={15} />
+              Export CSV
+            </button>
+          )}
         </div>
 
         {/* Panel Tabs */}

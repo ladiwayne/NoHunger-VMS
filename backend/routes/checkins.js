@@ -109,13 +109,30 @@ router.put('/:id/approve-checkout', adminAuth, async (req, res) => {
 // Get check-in records
 router.get('/', async (req, res) => {
   try {
-    const checkins = await CheckIn.find()
-      .populate('volunteerId', 'firstName lastName email')
-      .populate('activityId', 'title')
-      .populate('eventId', 'title')
-      .populate('approvedBy', 'firstName lastName email');
-    
-    res.status(200).json(checkins);
+    const query = {};
+    if (req.query.status) query.checkInStatus = req.query.status;
+    if (req.query.activityId) query.activityId = req.query.activityId;
+
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+    const skip  = (page - 1) * limit;
+
+    const [total, checkins] = await Promise.all([
+      CheckIn.countDocuments(query),
+      CheckIn.find(query)
+        .populate('volunteerId', 'firstName lastName email')
+        .populate('activityId', 'title')
+        .populate('eventId', 'title')
+        .populate('approvedBy', 'firstName lastName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+    ]);
+
+    res.status(200).json({
+      data: checkins,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching check-ins', error: error.message });
   }

@@ -9,6 +9,7 @@ import {
   updateActivity,
   deleteActivity,
   sendInvitesForActivity,
+  resetCheckinCode,
 } from '@/lib/api/activities';
 import { emailService } from '@/lib/services/emailService';
 import {
@@ -23,6 +24,7 @@ import {
   CheckCircle2,
   Edit2,
   Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -45,10 +47,23 @@ interface ActivityFormErrors {
   end_date?: string;
 }
 
+const ACTIVITY_TYPES = [
+  { value: 'general_event', label: 'General Event' },
+  { value: 'community_outreach', label: 'Community Outreach' },
+  { value: 'food_bank', label: 'Food Bank Activity' },
+  { value: 'training_education', label: 'Training & Education' },
+  { value: 'agriculture', label: 'Agriculture' },
+  { value: 'health', label: 'Health' },
+];
+
+const TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  ACTIVITY_TYPES.map((t) => [t.value, t.label])
+);
+
 const defaultForm: ActivityForm = {
   title: '',
   description: '',
-  activity_type: 'outreach',
+  activity_type: 'general_event',
   location: '',
   start_date: '',
   end_date: '',
@@ -65,7 +80,9 @@ export default function AdminActivitiesPage() {
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [sendingInvites, setSendingInvites] = useState<string | null>(null);
+  const [resettingCode, setResettingCode] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<ActivityFormErrors>({});
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchActivities();
@@ -151,7 +168,7 @@ export default function AdminActivitiesPage() {
     setForm({
       title: activity.title || '',
       description: activity.description || '',
-      activity_type: activity.activity_type || 'outreach',
+      activity_type: activity.activity_type || 'general_event',
       location: activity.location || '',
       start_date: activity.start_date
         ? new Date(activity.start_date).toISOString().slice(0, 16)
@@ -185,6 +202,20 @@ export default function AdminActivitiesPage() {
       toast.error(err.message || 'Failed to send invitations.');
     } finally {
       setSendingInvites(null);
+    }
+  };
+
+  const handleResetCode = async (id: string) => {
+    if (!confirm('Reset the check-in code for this activity? The old code will no longer work.')) return;
+    setResettingCode(id);
+    try {
+      const updated = await resetCheckinCode(id);
+      setActivities((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      toast.success('Check-in code reset successfully!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to reset check-in code.');
+    } finally {
+      setResettingCode(null);
     }
   };
 
@@ -288,10 +319,9 @@ export default function AdminActivitiesPage() {
                       onChange={(e) => setForm((p) => ({ ...p, activity_type: e.target.value }))}
                       className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     >
-                      <option value="outreach">Community Outreach</option>
-                      <option value="event">General Event</option>
-                      <option value="project">Project</option>
-                      <option value="training">Training</option>
+                      {ACTIVITY_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -307,6 +337,7 @@ export default function AdminActivitiesPage() {
                       <option value="published">Published</option>
                       <option value="ongoing">Ongoing</option>
                       <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
                 </div>
@@ -400,6 +431,35 @@ export default function AdminActivitiesPage() {
           </div>
         )}
 
+        {/* Type filter bar */}
+        {!loading && activities.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setTypeFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-[12.5px] font-600 border transition-all ${
+                typeFilter === 'all'
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-muted text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+              }`}
+            >
+              All Types
+            </button>
+            {ACTIVITY_TYPES.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setTypeFilter(t.value)}
+                className={`px-3.5 py-1.5 rounded-xl text-[12.5px] font-600 border transition-all ${
+                  typeFilter === t.value
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-muted text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Activities list */}
         {loading ? (
           <div className="space-y-4">
@@ -420,7 +480,7 @@ export default function AdminActivitiesPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {activities.map((act) => (
+            {(typeFilter === 'all' ? activities : activities.filter((a) => a.activity_type === typeFilter)).map((act) => (
               <div
                 key={act.id}
                 className="bg-card border border-border rounded-2xl shadow-card p-5"
@@ -433,8 +493,8 @@ export default function AdminActivitiesPage() {
                       >
                         {act.status}
                       </span>
-                      <span className="text-[11px] text-muted-foreground capitalize">
-                        {act.activity_type?.replace('_', ' ')}
+                      <span className="text-[11px] text-muted-foreground">
+                        {TYPE_LABEL[act.activity_type] || act.activity_type?.replace(/_/g, ' ')}
                       </span>
                     </div>
                     <h3 className="text-[16px] font-700 text-foreground mb-2">{act.title}</h3>
@@ -470,12 +530,12 @@ export default function AdminActivitiesPage() {
                     </div>
 
                     {/* Check-in code */}
-                    {act.checkin_code && (
+                    {act.check_in_code && (
                       <div className="mt-3 flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/8 border border-primary/20 rounded-lg">
                           <span className="text-[11px] font-600 text-muted-foreground">Code:</span>
                           <code className="text-[13px] font-800 text-primary">
-                            {act.checkin_code}
+                            {act.check_in_code}
                           </code>
                         </div>
                         {act.checkin_link && (
@@ -486,6 +546,18 @@ export default function AdminActivitiesPage() {
                             <Copy size={12} /> Copy link
                           </button>
                         )}
+                        <button
+                          onClick={() => handleResetCode(act.id)}
+                          disabled={resettingCode === act.id}
+                          className="flex items-center gap-1.5 text-[12px] font-600 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                        >
+                          {resettingCode === act.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <RefreshCw size={12} />
+                          )}
+                          Reset code
+                        </button>
                       </div>
                     )}
                   </div>

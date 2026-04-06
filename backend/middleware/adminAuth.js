@@ -2,7 +2,7 @@ const auth = require('./auth');
 
 const adminAuth = (req, res, next) => {
   auth(req, res, () => {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
       return res.status(403).json({ message: 'Only admins can access this resource' });
     }
     next();

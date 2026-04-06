@@ -8,7 +8,6 @@ import {
   getMe,
   logout as apiLogout,
 } from '@/lib/api/auth';
-import { getToken } from '@/lib/api/client';
 
 const AuthContext = createContext<any>({});
 
@@ -98,35 +97,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // On mount: restore session from localStorage JWT
   useEffect(() => {
     const initAuth = async () => {
-      const token = getToken();
-      if (!token) {
+      // If no stored profile, user was never logged in — skip the server round-trip
+      const stored = localStorage.getItem('auth-user');
+      if (!stored) {
         setLoading(false);
         return;
       }
 
-      // Check expiry from JWT payload
+      // Show stored profile immediately for instant UI, then verify via httpOnly cookie
       try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-          if (payload.exp && payload.exp * 1000 < Date.now()) {
-            apiLogout();
-            setLoading(false);
-            return;
-          }
-        }
+        const p = JSON.parse(stored);
+        setUser({ id: p.id, email: p.email });
+        setProfile(p);
       } catch {
-        /* continue */
+        /* ignore malformed storage */
       }
 
-      // Restore from localStorage then refresh
       try {
-        const stored = localStorage.getItem('auth-user');
-        if (stored) {
-          const p = JSON.parse(stored);
-          setUser({ id: p.id, email: p.email });
-          setProfile(p);
-        }
+        // getMe reads the httpOnly cookie (server-side) and restores the memory token
         const freshProfile = await getMe();
         if (freshProfile) {
           setUser({ id: freshProfile.id, email: freshProfile.email });
@@ -183,7 +171,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return fresh;
   };
 
-  const isAdmin = () => profile?.role === 'admin';
+  const isAdmin = () => profile?.role === 'admin' || profile?.role === 'super_admin';
+  const isSuperAdmin = () => profile?.role === 'super_admin';
   const isVolunteer = () => profile?.role === 'volunteer';
   const isApproved = () => profile?.volunteer_status === 'approved';
 
@@ -196,6 +185,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signOut,
     isAdmin,
+    isSuperAdmin,
     isVolunteer,
     isApproved,
     refreshProfile,

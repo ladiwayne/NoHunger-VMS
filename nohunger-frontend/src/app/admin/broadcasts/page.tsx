@@ -165,7 +165,7 @@ export default function AdminBroadcastsPage() {
                   >
                     <option value="">Select activity…</option>
                     {activities.map((a) => (
-                      <option key={a.id} value={a.id}>
+                      <option key={a._id || a.id} value={a._id || a.id}>
                         {a.title}
                       </option>
                     ))}
@@ -184,7 +184,7 @@ export default function AdminBroadcastsPage() {
                   >
                     <option value="">Select group…</option>
                     {groups.map((g) => (
-                      <option key={g.id} value={g.id}>
+                      <option key={g._id || g.id} value={g._id || g.id}>
                         {g.name}
                       </option>
                     ))}
@@ -227,7 +227,7 @@ export default function AdminBroadcastsPage() {
           ) : (
             <div className="divide-y divide-border">
               {broadcasts.map((b) => (
-                <div key={b.id} className="p-5 hover:bg-muted/30 transition-colors">
+                <div key={b._id || b.id} className="p-5 hover:bg-muted/30 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -240,7 +240,7 @@ export default function AdminBroadcastsPage() {
                         </p>
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-[11px] text-muted-foreground">
-                            {new Date(b.created_at || b.sent_at).toLocaleDateString('en', {
+                            {new Date(b.createdAt || b.created_at || b.sent_at).toLocaleDateString('en', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',

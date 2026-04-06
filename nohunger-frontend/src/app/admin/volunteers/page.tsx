@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Send,
   X,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ export default function AdminVolunteersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedVol, setSelectedVol] = useState<any>(null);
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [activePanel, setActivePanel] = useState<Panel>('list');
   const [messageTarget, setMessageTarget] = useState<any>(null);
   const [messageText, setMessageText] = useState('');
@@ -230,6 +232,30 @@ export default function AdminVolunteersPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
+  const exportCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Status', 'Region', 'Skills', 'Total Hours', 'Joined'];
+    const rows = filtered.map((v) => [
+      v.full_name || '',
+      v.email || '',
+      v.phone || '',
+      v.volunteer_status || '',
+      v.region || '',
+      (v.skills || []).join('; '),
+      v.total_hours ?? 0,
+      v.created_at ? new Date(v.created_at).toLocaleDateString() : '',
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `champions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       pending: 'bg-warning/10 text-warning border-warning/25',
@@ -252,7 +278,7 @@ export default function AdminVolunteersPage() {
           </div>
           {counts.pending > 0 && (
             <button
-              onClick={handleBulkApprove}
+              onClick={() => setShowBulkConfirm(true)}
               disabled={bulkApproving}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-white font-700 rounded-xl hover:bg-success/90 transition-all disabled:opacity-60 text-[13.5px]"
             >
@@ -262,6 +288,15 @@ export default function AdminVolunteersPage() {
                 <CheckSquare size={15} />
               )}
               Approve All Pending Champions ({counts.pending})
+            </button>
+          )}
+          {volunteers.length > 0 && (
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 bg-muted text-foreground border border-border font-600 rounded-xl hover:bg-border transition-all text-[13.5px]"
+            >
+              <Download size={15} />
+              Export CSV
             </button>
           )}
         </div>
@@ -731,6 +766,48 @@ export default function AdminVolunteersPage() {
               </div>
             )}
           </>
+        )}
+        {/* Bulk Approve Confirmation Modal */}
+        {showBulkConfirm && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-card border border-border rounded-2xl shadow-modal w-full max-w-sm p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[16px] font-700 text-foreground">Confirm Bulk Approve</h2>
+                <button
+                  onClick={() => setShowBulkConfirm(false)}
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p className="text-[14px] text-muted-foreground">
+                You are about to approve{' '}
+                <span className="font-700 text-foreground">{counts.pending}</span> pending Champion
+                {counts.pending === 1 ? '' : 's'}. They will immediately gain full access as
+                Nohunger Champions.
+              </p>
+              <p className="text-[13px] text-muted-foreground">Are you sure you want to continue?</p>
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setShowBulkConfirm(false)}
+                  className="px-4 py-2.5 bg-muted text-muted-foreground font-600 rounded-xl hover:bg-border transition-all text-[13.5px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBulkConfirm(false);
+                    handleBulkApprove();
+                  }}
+                  disabled={bulkApproving}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-success text-white font-700 rounded-xl hover:bg-success/90 transition-all disabled:opacity-60 text-[13.5px]"
+                >
+                  {bulkApproving ? <Loader2 size={15} className="animate-spin" /> : <CheckSquare size={15} />}
+                  Yes, Approve All
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AppLayout>

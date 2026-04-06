@@ -11,7 +11,6 @@ import {
   sendInvitesForActivity,
   resetCheckinCode,
 } from '@/lib/api/activities';
-import { emailService } from '@/lib/services/emailService';
 import {
   Plus,
   Calendar,

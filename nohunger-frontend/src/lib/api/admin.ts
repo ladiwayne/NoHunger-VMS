@@ -53,7 +53,7 @@ export async function getAdminActivities(): Promise<any[]> {
 }
 
 export async function getAdminCheckins(): Promise<any[]> {
-  const data = await apiFetch<any>('/checkins?limit=500');
+  const data = await apiFetch<any>('/checkins?limit=20');
   return (data?.data ?? (Array.isArray(data) ? data : [])).map(adaptCheckin);
 }
 

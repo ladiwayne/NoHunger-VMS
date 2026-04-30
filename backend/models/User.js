@@ -24,6 +24,9 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
     },
+    alternatePhone: {
+      type: String,
+    },
     gender: {
       type: String,
       enum: ['male', 'female', 'other', 'prefer_not_to_say', ''],
@@ -32,6 +35,44 @@ const userSchema = new mongoose.Schema(
     region: {
       type: String,
       default: '',
+    },
+    streetAddress: {
+      type: String,
+    },
+    addressLine2: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    stateProvRegion: {
+      type: String,
+    },
+    postalZip: {
+      type: String,
+    },
+    birthday: {
+      type: Date,
+    },
+    occupation: {
+      type: String,
+    },
+    organization: {
+      type: String,
+    },
+    instagramHandle: {
+      type: String,
+    },
+    twitterHandle: {
+      type: String,
+    },
+    shirtSize: {
+      type: String,
+      enum: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', ''],
+      default: '',
+    },
+    whyVolunteer: {
+      type: String,
     },
     role: {
       type: String,
@@ -98,5 +139,11 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Add indexes for faster queries
+userSchema.index({ email: 1 });  // Fast lookups by email for login
+userSchema.index({ role: 1 });   // Fast volunteer/admin filtering
+userSchema.index({ status: 1 }); // Fast approval status queries
+userSchema.index({ createdAt: -1 }); // Fast sorting by date
 
 module.exports = mongoose.model('User', userSchema);

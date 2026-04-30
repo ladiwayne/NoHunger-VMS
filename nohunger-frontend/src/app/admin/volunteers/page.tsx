@@ -271,9 +271,9 @@ export default function AdminVolunteersPage() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Nohunger Champions</h1>
+            <h1 className="text-2xl font-700 text-foreground">No Hunger Champions</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Approve, review, and support Champion accounts
+              Approve, review, and support No Hunger Champion accounts
             </p>
           </div>
           {counts.pending > 0 && (

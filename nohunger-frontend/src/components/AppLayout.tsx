@@ -74,7 +74,7 @@ export default function AppLayout({ children, activePath }: AppLayoutProps) {
                 </svg>
               </div>
               <span className="font-display font-700 text-base text-foreground">
-                Nohunger Initiative
+                No Hunger Initiatives
               </span>
             </div>
           </div>

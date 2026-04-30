@@ -26,6 +26,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add caching middleware for GET requests (2-minute cache)
+const cacheMiddleware = require('./middleware/cache');
+app.use(cacheMiddleware(120000));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/volunteers', require('./routes/volunteers'));
@@ -40,6 +44,18 @@ app.use('/api/notifications', require('./routes/notifications'));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ message: 'Server is running' });
+});
+
+// Request timing middleware for performance monitoring
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    if (duration > 500) {
+      console.warn(`⚠️  Slow request: ${req.method} ${req.path} took ${duration}ms`);
+    }
+  });
+  next();
 });
 
 // Error handling middleware

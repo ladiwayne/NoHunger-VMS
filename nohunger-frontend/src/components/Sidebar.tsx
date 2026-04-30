@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Award,
   UserCog,
+  MessageCircle,
 } from 'lucide-react';
 import Icon from '@/components/ui/AppIcon';
 
@@ -61,6 +62,7 @@ const volunteerNavGroups = [
     items: [
       { label: 'My Profile', icon: UserCircle, href: '/profile', badge: null },
       { label: 'Notifications', icon: Bell, href: '/notifications', badge: null },
+      { label: 'Contact & Support', icon: MessageCircle, href: '/contact', badge: null },
       { label: 'Achievements', icon: Award, href: '/profile?tab=achievements', badge: null },
     ],
   },
@@ -77,7 +79,7 @@ const adminNavGroups = [
     label: 'Management',
     items: [
       { label: 'Activities & Events', icon: CalendarDays, href: '/admin/activities', badge: null },
-      { label: 'Champions', icon: Users, href: '/admin/volunteers', badge: null },
+      { label: 'No Hunger Champions', icon: Users, href: '/admin/volunteers', badge: null },
       {
         label: 'Check-in Requests',
         icon: CheckSquare,
@@ -144,10 +146,10 @@ export default function Sidebar({
         {!collapsed && (
           <div className="flex flex-col min-w-0">
             <span className="font-display font-700 text-[15px] text-foreground leading-tight">
-              NoHunger
+              No Hunger
             </span>
             <span className="text-[10px] text-muted-foreground font-500 tracking-wide uppercase">
-              {isAdmin ? 'Initiative Admin' : 'Champion Hub'}
+              {isAdmin ? 'Initiative Admin' : 'No Hunger Champion Hub'}
             </span>
           </div>
         )}
@@ -221,12 +223,12 @@ export default function Sidebar({
             <span className="text-[11px] font-600 text-[hsl(142,72%,22%)]">Your Impact</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Nice work, Champion. You&apos;ve logged{' '}
+            Nice work, No Hunger Champion. You&apos;ve logged{' '}
             <span className="font-700 text-foreground">{profile?.total_hours || 0} hrs</span> of
             service.
           </p>
           <p className="text-[10px] text-[hsl(142,72%,35%)] mt-1 font-500">
-            Nohunger Initiative · Nigeria
+            No Hunger Initiatives · Nigeria
           </p>
         </div>
       )}
@@ -245,7 +247,7 @@ export default function Sidebar({
             </p>
             <p className="text-[11px] text-muted-foreground truncate capitalize">
               {profile?.role === 'volunteer'
-                ? 'Nohunger Champion'
+                ? 'No Hunger Champion'
                 : profile?.role === 'super_admin'
                 ? 'Super Administrator'
                 : profile?.role === 'admin'
@@ -254,15 +256,14 @@ export default function Sidebar({
             </p>
           </div>
         )}
-        {!collapsed && (
-          <button
-            onClick={handleSignOut}
-            className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
-            title="Sign out"
-          >
-            <LogOut size={15} />
-          </button>
-        )}
+        <button
+          onClick={handleSignOut}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground ${collapsed ? 'justify-center' : ''}`}
+          title="Sign out"
+        >
+          <LogOut size={15} />
+          {!collapsed && <span className="text-[12px] font-600">Log out</span>}
+        </button>
       </div>
 
       {/* Collapse toggle */}
@@ -300,9 +301,9 @@ export default function Sidebar({
           <div className="flex items-center gap-2.5">
             <AppLogo size={30} />
             <div>
-              <span className="font-display font-700 text-[15px] text-foreground">NoHunger</span>
+              <span className="font-display font-700 text-[15px] text-foreground">No Hunger</span>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                {isAdmin ? 'Initiative Admin' : 'Champion Hub'}
+                {isAdmin ? 'Initiative Admin' : 'No Hunger Champion Hub'}
               </p>
             </div>
           </div>

@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { NIGERIA_STATES } from '@/lib/constants/nigeria';
+import { requestPasswordReset } from '@/lib/api/password-reset';
+import { COUNTRIES } from '@/lib/constants/countries';
 import {
   Eye,
   EyeOff,
@@ -31,6 +32,13 @@ import {
   XCircle,
   RefreshCw,
   ArrowLeft,
+  Calendar,
+  Search,
+  DollarSign,
+  MessageSquare,
+  FileText,
+  Camera,
+  Briefcase,
 } from 'lucide-react';
 
 type LoginFormData = { email: string; password: string; rememberMe: boolean };
@@ -50,25 +58,42 @@ const LOCKOUT_SECONDS = 30;
 
 const SKILLS = [
   { id: 'food-packing', label: 'Food Packing', icon: Package },
-  { id: 'food-distribution', label: 'Distribution', icon: Truck },
-  { id: 'cooking', label: 'Cooking', icon: ChefHat },
   { id: 'logistics', label: 'Logistics', icon: ClipboardList },
   { id: 'community-outreach', label: 'Community Outreach', icon: Users },
-  { id: 'medical-support', label: 'Medical Support', icon: Heart },
+  { id: 'medical-outreach', label: 'Medical Outreach', icon: Heart },
+  { id: 'cooking', label: 'Cooking', icon: ChefHat },
+  { id: 'event-planning', label: 'Event Planning', icon: Calendar },
+  { id: 'research', label: 'Research', icon: Search },
+  { id: 'fundraising', label: 'Fundraising', icon: DollarSign },
+  { id: 'social-media', label: 'Social Media', icon: MessageSquare },
+  { id: 'content-creation', label: 'Content Creation', icon: FileText },
+  { id: 'videography-photography', label: 'Videography/Photography', icon: Camera },
+  { id: 'administration', label: 'Administration', icon: Briefcase },
 ];
 
 const IMPACT_STATS = [
-  { value: '18,500+', label: 'Meals served monthly' },
-  { value: '1,200', label: 'Registered Champions' },
-  { value: '52', label: 'Communities reached' },
+  { value: '10+', label: 'Active Programs' },
+  { value: '10+', label: 'Causes we are handling' },
+  { value: '1,500', label: 'Registered Volunteers' },
 ];
 
 const PROGRAMS = [
-  { icon: Leaf, label: 'Vertical Backyard Farming', desc: 'Growing food for family nutritional needs' },
-  { icon: ChefHat, label: 'Community Breakfast', desc: 'Serving hot meals to communities every morning' },
-  { icon: Users, label: 'Support A Girl Child Back To School', desc: 'Education and nutrition for girls across Nigeria' },
-  { icon: Package, label: 'Temporary Food Assistance (TFAP)', desc: 'Emergency food support for vulnerable families' },
-  { icon: Globe, label: 'Research and Innovation', desc: 'Pioneering solutions to end hunger in Nigeria' },
+  { icon: Package, label: 'Temporary Food Assistance Program (TFAP)', desc: 'Providing emergency food support to families in need' },
+  {
+    icon: Leaf,
+    label: 'Vertical Backyard Farming (VERT2FAMNN)',
+    desc: 'Family nutritional needs through home gardening',
+  },
+  {
+    icon: HandHeart,
+    label: 'Support A Girl Child Back To School',
+    desc: 'Ensuring girls have access to quality education',
+  },
+  {
+    icon: Leaf,
+    label: 'Climate-Smart Food Recovery (CSFRIEND)',
+    desc: 'Nutrition security through sustainable practices',
+  },
 ];
 
 // Password strength checker
@@ -132,6 +157,7 @@ export default function SignUpLoginContent() {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState('');
   const [skillsError, setSkillsError] = useState('');
   const [loginError, setLoginError] = useState('');
 
@@ -229,7 +255,7 @@ export default function SignUpLoginContent() {
         if (role === 'admin' || role === 'super_admin') {
           router.push('/admin/dashboard');
         } else {
-          router.push('/onboarding');
+          router.push('/volunteer-dashboard');
         }
       } else {
         const newAttempts = loginAttempts + 1;
@@ -276,9 +302,29 @@ export default function SignUpLoginContent() {
 
   const handleForgotPassword = async (data: ForgotFormData) => {
     setForgotError('');
-    setForgotError(
-      'Password reset via email is not available. Please contact an administrator to reset your password.'
-    );
+    setForgotLoading(true);
+
+    try {
+      const result = await requestPasswordReset(data.email);
+
+      toast.success('Password reset link generated!', {
+        description: 'Check your email for instructions. If not in inbox, check spam folder.',
+        duration: 5000,
+      });
+
+      if (process.env.NODE_ENV === 'development' && result?.resetLink) {
+        console.log('Development: Reset link -', result.resetLink);
+        console.log('Development: Reset token -', result.resetToken);
+      }
+
+      setForgotSent(true);
+      setForgotLoading(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An error occurred';
+      setForgotError(message);
+      toast.error('Password reset failed', { description: message });
+      setForgotLoading(false);
+    }
   };
 
   const handleSignup = async (data: SignupFormData) => {
@@ -294,16 +340,16 @@ export default function SignUpLoginContent() {
     try {
       await signUp(data.email, data.password, {
         fullName: `${data.firstName} ${data.lastName}`,
-        role: 'volunteer',
         phone: data.phone,
         region: data.country,
         skills: selectedSkills,
       });
       setSignupLoading(false);
       setSignupSuccess(true);
-      toast.success('Account created! Welcome to the Nohunger Initiative family.', {
+      toast.success('Account created! Welcome to the No Hunger Initiatives Nigeria family.', {
         duration: 4000,
       });
+<<<<<<< HEAD
       setTimeout(() => {
         router.push('/volunteer-dashboard');
         setTimeout(() => {
@@ -314,6 +360,9 @@ export default function SignUpLoginContent() {
           });
         }, 1000);
       }, 1500);
+=======
+      setTimeout(() => router.push('/volunteer-dashboard'), 1500);
+>>>>>>> develop
     } catch (err: any) {
       setSignupLoading(false);
       if (isRateLimitError(err)) {
@@ -356,9 +405,9 @@ export default function SignUpLoginContent() {
               <Heart size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-display font-700 text-xl text-white">Nohunger Initiative</p>
+              <p className="font-display font-700 text-xl text-white">No Hunger Initiative</p>
               <p className="text-[11px] text-green-100/80 uppercase tracking-widest">
-                Nohunger Champion Hub
+                No Hunger Champion Hub
               </p>
             </div>
           </div>
@@ -372,8 +421,7 @@ export default function SignUpLoginContent() {
               <span className="text-green-200">Change a life.</span>
             </h1>
             <p className="text-green-100/90 text-[15px] leading-relaxed max-w-sm mb-8">
-              Nohunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious
-              food to families in need, powered by caring Champions like you.
+              No Hunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious food to families in need, powered by caring Champions like you.
             </p>
 
             {/* Impact stats */}
@@ -411,6 +459,7 @@ export default function SignUpLoginContent() {
                   </div>
                 );
               })}
+<<<<<<< HEAD
               <a
                 href="https://www.nohungerfoodbank.org/"
                 target="_blank"
@@ -424,6 +473,23 @@ export default function SignUpLoginContent() {
           </div>
 
 
+=======
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 mt-3">
+                <p className="text-[12px] text-green-50">
+                  Visit our website to see more programs -{' '}
+                  <a
+                    href="https://www.nohungerfoodbank.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-700 underline hover:text-white transition-colors"
+                  >
+                    www.nohungerfoodbank.org
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+>>>>>>> develop
         </div>
       </div>
 
@@ -433,9 +499,9 @@ export default function SignUpLoginContent() {
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <AppLogo size={36} />
             <div>
-              <p className="font-display font-700 text-lg text-foreground">Nohunger Initiative</p>
+              <p className="font-display font-700 text-lg text-foreground">No Hunger Initiatives Nigeria</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Nohunger Champion Hub
+                No Hunger Champion Hub
               </p>
             </div>
           </div>
@@ -568,7 +634,7 @@ export default function SignUpLoginContent() {
                   <div className="mb-6">
                     <h2 className="text-2xl font-700 text-foreground">Welcome back</h2>
                     <p className="text-[14px] text-muted-foreground mt-1">
-                      Sign in to your Nohunger Champion account
+                      Sign in to your No Hunger Champion account
                     </p>
                   </div>
 
@@ -703,9 +769,9 @@ export default function SignUpLoginContent() {
               {activeTab === 'signup' && (
                 <div className="animate-slide-up">
                   <div className="mb-6">
-                    <h2 className="text-2xl font-700 text-foreground">Join Nohunger Initiative</h2>
+                    <h2 className="text-2xl font-700 text-foreground">Join No Hunger Initiatives Nigeria</h2>
                     <p className="text-[14px] text-muted-foreground mt-1">
-                      Create your Champion account and start making a difference
+                      Create your No Hunger Champion account and start making a difference
                     </p>
                   </div>
 
@@ -805,7 +871,7 @@ export default function SignUpLoginContent() {
                       </div>
                       <div>
                         <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                          State
+                          Country
                         </label>
                         <div className="relative">
                           <Globe
@@ -819,7 +885,7 @@ export default function SignUpLoginContent() {
                             className={`w-full pl-9 pr-3 py-2.5 bg-muted border rounded-xl text-[13.5px] text-foreground focus:outline-none focus:ring-2 transition-all appearance-none ${signupForm.formState.errors.country ? 'border-destructive/60 focus:ring-destructive/20 focus:border-destructive bg-destructive/5' : 'border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)]'}`}
                           >
                             <option value="">Select…</option>
-                            {NIGERIA_STATES.map((c) => (
+                            {COUNTRIES.map((c) => (
                               <option key={c} value={c}>
                                 {c}
                               </option>
@@ -858,6 +924,56 @@ export default function SignUpLoginContent() {
                           );
                         })}
                       </div>
+
+                      {/* Others input */}
+                      <div className="mt-3">
+                        <label className="block text-[12px] font-600 text-foreground mb-1.5">
+                          Others (please specify)
+                        </label>
+                        <input
+                          type="text"
+                          value={customSkill}
+                          onChange={(e) => setCustomSkill(e.target.value)}
+                          placeholder="e.g., Event Planning, Social Media, Fundraising..."
+                          className={`w-full pl-3 pr-4 py-2.5 bg-muted border border-border rounded-xl text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all ${skillsError ? 'border-destructive/30' : ''}`}
+                        />
+                        {customSkill.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+                                setSelectedSkills(prev => [...prev, customSkill.trim()]);
+                                setCustomSkill('');
+                              }
+                            }}
+                            className="mt-2 px-3 py-1.5 text-[12px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-lg hover:bg-[hsl(142,72%,22%)] transition-colors"
+                          >
+                            Add Skill
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Selected custom skills */}
+                      {selectedSkills.filter(skill => !SKILLS.some(s => s.id === skill)).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {selectedSkills.filter(skill => !SKILLS.some(s => s.id === skill)).map((skill) => (
+                            <span
+                              key={skill}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-600 bg-[hsl(142,72%,92%)] text-[hsl(142,72%,20%)] rounded-full"
+                            >
+                              {skill}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
+                                className="ml-1 text-[hsl(142,72%,40%)] hover:text-[hsl(142,72%,20%)]"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {skillsError && (
                         <p className="flex items-center gap-1 text-[12px] text-destructive mt-1.5">
                           <AlertCircle size={11} className="flex-shrink-0" />

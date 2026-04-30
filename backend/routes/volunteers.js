@@ -134,15 +134,52 @@ router.put('/:id', auth, [
   body('firstName').optional().trim().isLength({ min: 1, max: 50 }),
   body('lastName').optional().trim().isLength({ max: 50 }),
   body('phone').optional().trim().isLength({ max: 20 }),
+  body('alternatePhone').optional().trim().isLength({ max: 20 }),
   body('bio').optional().trim().isLength({ max: 500 }),
   body('region').optional().trim().isLength({ max: 100 }),
+  body('streetAddress').optional().trim().isLength({ max: 100 }),
+  body('addressLine2').optional().trim().isLength({ max: 100 }),
+  body('city').optional().trim().isLength({ max: 50 }),
+  body('stateProvRegion').optional().trim().isLength({ max: 50 }),
+  body('postalZip').optional().trim().isLength({ max: 20 }),
+  body('birthday').optional().isISO8601(),
+  body('occupation').optional().trim().isLength({ max: 100 }),
+  body('organization').optional().trim().isLength({ max: 100 }),
+  body('instagramHandle').optional().trim().isLength({ max: 100 }),
+  body('twitterHandle').optional().trim().isLength({ max: 100 }),
+  body('shirtSize').optional().isIn(['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']),
+  body('whyVolunteer').optional().trim().isLength({ max: 500 }),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: errors.array()[0].msg });
   }
   try {
-    const { firstName, lastName, phone, bio, skills, profilePicture, region, gender, availability, onboardingCompleted } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      phone, 
+      alternatePhone,
+      bio, 
+      skills, 
+      profilePicture, 
+      region, 
+      streetAddress,
+      addressLine2,
+      city,
+      stateProvRegion,
+      postalZip,
+      birthday,
+      occupation,
+      organization,
+      instagramHandle,
+      twitterHandle,
+      shirtSize,
+      whyVolunteer,
+      gender, 
+      availability, 
+      onboardingCompleted 
+    } = req.body;
 
     let volunteer = await User.findById(req.params.id);
     if (!volunteer) {
@@ -152,11 +189,24 @@ router.put('/:id', auth, [
     if (firstName) volunteer.firstName = firstName;
     if (lastName) volunteer.lastName = lastName;
     if (phone) volunteer.phone = phone;
+    if (alternatePhone !== undefined) volunteer.alternatePhone = alternatePhone;
     if (gender !== undefined) volunteer.gender = gender;
     if (bio) volunteer.bio = bio;
     if (skills) volunteer.skills = skills;
     if (profilePicture) volunteer.profilePicture = profilePicture;
     if (region !== undefined) volunteer.region = region;
+    if (streetAddress !== undefined) volunteer.streetAddress = streetAddress;
+    if (addressLine2 !== undefined) volunteer.addressLine2 = addressLine2;
+    if (city !== undefined) volunteer.city = city;
+    if (stateProvRegion !== undefined) volunteer.stateProvRegion = stateProvRegion;
+    if (postalZip !== undefined) volunteer.postalZip = postalZip;
+    if (birthday !== undefined) volunteer.birthday = birthday;
+    if (occupation !== undefined) volunteer.occupation = occupation;
+    if (organization !== undefined) volunteer.organization = organization;
+    if (instagramHandle !== undefined) volunteer.instagramHandle = instagramHandle;
+    if (twitterHandle !== undefined) volunteer.twitterHandle = twitterHandle;
+    if (shirtSize !== undefined) volunteer.shirtSize = shirtSize;
+    if (whyVolunteer !== undefined) volunteer.whyVolunteer = whyVolunteer;
     if (availability !== undefined) volunteer.availability = availability;
     if (onboardingCompleted !== undefined) volunteer.onboardingCompleted = onboardingCompleted;
 

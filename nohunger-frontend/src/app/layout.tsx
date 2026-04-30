@@ -4,23 +4,23 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'Nohunger Initiative — Champion Hub',
+  title: 'No Hunger Initiatives — No Hunger Champion Hub',
   description:
-    'The friendly home for Nohunger Champions to join activities, track hours, and make impact across Nigeria.',
+    'The friendly home for No Hunger Champions to join activities, track hours, and make impact across Nigeria.',
   icons: { icon: '/favicon.ico' },
   openGraph: {
-    title: 'Nohunger Initiative — Champion Hub',
+    title: 'No Hunger Initiatives — No Hunger Champion Hub',
     description:
-      'Join Nohunger Champions fighting hunger across Nigeria. Track events, log hours, and do good together.',
+      'Join No Hunger Champions fighting hunger across Nigeria. Track events, log hours, and do good together.',
     url: 'https://volunteer.nohungerfoodbank.org',
-    siteName: 'Nohunger Initiative',
+    siteName: 'No Hunger Initiatives',
     locale: 'en_NG',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nohunger Initiative — Champion Hub',
-    description: 'Join Nohunger Champions fighting hunger across Nigeria.',
+    title: 'No Hunger Initiatives — No Hunger Champion Hub',
+    description: 'Join No Hunger Champions fighting hunger across Nigeria.',
   },
   metadataBase: new URL('https://volunteer.nohungerfoodbank.org'),
 };

@@ -342,7 +342,7 @@ export default function AdminDashboardPage() {
                 day: 'numeric',
                 year: 'numeric',
               })}{' '}
-              · Nohunger Initiative
+              · No Hunger Initiatives
             </p>
           </div>
           <div className="flex items-center gap-2">

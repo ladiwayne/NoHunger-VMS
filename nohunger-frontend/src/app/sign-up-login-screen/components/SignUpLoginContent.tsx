@@ -74,7 +74,7 @@ const SKILLS = [
 const IMPACT_STATS = [
   { value: '10+', label: 'Active Programs' },
   { value: '10+', label: 'Causes we are handling' },
-  { value: '1,000', label: 'Registered Volunteers' },
+  { value: '1,500', label: 'Registered Volunteers' },
 ];
 
 const PROGRAMS = [

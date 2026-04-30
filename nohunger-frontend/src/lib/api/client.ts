@@ -4,11 +4,14 @@
  * Session persistence is handled by the httpOnly cookie set by Next.js API routes.
  */
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // In-memory token — survives the current page session but is cleared on refresh.
 // Restored from the httpOnly cookie via /api/auth/me on each page load.
 let _memoryToken: string | null = null;
+
+// Simple response cache for GET requests (5-minute TTL)
+const _responseCache = new Map<string, { data: any; expiry: number }>();
 
 export function getToken(): string | null {
   return _memoryToken;
@@ -28,6 +31,14 @@ export function clearToken(): void {
   fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
 }
 
+export function invalidateCache(path?: string): void {
+  if (!path) {
+    _responseCache.clear();
+    return;
+  }
+  _responseCache.delete(`${BASE_URL}${path}`);
+}
+
 export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -36,7 +47,18 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const fullUrl = `${BASE_URL}${path}`;
+  const cacheKey = fullUrl;
+
+  // Check cache for GET requests
+  if (options.method?.toUpperCase() === 'GET' || !options.method) {
+    const cached = _responseCache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data as T;
+    }
+  }
+
+  const response = await fetch(fullUrl, { ...options, headers });
 
   if (response.status === 401) {
     clearToken();
@@ -53,5 +75,15 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
 
   // Handle empty responses (204 No Content)
   const text = await response.text();
-  return text ? JSON.parse(text) : ({} as T);
+  const data = text ? JSON.parse(text) : ({} as T);
+
+  // Cache GET requests for 5 minutes
+  if (options.method?.toUpperCase() === 'GET' || !options.method) {
+    _responseCache.set(cacheKey, {
+      data,
+      expiry: Date.now() + 5 * 60 * 1000,
+    });
+  }
+
+  return data;
 }

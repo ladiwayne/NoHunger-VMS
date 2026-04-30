@@ -37,11 +37,24 @@ export async function updateVolunteerProfile(
     firstName?: string;
     lastName?: string;
     phone?: string;
+    alternatePhone?: string;
     gender?: string;
     bio?: string;
     skills?: string[];
     availability?: string[];
     region?: string;
+    streetAddress?: string;
+    addressLine2?: string;
+    city?: string;
+    stateProvRegion?: string;
+    postalZip?: string;
+    birthday?: string;
+    occupation?: string;
+    organization?: string;
+    instagramHandle?: string;
+    twitterHandle?: string;
+    shirtSize?: string;
+    whyVolunteer?: string;
     onboardingCompleted?: boolean;
   }
 ): Promise<any> {

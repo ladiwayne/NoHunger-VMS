@@ -10,7 +10,10 @@ const connectDB = async () => {
   const mongoUri = getMongoUri();
 
   try {
-    const conn = await mongoose.connect(mongoUri);
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 5000,
+    });
     console.log(`MongoDB connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
@@ -20,11 +23,15 @@ const connectDB = async () => {
 
     console.warn(`Local MongoDB unavailable: ${error.message}`);
     console.warn('Starting embedded MongoDB instance for local preview.');
+    console.warn('⏳ First startup may take 30-60 seconds...');
 
     memoryServer = await MongoMemoryServer.create({
       instance: {
         dbName: 'nohunger-vms',
-        launchTimeout: 120000,
+        launchTimeout: 30000,  // More conservative timeout
+      },
+      binary: {
+        downloadDir: './.mongodb-bin',  // Cache binary
       },
     });
 

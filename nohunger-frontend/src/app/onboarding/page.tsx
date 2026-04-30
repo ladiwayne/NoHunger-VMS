@@ -31,6 +31,11 @@ import {
   Shirt,
   MessageSquare,
   Building2,
+  Calendar,
+  Search,
+  DollarSign,
+  FileText,
+  Camera,
 } from 'lucide-react';
 import { GENDER_OPTIONS, NIGERIA_STATES } from '@/lib/constants/nigeria';
 
@@ -44,25 +49,31 @@ const SKILLS = [
     desc: 'Sorting and packing food items',
   },
   {
-    id: 'food-distribution',
-    label: 'Distribution',
-    icon: Truck,
-    desc: 'Delivering food to communities',
+    id: 'logistics',
+    label: 'Logistics',
+    icon: ClipboardList,
+    desc: 'Coordinating operations and transportation',
   },
-  { id: 'cooking', label: 'Cooking', icon: ChefHat, desc: 'Preparing meals for events' },
-  { id: 'logistics', label: 'Logistics', icon: ClipboardList, desc: 'Coordinating operations' },
   {
     id: 'community-outreach',
     label: 'Community Outreach',
     icon: Users,
-    desc: 'Engaging with communities',
+    desc: 'Engaging with communities and building relationships',
   },
   {
-    id: 'medical-support',
-    label: 'Medical Support',
+    id: 'medical-outreach',
+    label: 'Medical Outreach',
     icon: Heart,
-    desc: 'Health and wellness support',
+    desc: 'Health and wellness support services',
   },
+  { id: 'cooking', label: 'Cooking', icon: ChefHat, desc: 'Preparing meals for events and distribution' },
+  { id: 'event-planning', label: 'Event Planning', icon: Calendar, desc: 'Organizing and coordinating events' },
+  { id: 'research', label: 'Research', icon: Search, desc: 'Data collection and analysis' },
+  { id: 'fundraising', label: 'Fundraising', icon: DollarSign, desc: 'Raising funds and sponsorships' },
+  { id: 'social-media', label: 'Social Media', icon: MessageSquare, desc: 'Social media management and engagement' },
+  { id: 'content-creation', label: 'Content Creation', icon: FileText, desc: 'Creating written and visual content' },
+  { id: 'videography-photography', label: 'Videography/Photography', icon: Camera, desc: 'Video and photo production' },
+  { id: 'administration', label: 'Administration', icon: Briefcase, desc: 'Administrative and organizational tasks' },
 ];
 
 const AVAILABILITY = [
@@ -306,10 +317,10 @@ export default function OnboardingPage() {
             <AppLogo size={32} />
             <div>
               <p className="font-display font-700 text-sm sm:text-base text-foreground">
-                Nohunger Initiative
+                No Hunger Initiatives
               </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:block">
-                Champion Onboarding
+                No Hunger Champion Onboarding
               </p>
             </div>
           </div>
@@ -354,11 +365,11 @@ export default function OnboardingPage() {
                 <Heart size={36} className="text-[hsl(142,72%,22%)]" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-800 text-foreground mb-3">
-                Welcome to Nohunger Initiative!
+                Welcome to No Hunger Initiatives Nigeria!
               </h1>
               <p className="text-muted-foreground text-[14px] sm:text-[15px] max-w-md mx-auto mb-8 leading-relaxed">
                 Thanks for joining our mission to end hunger in Nigeria. Let&apos;s set up your
-                Champion profile so we can match you with the best opportunities.
+                No Hunger Champion profile so we can match you with the best opportunities.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -371,7 +382,7 @@ export default function OnboardingPage() {
                   { icon: Star, title: 'Select Skills', desc: 'Choose your areas of expertise' },
                   {
                     icon: Shield,
-                    title: 'Start as a Champion',
+                    title: 'Start as a No Hunger Champion',
                     desc: 'Get matched and join upcoming activities immediately',
                   },
                 ].map((item) => {
@@ -793,12 +804,12 @@ export default function OnboardingPage() {
                 <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
                   <h3 className="text-[13px] font-700 text-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
                     <MessageSquare size={14} className="text-[hsl(142,72%,29%)]" /> About Your
-                    Champion Journey
+                    No Hunger Champion Journey
                   </h3>
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-[13px] font-600 text-foreground">
-                        Why do you want to join as a Nohunger Champion?{' '}
+                        Why do you want to join as a No Hunger Champion?{' '}
                         <span className="text-destructive">*</span>
                       </label>
                       <span
@@ -808,7 +819,7 @@ export default function OnboardingPage() {
                       </span>
                     </div>
                     <textarea
-                      placeholder="Tell us what motivates you to be a Nohunger Champion and what you hope to contribute..."
+                      placeholder="Tell us what motivates you to be a No Hunger Champion and what you hope to contribute..."
                       value={form.whyVolunteer}
                       onChange={(e) => setField('whyVolunteer', e.target.value.slice(0, 500))}
                       rows={5}

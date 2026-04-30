@@ -234,7 +234,7 @@ export default function CheckinPage() {
             <AlertTriangle size={32} className="text-destructive mx-auto mb-3" />
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Rejected</h3>
             <p className="text-[13px] text-muted-foreground">
-              Your check-in wasn&apos;t approved. Please reach out to the Nohunger Initiative team.
+              Your check-in wasn&apos;t approved. Please reach out to the No Hunger Initiatives team.
             </p>
           </div>
         )}

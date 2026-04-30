@@ -196,7 +196,7 @@ export default function AdminActivitiesPage() {
     setSendingInvites(activity.id);
     try {
       await sendInvitesForActivity(activity.id);
-      toast.success('Invitations sent to approved Champions!');
+      toast.success('Invitations sent to approved No Hunger Champions!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to send invitations.');
     } finally {
@@ -241,7 +241,7 @@ export default function AdminActivitiesPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Activities & Events</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Create and manage Nohunger Initiative activities for Champions
+              Create and manage No Hunger Initiative activities for No Hunger Champions
             </p>
           </div>
           <button
@@ -395,7 +395,7 @@ export default function AdminActivitiesPage() {
                 </div>
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Max Champions
+                    Max No Hunger Champions
                   </label>
                   <input
                     type="number"
@@ -474,7 +474,7 @@ export default function AdminActivitiesPage() {
             <Calendar size={40} className="text-muted-foreground mx-auto mb-3" />
             <p className="text-[15px] font-600 text-foreground">No activities yet</p>
             <p className="text-[13px] text-muted-foreground mt-1">
-              Create your first activity for Nohunger Champions
+              Create your first activity for No Hunger Champions
             </p>
           </div>
         ) : (

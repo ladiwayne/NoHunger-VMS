@@ -168,7 +168,7 @@ export default function NotificationsPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Notifications & Activity</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Stay in the loop on your Nohunger Champion activity
+              Stay in the loop on your No Hunger Champion activity
             </p>
           </div>
           {unreadCount > 0 && (
@@ -294,7 +294,7 @@ export default function NotificationsPage() {
                 <Activity size={40} className="text-muted-foreground mx-auto mb-3" />
                 <p className="text-[15px] font-600 text-foreground">No activity yet</p>
                 <p className="text-[13px] text-muted-foreground mt-1">
-                  Your Champion activity will show up here
+                  Your No Hunger Champion activity will show up here
                 </p>
               </div>
             ) : (

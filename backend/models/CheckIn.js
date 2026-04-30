@@ -54,4 +54,10 @@ checkinSchema.pre('save', function (next) {
   next();
 });
 
+// Add indexes for faster queries
+checkinSchema.index({ volunteerId: 1 }); // Fast lookups by volunteer
+checkinSchema.index({ volunteerId: 1, checkInStatus: 1 }); // Volunteer + status
+checkinSchema.index({ checkInTime: -1 }); // Fast sorting by date
+checkinSchema.index({ activityId: 1 }); // Fast lookups by activity
+
 module.exports = mongoose.model('CheckIn', checkinSchema);

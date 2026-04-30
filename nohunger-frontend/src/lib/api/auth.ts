@@ -9,7 +9,6 @@ export interface LoginResult {
 
 export interface SignUpOptions {
   fullName: string;
-  role?: string;
   phone?: string;
   region?: string;
   skills?: string[];
@@ -59,7 +58,6 @@ export async function register(
       firstName,
       lastName,
       phone: options.phone || '',
-      role: options.role || 'volunteer',
       country: options.region || '',
       skills: options.skills || [],
     }),

@@ -20,10 +20,19 @@ import {
   Clock,
   CalendarCheck,
   ExternalLink,
+  Heart,
+  Shirt,
+  Calendar,
+  Instagram,
+  Twitter,
+  Building2,
+  MessageSquare,
+  Briefcase,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { GENDER_OPTIONS, NIGERIA_STATES } from '@/lib/constants/nigeria';
 
 const SKILL_OPTIONS = [
   'cooking',
@@ -40,6 +49,8 @@ const SKILL_OPTIONS = [
   'construction',
 ];
 
+const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+
 type Panel = 'profile' | 'achievements';
 
 export default function ProfilePage() {
@@ -48,7 +59,23 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     full_name: '',
     phone: '',
+    alternatePhone: '',
     region: '',
+    streetAddress: '',
+    addressLine2: '',
+    city: '',
+    stateProvRegion: '',
+    postalZip: '',
+    gender: '',
+    birthdayMM: '',
+    birthdayDD: '',
+    birthdayYYYY: '',
+    occupation: '',
+    organization: '',
+    instagramHandle: '',
+    twitterHandle: '',
+    shirtSize: '',
+    whyVolunteer: '',
     bio: '',
     skills: [] as string[],
   });
@@ -59,10 +86,29 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profile) {
+      // Parse birthday if available
+      const birthday = profile.birthday ? new Date(profile.birthday) : null;
+      
       setForm({
         full_name: profile.full_name || '',
         phone: profile.phone || '',
+        alternatePhone: profile.alternate_phone || '',
         region: profile.region || '',
+        streetAddress: profile.street_address || '',
+        addressLine2: profile.address_line2 || '',
+        city: profile.city || '',
+        stateProvRegion: profile.state_prov_region || '',
+        postalZip: profile.postal_zip || '',
+        gender: profile.gender || '',
+        birthdayMM: birthday ? (birthday.getMonth() + 1).toString().padStart(2, '0') : '',
+        birthdayDD: birthday ? birthday.getDate().toString().padStart(2, '0') : '',
+        birthdayYYYY: birthday ? birthday.getFullYear().toString() : '',
+        occupation: profile.occupation || '',
+        organization: profile.organization || '',
+        instagramHandle: profile.instagram_handle || '',
+        twitterHandle: profile.twitter_handle || '',
+        shirtSize: profile.shirt_size || '',
+        whyVolunteer: profile.why_volunteer || '',
         bio: profile.bio || '',
         skills: profile.skills || [],
       });
@@ -83,14 +129,49 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const nameParts = form.full_name.trim().split(' ');
+      
+      // Construct birthday
+      const birthday = form.birthdayMM && form.birthdayDD && form.birthdayYYYY
+        ? `${form.birthdayYYYY}-${form.birthdayMM.padStart(2, '0')}-${form.birthdayDD.padStart(2, '0')}`
+        : null;
+
+      // Construct full address
+      const fullAddress = [form.streetAddress, form.addressLine2, form.city, form.stateProvRegion]
+        .filter(Boolean)
+        .join(', ');
+
+      // Construct bio from why volunteer and other info
+      const bioText = [
+        form.whyVolunteer,
+        form.occupation ? `Occupation: ${form.occupation}` : '',
+        form.organization ? `Organization: ${form.organization}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+
       await updateVolunteerProfile(user.id, {
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
         phone: form.phone,
-        region: form.region,
-        bio: form.bio,
+        alternatePhone: form.alternatePhone,
+        region: fullAddress || form.region,
+        streetAddress: form.streetAddress,
+        addressLine2: form.addressLine2,
+        city: form.city,
+        stateProvRegion: form.stateProvRegion,
+        postalZip: form.postalZip,
+        gender: form.gender,
+        birthday,
+        occupation: form.occupation,
+        organization: form.organization,
+        instagramHandle: form.instagramHandle,
+        twitterHandle: form.twitterHandle,
+        shirtSize: form.shirtSize,
+        whyVolunteer: form.whyVolunteer,
+        bio: bioText || form.bio,
         skills: form.skills,
-      });
+        onboardingCompleted: true, // Mark as completed when saving from profile page
+      } as any);
       await refreshProfile?.();
       toast.success('Profile saved successfully!');
     } catch (err: any) {
@@ -297,6 +378,232 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Additional Profile Information */}
+            <div className="bg-card border border-border rounded-2xl shadow-card p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <Heart size={16} className="text-primary mt-0.5" />
+                <div>
+                  <h2 className="text-[15px] font-700 text-foreground">Complete Your Profile</h2>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
+                    Help us get to know you better! These details are optional but help us match you with the perfect volunteering opportunities and create a more personalized experience.
+                  </p>
+                </div>
+              </div>
+
+              {/* Birthday */}
+              <div>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Birthday <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <input
+                      value={form.birthdayMM}
+                      onChange={(e) => setForm((p) => ({ ...p, birthdayMM: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
+                      placeholder="MM"
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      value={form.birthdayDD}
+                      onChange={(e) => setForm((p) => ({ ...p, birthdayDD: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
+                      placeholder="DD"
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      value={form.birthdayYYYY}
+                      onChange={(e) => setForm((p) => ({ ...p, birthdayYYYY: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+                      placeholder="YYYY"
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Gender and Shirt Size */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Gender <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </label>
+                  <select
+                    value={form.gender}
+                    onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Select gender</option>
+                    {GENDER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Shirt Size <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Shirt size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={form.shirtSize}
+                      onChange={(e) => setForm((p) => ({ ...p, shirtSize: e.target.value }))}
+                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    >
+                      <option value="">Select size</option>
+                      {SHIRT_SIZES.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Address <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="space-y-2">
+                  <input
+                    value={form.streetAddress}
+                    onChange={(e) => setForm((p) => ({ ...p, streetAddress: e.target.value }))}
+                    placeholder="Street address"
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                  <input
+                    value={form.addressLine2}
+                    onChange={(e) => setForm((p) => ({ ...p, addressLine2: e.target.value }))}
+                    placeholder="Address line 2 (optional)"
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <input
+                      value={form.city}
+                      onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                      placeholder="City"
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                    <select
+                      value={form.stateProvRegion}
+                      onChange={(e) => setForm((p) => ({ ...p, stateProvRegion: e.target.value }))}
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    >
+                      <option value="">State/Province</option>
+                      {NIGERIA_STATES.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={form.postalZip}
+                      onChange={(e) => setForm((p) => ({ ...p, postalZip: e.target.value }))}
+                      placeholder="Postal/Zip"
+                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Alternate Phone <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={form.alternatePhone}
+                      onChange={(e) => setForm((p) => ({ ...p, alternatePhone: e.target.value }))}
+                      placeholder="+234 (0) 800 000 0000"
+                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Occupation <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Briefcase size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={form.occupation}
+                      onChange={(e) => setForm((p) => ({ ...p, occupation: e.target.value }))}
+                      placeholder="Your profession"
+                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Organization */}
+              <div>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Organization <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={form.organization}
+                    onChange={(e) => setForm((p) => ({ ...p, organization: e.target.value }))}
+                    placeholder="School, company, or organization you represent"
+                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Social Media */}
+              <div>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Social Media <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Instagram size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={form.instagramHandle}
+                      onChange={(e) => setForm((p) => ({ ...p, instagramHandle: e.target.value }))}
+                      placeholder="@yourinstagram or full URL"
+                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Twitter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={form.twitterHandle}
+                      onChange={(e) => setForm((p) => ({ ...p, twitterHandle: e.target.value }))}
+                      placeholder="@yourtwitter or full URL"
+                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Why Volunteer */}
+              <div>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                  Why do you want to volunteer? <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <MessageSquare size={15} className="absolute left-3 top-3 text-muted-foreground" />
+                  <textarea
+                    value={form.whyVolunteer}
+                    onChange={(e) => setForm((p) => ({ ...p, whyVolunteer: e.target.value }))}
+                    rows={3}
+                    placeholder="Share your motivation for volunteering with No Hunger Initiatives Nigeria..."
+                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Skills */}
             <div className="bg-card border border-border rounded-2xl shadow-card p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -455,7 +762,7 @@ export default function ProfilePage() {
                 </div>
                 <button
                   onClick={() => {
-                    const cert = `CERTIFICATE OF VOLUNTEER SERVICE\n\nThis certifies that\n\n${profile?.full_name}\n\nhas volunteered ${stats.totalHours} hours across ${stats.eventsAttended} events\nwith the NoHunger Initiative.\n\nIssued: ${new Date().toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                    const cert = `CERTIFICATE OF VOLUNTEER SERVICE\n\nThis certifies that\n\n${profile?.full_name}\n\nhas volunteered ${stats.totalHours} hours across ${stats.eventsAttended} events\nwith the No Hunger Initiatives.\n\nIssued: ${new Date().toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}`;
                     const blob = new Blob([cert], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');

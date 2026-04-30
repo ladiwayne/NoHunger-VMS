@@ -92,7 +92,7 @@ export default function ActivitiesPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Browse Activities</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Find where Nohunger Champions can jump in and help
+              Find where No Hunger Champions can jump in and help
             </p>
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function ActivitiesPage() {
             <Calendar size={40} className="text-muted-foreground mx-auto mb-3" />
             <p className="text-[15px] font-600 text-foreground">No activities found</p>
             <p className="text-[13px] text-muted-foreground mt-1">
-              No worries, new Nohunger Initiative opportunities are coming soon
+              No worries, new No Hunger Initiatives opportunities are coming soon
             </p>
           </div>
         ) : (
@@ -178,7 +178,7 @@ export default function ActivitiesPage() {
                       {activity.max_volunteers && (
                         <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
                           <Users size={13} className="flex-shrink-0" />
-                          <span>Up to {activity.max_volunteers} Champions</span>
+                          <span>Up to {activity.max_volunteers} No Hunger Champions</span>
                         </div>
                       )}
                     </div>
@@ -209,7 +209,7 @@ export default function ActivitiesPage() {
                           onChange={(e) =>
                             setMessage((prev) => ({ ...prev, [activity.id]: e.target.value }))
                           }
-                          placeholder="Optional: Tell us why you want to join as a Nohunger Champion"
+                          placeholder="Optional: Tell us why you want to join as a No Hunger Champion"
                           rows={2}
                           className="w-full px-3 py-2 bg-muted border border-border rounded-xl text-[12.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                         />
@@ -222,7 +222,7 @@ export default function ActivitiesPage() {
                             <Loader2 size={15} className="animate-spin" />
                           ) : (
                             <>
-                              <Send size={14} /> Join as Champion
+                              <Send size={14} /> Join as No Hunger Champion
                             </>
                           )}
                         </button>

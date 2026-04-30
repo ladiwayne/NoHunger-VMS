@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import AppLogo from '@/components/ui/AppLogo';
+import { resetPassword } from '@/lib/api/password-reset';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 
 type ResetFormData = { password: string; confirmPassword: string };
@@ -37,6 +38,7 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const {
     register,
@@ -51,10 +53,32 @@ export default function ResetPasswordPage() {
   const watchedPassword = watch('password');
   const passwordStrength = getPasswordStrength(watchedPassword);
 
-  const onSubmit = async (_data: ResetFormData) => {
-    setError(
-      'Password reset via email is not available. Please contact an administrator to reset your password.'
-    );
+  const onSubmit = async (data: ResetFormData) => {
+    setError('');
+    setLoading(true);
+
+    try {
+      // Get token from URL
+      const token = searchParams.get('token');
+      if (!token) {
+        throw new Error('Invalid reset link. Missing token.');
+      }
+
+      // Call reset password API through frontend helper
+      await resetPassword(token, data.password, data.confirmPassword);
+
+      setLoading(false);
+      setSuccess(true);
+
+      // Redirect to sign-in after 2 seconds
+      setTimeout(() => {
+        router.push('/sign-up-login-screen');
+      }, 2000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An error occurred';
+      setError(message);
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -79,9 +103,9 @@ export default function ResetPasswordPage() {
         <div className="flex items-center gap-2.5 mb-8">
           <AppLogo size={36} />
           <div>
-            <p className="font-display font-700 text-lg text-foreground">Nohunger Initiative</p>
+            <p className="font-display font-700 text-lg text-foreground">No Hunger Initiatives</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-              Nohunger Champion Hub
+              No Hunger Champion Hub
             </p>
           </div>
         </div>

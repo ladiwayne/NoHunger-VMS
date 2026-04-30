@@ -413,7 +413,7 @@ export default function SignUpLoginContent() {
               <span className="text-green-200">Change a life.</span>
             </h1>
             <p className="text-green-100/90 text-[15px] leading-relaxed max-w-sm mb-8">
-              No Hunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious
+              No Hunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious food to families in need, powered by caring Champions like you.
             </p>
 
             {/* Impact stats */}

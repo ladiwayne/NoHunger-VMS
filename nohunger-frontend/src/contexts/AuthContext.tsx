@@ -154,6 +154,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       phone: metadata?.phone || '',
       region: metadata?.region || '',
       skills: metadata?.skills || [],
+      securityQuestion: metadata?.securityQuestion || '',
+      securityAnswer: metadata?.securityAnswer || '',
     });
     if (result?.profile) {
       setUser({ id: result.profile.id, email: result.profile.email });

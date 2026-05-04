@@ -12,6 +12,15 @@
 				"4028"
 			],
 			"isBackground": true
+		},
+		{
+			"label": "Start backend server",
+			"type": "shell",
+			"command": "cd \"c:\\Users\\Dell Precision\\Desktop\\App Build\\NoHunger VMS\\backend\" && npm start",
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			]
 		}
 	]
 }

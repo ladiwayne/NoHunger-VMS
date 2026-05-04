@@ -12,6 +12,8 @@ export interface SignUpOptions {
   phone?: string;
   region?: string;
   skills?: string[];
+  securityQuestion?: string;
+  securityAnswer?: string;
 }
 
 /** Helper for calling the Next.js auth API routes (same-origin, httpOnly cookie handling). */
@@ -60,6 +62,8 @@ export async function register(
       phone: options.phone || '',
       country: options.region || '',
       skills: options.skills || [],
+      securityQuestion: options.securityQuestion || '',
+      securityAnswer: options.securityAnswer || '',
     }),
   });
 
@@ -88,4 +92,20 @@ export async function getMe(): Promise<any | null> {
 
 export function logout(): void {
   clearToken(); // clears memory + localStorage profile + fires cookie clear
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<any> {
+  const data = await authFetch<any>('/api/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    }),
+  });
+  return data;
 }

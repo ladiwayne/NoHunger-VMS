@@ -292,4 +292,61 @@ router.put('/promote-to-admin/:id', superAdminAuth, async (req, res) => {
   }
 });
 
+// ─── Super Admin: Password Reset ───────────────────────────────────
+
+// Reset volunteer password (auto-generate new password)
+router.post('/reset-volunteer-password/:id', superAdminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Only allow resetting volunteer passwords
+    if (user.role !== 'volunteer') {
+      return res.status(403).json({ message: 'Can only reset volunteer passwords' });
+    }
+
+    // Generate a secure random password
+    const newPassword = generateSecurePassword();
+    
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Password reset successfully',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+      newPassword, // Return the plain password for sharing
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
+  }
+});
+
+// Helper function to generate secure password
+function generateSecurePassword() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  
+  // Ensure at least one uppercase, one lowercase, one number, one special char
+  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // uppercase
+  password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // lowercase
+  password += '0123456789'[Math.floor(Math.random() * 10)]; // number
+  password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // special
+  
+  // Fill remaining characters
+  for (let i = 4; i < 12; i++) {
+    password += chars[Math.floor(Math.random() * chars.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 module.exports = router;

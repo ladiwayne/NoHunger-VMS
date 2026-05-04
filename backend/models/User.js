@@ -104,6 +104,14 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    securityQuestion: {
+      type: String,
+      required: true,
+    },
+    securityAnswer: {
+      type: String,
+      required: true,
+    },
     appliedActivities: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -28,6 +28,7 @@ import {
   Building2,
   MessageSquare,
   Briefcase,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -51,7 +52,7 @@ const SKILL_OPTIONS = [
 
 const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
-type Panel = 'profile' | 'achievements';
+type Panel = 'profile' | 'achievements' | 'security';
 
 export default function ProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -83,6 +84,12 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState({ totalHours: 0, eventsAttended: 0 });
   const [sessions, setSessions] = useState<any[]>([]);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   useEffect(() => {
     if (profile) {
@@ -188,6 +195,38 @@ export default function ProfilePage() {
     }));
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('New passwords do not match.');
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters.');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmPassword: passwordForm.confirmPassword,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      toast.success('Password changed successfully!');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to change password.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!user) return;
     const url = `${window.location.origin}/profile/${user.id}`;
@@ -216,6 +255,7 @@ export default function ProfilePage() {
 
   const panels: { id: Panel; label: string; icon: React.ElementType }[] = [
     { id: 'profile', label: 'Edit Profile', icon: UserCircle },
+    { id: 'security', label: 'Security', icon: Shield },
     { id: 'achievements', label: 'Achievements', icon: Award },
   ];
 
@@ -639,6 +679,72 @@ export default function ProfilePage() {
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 {saving ? 'Saving…' : 'Save Changes'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Security Panel */}
+        {activePanel === 'security' && (
+          <div className="space-y-5">
+            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield size={18} className="text-primary" />
+                <h2 className="text-[15px] font-700 text-foreground">Change Password</h2>
+              </div>
+              <p className="text-[12px] text-muted-foreground mb-4">
+                Update your password to keep your account secure.
+              </p>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
+                    placeholder="Enter your current password"
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
+                    placeholder="Enter a new password"
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                    placeholder="Confirm your new password"
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={changingPassword}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[14px]"
+                  >
+                    {changingPassword ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    {changingPassword ? 'Changing…' : 'Change Password'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

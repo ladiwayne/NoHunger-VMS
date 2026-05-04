@@ -90,6 +90,8 @@ const seedSuperAdmin = async () => {
       password,
       role: 'super_admin',
       status: 'approved',
+      securityQuestion: 'What is your favorite color?',
+      securityAnswer: 'Blue',
     });
 
     await superAdmin.save();

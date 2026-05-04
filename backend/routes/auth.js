@@ -24,6 +24,8 @@ const sanitizeRegister = [
   body('phone').optional().trim().isLength({ max: 20 }),
   body('country').optional().trim().isLength({ max: 100 }),
   body('region').optional().trim().isLength({ max: 100 }),
+  body('securityQuestion').notEmpty().withMessage('Security question is required'),
+  body('securityAnswer').notEmpty().withMessage('Security answer is required'),
 ];
 
 // Sanitization middleware for login
@@ -39,7 +41,7 @@ router.post('/register', sanitizeRegister, async (req, res) => {
     return res.status(400).json({ message: errors.array()[0].msg });
   }
   try {
-    const { firstName, lastName, email, password, phone, gender, country, region, skills = [] } = req.body;
+    const { firstName, lastName, email, password, phone, gender, country, region, skills = [], securityQuestion, securityAnswer } = req.body;
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -59,6 +61,8 @@ router.post('/register', sanitizeRegister, async (req, res) => {
       status: 'approved',
       skills,
       region: region || country || '',
+      securityQuestion,
+      securityAnswer: securityAnswer.toLowerCase().trim(), // Normalize answer
     });
 
     await user.save();
@@ -208,6 +212,43 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error: error.message });
+  }
+});
+
+// Change password for authenticated user
+router.put('/change-password', require('../middleware/auth'), [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+    .matches(/[A-Z]/).withMessage('New password must contain at least one uppercase letter'),
+  body('confirmPassword').custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('Passwords do not match'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0].msg });
+  }
+
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const isValidPassword = await user.comparePassword(currentPassword);
+    if (!isValidPassword) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error changing password', error: error.message });
   }
 });
 

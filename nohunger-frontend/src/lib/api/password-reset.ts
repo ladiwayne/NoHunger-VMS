@@ -4,7 +4,7 @@
  */
 import { apiFetch } from './client';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface ForgotPasswordResponse {
   message: string;
@@ -26,14 +26,20 @@ export interface ResetPasswordResponse {
 /**
  * Request password reset (forgot password flow)
  * @param email - User's email address
+ * @param securityQuestion - User's security question
+ * @param securityAnswer - User's security answer
  * @returns Response with reset link information
  */
-export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse | null> {
+export async function requestPasswordReset(
+  email: string,
+  securityQuestion: string,
+  securityAnswer: string
+): Promise<ForgotPasswordResponse | null> {
   try {
     const response = await apiFetch<ForgotPasswordResponse>(`${BASE_URL}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, securityQuestion, securityAnswer }),
     });
     return response;
   } catch (error) {

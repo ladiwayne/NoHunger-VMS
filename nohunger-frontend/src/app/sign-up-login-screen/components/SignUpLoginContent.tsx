@@ -8,6 +8,7 @@ import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { requestPasswordReset } from '@/lib/api/password-reset';
 import { COUNTRIES } from '@/lib/constants/countries';
+import { SECURITY_QUESTIONS } from '@/lib/constants/security-questions';
 import {
   Eye,
   EyeOff,
@@ -39,6 +40,8 @@ import {
   FileText,
   Camera,
   Briefcase,
+  HelpCircle,
+  Shield,
 } from 'lucide-react';
 
 type LoginFormData = { email: string; password: string; rememberMe: boolean };
@@ -51,8 +54,10 @@ type SignupFormData = {
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
+  securityQuestion: string;
+  securityAnswer: string;
 };
-type ForgotFormData = { email: string };
+type ForgotFormData = { email: string; securityQuestion: string; securityAnswer: string };
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
 
@@ -219,12 +224,14 @@ export default function SignUpLoginContent() {
       password: '',
       confirmPassword: '',
       agreeTerms: false,
+      securityQuestion: '',
+      securityAnswer: '',
     },
     mode: 'onTouched',
   });
 
   const forgotForm = useForm<ForgotFormData>({
-    defaultValues: { email: '' },
+    defaultValues: { email: '', securityQuestion: '', securityAnswer: '' },
     mode: 'onTouched',
   });
 
@@ -305,7 +312,7 @@ export default function SignUpLoginContent() {
     setForgotLoading(true);
 
     try {
-      const result = await requestPasswordReset(data.email);
+      const result = await requestPasswordReset(data.email, data.securityQuestion, data.securityAnswer);
 
       toast.success('Password reset link generated!', {
         description: 'Check your email for instructions. If not in inbox, check spam folder.',
@@ -343,26 +350,15 @@ export default function SignUpLoginContent() {
         phone: data.phone,
         region: data.country,
         skills: selectedSkills,
+        securityQuestion: data.securityQuestion,
+        securityAnswer: data.securityAnswer,
       });
       setSignupLoading(false);
       setSignupSuccess(true);
       toast.success('Account created! Welcome to the No Hunger Initiatives Nigeria family.', {
         duration: 4000,
       });
-<<<<<<< HEAD
-      setTimeout(() => {
-        router.push('/volunteer-dashboard');
-        setTimeout(() => {
-          toast('Complete your profile to get the most out of your Champion experience!', {
-            duration: 8000,
-            icon: '👤',
-            action: { label: 'Complete Profile', onClick: () => router.push('/profile') },
-          });
-        }, 1000);
-      }, 1500);
-=======
       setTimeout(() => router.push('/volunteer-dashboard'), 1500);
->>>>>>> develop
     } catch (err: any) {
       setSignupLoading(false);
       if (isRateLimitError(err)) {
@@ -373,49 +369,12 @@ export default function SignUpLoginContent() {
     }
   };
 
-  if (signupSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="text-center max-w-md animate-scale-in">
-          <div className="w-16 h-16 rounded-full bg-[hsl(142,72%,92%)] flex items-center justify-center mx-auto mb-4 shadow-green">
-            <CheckCircle2 size={32} className="text-[hsl(142,72%,22%)]" />
-          </div>
-          <h2 className="text-2xl font-700 text-foreground mb-2">You're in!</h2>
-          <p className="text-muted-foreground text-[15px]">
-            Your account has been created. Redirecting to your dashboard…
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[44%] xl:w-[46%] flex-col bg-gradient-to-br from-[hsl(142,72%,20%)] via-[hsl(142,72%,25%)] to-[hsl(158,64%,18%)] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-16 left-16 w-64 h-64 rounded-full bg-white/30 blur-3xl" />
-          <div className="absolute bottom-32 right-8 w-80 h-80 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full bg-green-300/20 blur-2xl" />
-        </div>
-        <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
-          {/* Logo + brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
-              <Heart size={20} className="text-white" />
-            </div>
-            <div>
-              <p className="font-display font-700 text-xl text-white">No Hunger Initiative</p>
-              <p className="text-[11px] text-green-100/80 uppercase tracking-widest">
-                No Hunger Champion Hub
-              </p>
-            </div>
-          </div>
+      {/* Hero copy */}
+      <div className="flex-1 flex flex-col justify-center bg-gradient-to-br from-green-600 to-green-800 px-8 lg:px-12">
 
-          {/* Hero copy */}
-          <div className="flex-1 flex flex-col justify-center">
-
-            <h1 className="text-4xl xl:text-5xl font-800 text-white leading-tight mb-5">
+        <h1 className="text-4xl xl:text-5xl font-800 text-white leading-tight mb-5">
               Feed a family.
               <br />
               <span className="text-green-200">Change a life.</span>
@@ -459,21 +418,6 @@ export default function SignUpLoginContent() {
                   </div>
                 );
               })}
-<<<<<<< HEAD
-              <a
-                href="https://www.nohungerfoodbank.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 mt-2 py-2 rounded-xl border border-white/20 text-[12px] font-600 text-green-100 hover:bg-white/10 transition-colors"
-              >
-                View More Programs
-                <ArrowRight size={12} />
-              </a>
-            </div>
-          </div>
-
-
-=======
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 mt-3">
                 <p className="text-[12px] text-green-50">
                   Visit our website to see more programs -{' '}
@@ -489,15 +433,12 @@ export default function SignUpLoginContent() {
               </div>
             </div>
           </div>
->>>>>>> develop
-        </div>
-      </div>
 
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 overflow-y-auto scrollbar-thin">
-        <div className="w-full max-w-md">
+          {/* Right panel */}
+          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 overflow-y-auto scrollbar-thin">
+            <div className="w-full max-w-md">
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <AppLogo size={36} />
+            <AppLogo src="/assets/images/NoHunger-Logo-Main2-1774544336394.png" size={36} />
             <div>
               <p className="font-display font-700 text-lg text-foreground">No Hunger Initiatives Nigeria</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
@@ -550,7 +491,7 @@ export default function SignUpLoginContent() {
                   <div className="mb-6">
                     <h2 className="text-2xl font-700 text-foreground">Reset your password</h2>
                     <p className="text-[14px] text-muted-foreground mt-1">
-                      Enter your email and we&apos;ll send you a reset link
+                      Answer your security question to reset your password
                     </p>
                   </div>
 
@@ -589,6 +530,55 @@ export default function SignUpLoginContent() {
                         />
                       </div>
                       <FieldError message={forgotForm.formState.errors.email?.message} />
+                    </div>
+
+                    {/* Security Question */}
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        Security Question
+                      </label>
+                      <div className="relative">
+                        <HelpCircle
+                          size={16}
+                          className={`absolute left-3.5 top-1/2 -translate-y-1/2 z-10 ${forgotForm.formState.errors.securityQuestion ? 'text-destructive' : 'text-[hsl(142,72%,35%)]'}`}
+                        />
+                        <select
+                          {...forgotForm.register('securityQuestion', {
+                            required: 'Security question is required',
+                          })}
+                          className={`w-full pl-10 pr-4 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 transition-all appearance-none ${forgotForm.formState.errors.securityQuestion ? 'border-destructive/60 focus:ring-destructive/20 focus:border-destructive bg-destructive/5' : 'border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)]'}`}
+                        >
+                          <option value="">Select your security question…</option>
+                          {SECURITY_QUESTIONS.map((question) => (
+                            <option key={question} value={question}>
+                              {question}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <FieldError message={forgotForm.formState.errors.securityQuestion?.message} />
+                    </div>
+
+                    {/* Security Answer */}
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        Security Answer
+                      </label>
+                      <div className="relative">
+                        <Shield
+                          size={16}
+                          className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${forgotForm.formState.errors.securityAnswer ? 'text-destructive' : 'text-[hsl(142,72%,35%)]'}`}
+                        />
+                        <input
+                          {...forgotForm.register('securityAnswer', {
+                            required: 'Security answer is required',
+                          })}
+                          type="text"
+                          placeholder="Your answer to the security question"
+                          className={inputClass(!!forgotForm.formState.errors.securityAnswer)}
+                        />
+                      </div>
+                      <FieldError message={forgotForm.formState.errors.securityAnswer?.message} />
                     </div>
 
                     <button
@@ -796,7 +786,7 @@ export default function SignUpLoginContent() {
                               required: 'First name is required',
                               minLength: { value: 2, message: 'Min. 2 characters' },
                             })}
-                            placeholder="Chidi"
+                            placeholder="Emeka"
                             className={inputClassSm(!!signupForm.formState.errors.firstName)}
                           />
                         </div>
@@ -811,7 +801,7 @@ export default function SignUpLoginContent() {
                             required: 'Last name is required',
                             minLength: { value: 2, message: 'Min. 2 characters' },
                           })}
-                          placeholder="Mensah"
+                          placeholder="Aliu"
                           className={`w-full px-3 py-2.5 bg-muted border rounded-xl text-[13.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all appearance-none ${signupForm.formState.errors.lastName ? 'border-destructive/60 focus:ring-destructive/20 focus:border-destructive bg-destructive/5' : 'border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)]'}`}
                         />
                         <FieldError message={signupForm.formState.errors.lastName?.message} />
@@ -980,6 +970,65 @@ export default function SignUpLoginContent() {
                           {skillsError}
                         </p>
                       )}
+                    </div>
+
+                    {/* Security Question */}
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        Security Question{' '}
+                        <span className="text-muted-foreground font-400 text-[12px]">
+                          (for password recovery)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <HelpCircle
+                          size={15}
+                          className={`absolute left-3 top-1/2 -translate-y-1/2 z-10 ${signupForm.formState.errors.securityQuestion ? 'text-destructive' : 'text-[hsl(142,72%,35%)]'}`}
+                        />
+                        <select
+                          {...signupForm.register('securityQuestion', {
+                            required: 'Please select a security question',
+                          })}
+                          className={`w-full pl-9 pr-3 py-2.5 bg-muted border rounded-xl text-[13.5px] text-foreground focus:outline-none focus:ring-2 transition-all appearance-none ${signupForm.formState.errors.securityQuestion ? 'border-destructive/60 focus:ring-destructive/20 focus:border-destructive bg-destructive/5' : 'border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)]'}`}
+                        >
+                          <option value="">Select a security question…</option>
+                          {SECURITY_QUESTIONS.map((question) => (
+                            <option key={question} value={question}>
+                              {question}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <FieldError message={signupForm.formState.errors.securityQuestion?.message} />
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        This will be used to reset your password if forgotten. Keep it safe and memorable.
+                      </p>
+                    </div>
+
+                    {/* Security Answer */}
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        Security Answer
+                      </label>
+                      <div className="relative">
+                        <Shield
+                          size={15}
+                          className={`absolute left-3 top-1/2 -translate-y-1/2 ${signupForm.formState.errors.securityAnswer ? 'text-destructive' : 'text-[hsl(142,72%,35%)]'}`}
+                        />
+                        <input
+                          {...signupForm.register('securityAnswer', {
+                            required: 'Security answer is required',
+                            minLength: {
+                              value: 2,
+                              message: 'Security answer must be at least 2 characters',
+                            },
+                          })}
+                          type="text"
+                          placeholder="Your answer to the security question"
+                          className={inputClassSm(!!signupForm.formState.errors.securityAnswer)}
+                        />
+                      </div>
+                      <FieldError message={signupForm.formState.errors.securityAnswer?.message} />
                     </div>
 
                     {/* Password */}

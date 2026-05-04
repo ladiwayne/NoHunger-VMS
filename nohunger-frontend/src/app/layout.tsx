@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'No Hunger Initiatives — No Hunger Champion Hub',
   description:
     'The friendly home for No Hunger Champions to join activities, track hours, and make impact across Nigeria.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/assets/images/NoHunger-Logo-Icon.png' },
   openGraph: {
     title: 'No Hunger Initiatives — No Hunger Champion Hub',
     description:

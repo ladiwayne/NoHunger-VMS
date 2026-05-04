@@ -4,7 +4,7 @@
  * Session persistence is handled by the httpOnly cookie set by Next.js API routes.
  */
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // In-memory token — survives the current page session but is cleared on refresh.
 // Restored from the httpOnly cookie via /api/auth/me on each page load.

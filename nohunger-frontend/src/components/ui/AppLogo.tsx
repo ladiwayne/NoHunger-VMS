@@ -13,7 +13,7 @@ interface AppLogoProps {
 }
 
 const AppLogo = memo(function AppLogo({
-  src = '/assets/images/NoHunger-Logo-Main1-1774553176269.png',
+  src = '/assets/images/NoHunger-Logo-Icon.png',
   iconName = 'SparklesIcon',
   size = 64,
   className = '',

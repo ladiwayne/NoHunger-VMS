@@ -78,60 +78,11 @@ router.post(
         console.log(`\n📧 PASSWORD RESET LINK (Development Only):\n${resetLink}\n`);
       }
 
-      // Return success (don't expose token in production)
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(200).json({
-          message: 'Password reset link sent to your email.',
-        });
-      }
-
-      // In development, return the token for testing
+      // Return the token for immediate password reset (without email requirement)
       return res.status(200).json({
-        message: 'Password reset link generated',
-        resetToken, // Only in development
-        resetLink, // Only in development
-        expiresIn: '1 hour',
-      });
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      res.status(500).json({ message: 'Error processing password reset request' });
-    }
-  }
-);
-        },
-        process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-        { expiresIn: '1h' }
-      );
-
-      // Store token metadata (for revocation/tracking)
-      resetTokens.set(resetToken, {
-        userId: user._id,
-        email: user.email,
-        expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
-        used: false,
-      });
-
-      // Build reset link
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:4028'}/reset-password?token=${resetToken}`;
-
-      // TODO: In production, send email with reset link
-      // For now, log it and return to user (in dev/staging)
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`\n📧 PASSWORD RESET LINK (Development Only):\n${resetLink}\n`);
-      }
-
-      // Return success (don't expose token in production)
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(200).json({
-          message: 'If that email address is in our system, you will receive a password reset link.',
-        });
-      }
-
-      // In development, return the token for testing
-      return res.status(200).json({
-        message: 'Password reset link generated',
-        resetToken, // Only in development
-        resetLink, // Only in development
+        message: 'Security verified. You can now reset your password.',
+        resetToken, // Token for immediate reset
+        allowDirectReset: true, // Flag to indicate password can be set immediately
         expiresIn: '1 hour',
       });
     } catch (error) {

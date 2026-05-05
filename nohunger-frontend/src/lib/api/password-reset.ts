@@ -11,6 +11,7 @@ export interface ForgotPasswordResponse {
   resetToken?: string; // Only in development
   resetLink?: string; // Only in development
   expiresIn?: string;
+  allowDirectReset?: boolean; // Flag to indicate password can be set immediately
 }
 
 export interface VerifyTokenResponse {

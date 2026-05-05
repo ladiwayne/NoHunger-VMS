@@ -26,8 +26,8 @@ import {
   Bell,
   Mail,
   Briefcase,
-  Instagram,
-  Twitter,
+  AtSign,
+  Link2,
   Shirt,
   MessageSquare,
   Building2,
@@ -679,7 +679,7 @@ export default function OnboardingPage() {
                           Instagram Handle
                         </label>
                         <div className="relative">
-                          <Instagram
+                          <AtSign
                             size={15}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                           />
@@ -697,7 +697,7 @@ export default function OnboardingPage() {
                           Twitter Handle
                         </label>
                         <div className="relative">
-                          <Twitter
+                          <Link2
                             size={15}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                           />

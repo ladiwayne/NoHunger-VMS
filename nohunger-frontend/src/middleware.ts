@@ -82,13 +82,12 @@ export function middleware(request: NextRequest) {
 
   const role = payload.role;
 
-  if ((role === 'admin' || role === 'super_admin') && isVolunteerPath) {
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-  }
+  // Volunteers cannot access admin paths
   if (role !== 'admin' && role !== 'super_admin' && isAdminPath) {
     return NextResponse.redirect(new URL('/volunteer-dashboard', request.url));
   }
 
+  // Admins can access both admin and volunteer paths (no redirect)
   return NextResponse.next();
 }
 

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { requestPasswordReset } from '@/lib/api/password-reset';
+import { requestPasswordReset, resetPassword } from '@/lib/api/password-reset';
 import { COUNTRIES } from '@/lib/constants/countries';
 import { SECURITY_QUESTIONS } from '@/lib/constants/security-questions';
 import {
@@ -174,8 +174,16 @@ export default function SignUpLoginContent() {
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotValidated, setForgotValidated] = useState(false);
+  const [resetPasswordToken, setResetPasswordToken] = useState('');
   const [forgotError, setForgotError] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    password: '',
+    confirmPassword: '',
+  });
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const router = useRouter();
@@ -314,23 +322,61 @@ export default function SignUpLoginContent() {
     try {
       const result = await requestPasswordReset(data.email, data.securityQuestion, data.securityAnswer);
 
-      toast.success('Password reset link generated!', {
-        description: 'Check your email for instructions. If not in inbox, check spam folder.',
-        duration: 5000,
-      });
-
-      if (process.env.NODE_ENV === 'development' && result?.resetLink) {
-        console.log('Development: Reset link -', result.resetLink);
-        console.log('Development: Reset token -', result.resetToken);
+      if (result?.resetToken && result?.allowDirectReset) {
+        // Direct reset after security verification
+        setResetPasswordToken(result.resetToken);
+        setForgotValidated(true);
+        toast.success('Security verified!', {
+          description: 'You can now set your new password.',
+          duration: 3000,
+        });
+      } else {
+        // Fallback for older API response
+        toast.success('Security verified!', {
+          description: 'Check your email for instructions.',
+          duration: 3000,
+        });
+        setForgotValidated(true);
       }
-
-      setForgotSent(true);
       setForgotLoading(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       setForgotError(message);
       toast.error('Password reset failed', { description: message });
       setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (resetPasswordForm.password !== resetPasswordForm.confirmPassword) {
+      setForgotError('Passwords do not match');
+      return;
+    }
+    if (resetPasswordForm.password.length < 8) {
+      setForgotError('Password must be at least 8 characters');
+      return;
+    }
+    setResetPasswordLoading(true);
+    setForgotError('');
+    try {
+      await resetPassword(resetPasswordToken, resetPasswordForm.password, resetPasswordForm.confirmPassword);
+      toast.success('Password reset successfully!', {
+        description: 'Redirecting to sign in...',
+        duration: 2000,
+      });
+      setTimeout(() => {
+        setForgotValidated(false);
+        setShowForgotPassword(false);
+        forgotForm.reset();
+        setResetPasswordForm({ password: '', confirmPassword: '' });
+      }, 1500);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An error occurred';
+      setForgotError(message);
+      toast.error('Password reset failed', { description: message });
+    } finally {
+      setResetPasswordLoading(false);
     }
   };
 
@@ -453,38 +499,100 @@ export default function SignUpLoginContent() {
               <button
                 onClick={() => {
                   setShowForgotPassword(false);
-                  setForgotSent(false);
+                  setForgotValidated(false);
                   setForgotError('');
                   forgotForm.reset();
+                  setResetPasswordForm({ password: '', confirmPassword: '' });
                 }}
                 className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors mb-6"
               >
                 <ArrowLeft size={14} /> Back to Sign In
               </button>
 
-              {forgotSent ? (
-                <div className="text-center py-6">
-                  <div className="w-14 h-14 rounded-full bg-[hsl(142,72%,92%)] flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 size={28} className="text-[hsl(142,72%,22%)]" />
+              {forgotValidated ? (
+                <div className="animate-slide-up">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-700 text-foreground">Set new password</h2>
+                    <p className="text-[14px] text-muted-foreground mt-1">
+                      Choose a strong password for your account
+                    </p>
                   </div>
-                  <h2 className="text-xl font-700 text-foreground mb-2">Check your email</h2>
-                  <p className="text-[14px] text-muted-foreground mb-1">
-                    We sent a password reset link to
-                  </p>
-                  <p className="text-[14px] font-600 text-foreground mb-5">
-                    {forgotForm.getValues('email')}
-                  </p>
-                  <p className="text-[13px] text-muted-foreground">
-                    Didn&apos;t receive it?{' '}
+
+                  {forgotError && (
+                    <div className="flex items-start gap-2.5 p-3.5 bg-destructive/8 border border-destructive/20 rounded-xl mb-5">
+                      <AlertCircle size={16} className="text-destructive flex-shrink-0 mt-0.5" />
+                      <p className="text-[13px] text-destructive">{forgotError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        New password
+                      </label>
+                      <div className="relative">
+                        <Lock
+                          size={16}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[hsl(142,72%,35%)]"
+                        />
+                        <input
+                          type={showResetPassword ? 'text' : 'password'}
+                          placeholder="Min. 8 characters"
+                          value={resetPasswordForm.password}
+                          onChange={(e) => setResetPasswordForm((p) => ({ ...p, password: e.target.value }))}
+                          className="w-full pl-10 pr-10 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetPassword(!showResetPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-[hsl(142,72%,29%)] transition-colors"
+                        >
+                          {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                        Confirm new password
+                      </label>
+                      <div className="relative">
+                        <Lock
+                          size={16}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[hsl(142,72%,35%)]"
+                        />
+                        <input
+                          type={showResetConfirm ? 'text' : 'password'}
+                          placeholder="Repeat password"
+                          value={resetPasswordForm.confirmPassword}
+                          onChange={(e) => setResetPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                          className="w-full pl-10 pr-10 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 border-border focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetConfirm(!showResetConfirm)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-[hsl(142,72%,29%)] transition-colors"
+                        >
+                          {showResetConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
                     <button
-                      onClick={() => {
-                        setForgotSent(false);
-                      }}
-                      className="text-[hsl(142,72%,29%)] font-600 hover:underline"
+                      type="submit"
+                      disabled={resetPasswordLoading}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-[hsl(142,72%,29%)] text-white font-700 rounded-xl hover:bg-[hsl(142,72%,22%)] hover:shadow-[0_4px_14px_0_rgba(22,101,52,0.30)] transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
                     >
-                      Resend email
+                      {resetPasswordLoading ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <>
+                          <span>Update Password</span>
+                          <ArrowRight size={16} />
+                        </>
+                      )}
                     </button>
-                  </p>
+                  </form>
                 </div>
               ) : (
                 <>
@@ -590,7 +698,7 @@ export default function SignUpLoginContent() {
                         <Loader2 size={18} className="animate-spin" />
                       ) : (
                         <>
-                          <span>Send Reset Link</span>
+                          <span>Continue</span>
                           <ArrowRight size={16} />
                         </>
                       )}

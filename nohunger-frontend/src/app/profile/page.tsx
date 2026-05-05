@@ -23,8 +23,8 @@ import {
   Heart,
   Shirt,
   Calendar,
-  Instagram,
-  Twitter,
+  AtSign,
+  Link2,
   Building2,
   MessageSquare,
   Briefcase,
@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import Icon from '@/components/ui/AppIcon';
 import { GENDER_OPTIONS, NIGERIA_STATES } from '@/lib/constants/nigeria';
 
 const SKILL_OPTIONS = [
@@ -606,7 +605,7 @@ export default function ProfilePage() {
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
-                    <Instagram size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <AtSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
                       value={form.instagramHandle}
                       onChange={(e) => setForm((p) => ({ ...p, instagramHandle: e.target.value }))}
@@ -615,7 +614,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="relative">
-                    <Twitter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
                       value={form.twitterHandle}
                       onChange={(e) => setForm((p) => ({ ...p, twitterHandle: e.target.value }))}

@@ -10,7 +10,7 @@ const nextConfig = {
   },
 
   turbopack: {
-    root: process.cwd(),
+    root: 'C:\\Users\\Dell Precision\\Desktop\\App Build\\NoHunger VMS',
   },
 
   async redirects() {

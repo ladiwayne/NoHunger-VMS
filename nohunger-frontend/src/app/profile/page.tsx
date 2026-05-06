@@ -346,10 +346,10 @@ export default function ProfilePage() {
             </div>
 
             {/* Form */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5 space-y-4">
+            <div className="bg-card border border-border rounded-2xl shadow-card p-4 sm:p-5 space-y-4">
               <h2 className="text-[15px] font-700 text-foreground">Personal Information</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">
                     Full Name
@@ -463,7 +463,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Gender and Shirt Size */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">
                     Gender <span className="text-muted-foreground font-normal">(Optional)</span>
@@ -521,7 +521,7 @@ export default function ProfilePage() {
                     placeholder="Address line 2 (optional)"
                     className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       value={form.city}
                       onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
@@ -551,7 +551,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">
                     Alternate Phone <span className="text-muted-foreground font-normal">(Optional)</span>
@@ -603,7 +603,7 @@ export default function ProfilePage() {
                 <label className="block text-[13px] font-600 text-foreground mb-1.5">
                   Social Media <span className="text-muted-foreground font-normal">(Optional)</span>
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="relative">
                     <AtSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input

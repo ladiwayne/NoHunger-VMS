@@ -58,6 +58,18 @@ module.exports = {
         md: '0.5rem',
         sm: '0.375rem',
       },
+      spacing: {
+        'touch': '2.75rem',
+        'touch-sm': '2.5rem',
+      },
+      minWidth: {
+        'touch': '2.75rem',
+        'touch-sm': '2.5rem',
+      },
+      minHeight: {
+        'touch': '2.75rem',
+        'touch-sm': '2.5rem',
+      },
       boxShadow: {
         card: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
         'card-hover': '0 4px 16px 0 rgba(22,101,52,0.12), 0 2px 6px -1px rgba(22,101,52,0.08)',
@@ -94,5 +106,21 @@ module.exports = {
   },
   plugins: [
     require('@tailwindcss/typography'),
+    function({ addComponents, theme }) {
+      addComponents({
+        '.touch-target': {
+          '@apply min-w-[2.75rem] min-h-[2.75rem]': {},
+        },
+        '.touch-target-sm': {
+          '@apply min-w-[2.5rem] min-h-[2.5rem]': {},
+        },
+        '.mobile-safe-padding': {
+          '@apply px-3 sm:px-4 md:px-6 py-4 sm:py-6': {},
+        },
+        '.responsive-grid-cols': {
+          '@apply grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4': {},
+        },
+      });
+    },
   ],
 };

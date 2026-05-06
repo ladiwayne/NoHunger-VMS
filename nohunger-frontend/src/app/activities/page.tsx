@@ -87,18 +87,16 @@ export default function ActivitiesPage() {
 
   return (
     <AppLayout activePath="/activities">
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-700 text-foreground">Browse Activities</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">
-              Find where No Hunger Champions can jump in and help
-            </p>
-          </div>
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-700 text-foreground">Browse Activities</h1>
+          <p className="text-[13px] sm:text-[14px] text-muted-foreground mt-1">
+            Find where No Hunger Champions can jump in and help
+          </p>
         </div>
 
         {/* Search */}
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -107,12 +105,12 @@ export default function ActivitiesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search activities or locations…"
-            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-card border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
           />
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -129,7 +127,7 @@ export default function ActivitiesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filtered.map((activity) => {
               const app = applications[activity.id];
               const isPast = new Date(activity.end_date || activity.endDate || 0) < new Date();

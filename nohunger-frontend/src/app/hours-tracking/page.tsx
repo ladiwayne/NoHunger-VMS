@@ -94,16 +94,16 @@ export default function HoursTrackingPage() {
   return (
     <AppLayout activePath="/hours-tracking">
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Hours Tracking</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">
+            <h1 className="text-2xl sm:text-3xl font-700 text-foreground">Hours Tracking</h1>
+            <p className="text-[13px] sm:text-[14px] text-muted-foreground mt-1">
               Your complete volunteer hours log
             </p>
           </div>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-xl text-[13.5px] font-600 text-foreground hover:bg-muted transition-all"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border rounded-xl text-[13px] sm:text-[13.5px] font-600 text-foreground hover:bg-muted transition-all min-h-[40px] whitespace-nowrap"
           >
             <Download size={15} /> Export CSV
           </button>
@@ -111,16 +111,16 @@ export default function HoursTrackingPage() {
 
         {/* Summary cards */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="h-28 bg-card border border-border rounded-2xl animate-pulse"
+                className="h-24 sm:h-28 bg-card border border-border rounded-2xl animate-pulse"
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               {
                 label: 'Total Hours',

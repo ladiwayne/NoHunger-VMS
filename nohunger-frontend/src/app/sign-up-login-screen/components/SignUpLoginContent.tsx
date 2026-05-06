@@ -414,28 +414,28 @@ export default function SignUpLoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Hero copy */}
-      <div className="flex-1 flex flex-col justify-center bg-gradient-to-br from-green-600 to-green-800 px-8 lg:px-12">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+      {/* Hero copy - hidden on mobile, shown on desktop */}
+      <div className="hidden lg:flex flex-1 flex-col justify-center bg-gradient-to-br from-green-600 to-green-800 px-8 xl:px-12">
 
-        <h1 className="text-4xl xl:text-5xl font-800 text-white leading-tight mb-5">
+        <h1 className="text-3xl xl:text-5xl font-800 text-white leading-tight mb-4 xl:mb-5">
               Feed a family.
               <br />
               <span className="text-green-200">Change a life.</span>
             </h1>
-            <p className="text-green-100/90 text-[15px] leading-relaxed max-w-sm mb-8">
+            <p className="text-green-100/90 text-sm xl:text-[15px] leading-relaxed max-w-sm mb-6 xl:mb-8">
               No Hunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious food to families in need, powered by caring Champions like you.
             </p>
 
             {/* Impact stats */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="grid grid-cols-3 gap-2 mb-6 xl:mb-8">
               {IMPACT_STATS.map((stat) => (
                 <div
                   key={stat.label}
-                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 hover:bg-white/15 transition-colors"
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-3 xl:p-4 border border-white/15 hover:bg-white/15 transition-colors"
                 >
-                  <p className="text-2xl font-800 text-white font-tabular">{stat.value}</p>
-                  <p className="text-[11px] text-green-100/80 mt-0.5 leading-tight">{stat.label}</p>
+                  <p className="text-xl xl:text-2xl font-800 text-white font-tabular">{stat.value}</p>
+                  <p className="text-[10px] xl:text-[11px] text-green-100/80 mt-0.5 leading-tight">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -479,13 +479,13 @@ export default function SignUpLoginContent() {
           </div>
 
           {/* Right panel */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 overflow-y-auto scrollbar-thin">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto scrollbar-thin">
             <div className="w-full max-w-md">
-          <div className="flex items-center gap-2.5 mb-8 lg:hidden">
+          <div className="flex items-center gap-2.5 mb-6 sm:mb-8 lg:hidden">
             <AppLogo src="/assets/images/NoHunger-Logo-Main2-1774544336394.png" size={36} />
             <div>
-              <p className="font-display font-700 text-lg text-foreground">No Hunger Initiatives Nigeria</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              <p className="font-display font-700 text-base sm:text-lg text-foreground">No Hunger Initiatives Nigeria</p>
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-widest">
                 No Hunger Champion Hub
               </p>
             </div>

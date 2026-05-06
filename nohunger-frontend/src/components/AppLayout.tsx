@@ -40,11 +40,11 @@ export default function AppLayout({ children, activePath }: AppLayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile topbar */}
-        <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3 bg-card border-b border-border">
-          <div className="flex items-center gap-3">
+        <div className="lg:hidden flex items-center justify-between gap-2 px-3 sm:px-4 py-3 bg-card border-b border-border">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0 min-w-[44px] h-10 flex items-center justify-center active:bg-muted/80"
               aria-label="Open navigation menu"
             >
               <svg
@@ -57,8 +57,8 @@ export default function AppLayout({ children, activePath }: AppLayoutProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                 <svg
                   className="w-4 h-4 text-white"
                   fill="none"
@@ -73,12 +73,14 @@ export default function AppLayout({ children, activePath }: AppLayoutProps) {
                   />
                 </svg>
               </div>
-              <span className="font-display font-700 text-base text-foreground">
-                No Hunger Initiatives
+              <span className="font-display font-700 text-sm sm:text-base text-foreground truncate">
+                No Hunger
               </span>
             </div>
           </div>
-          <NotificationBell />
+          <div className="flex-shrink-0">
+            <NotificationBell />
+          </div>
         </div>
 
         {/* Desktop topbar with notification bell */}
@@ -87,7 +89,7 @@ export default function AppLayout({ children, activePath }: AppLayoutProps) {
         </div>
 
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 lg:py-8">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 lg:py-8">
             {children}
           </div>
         </main>

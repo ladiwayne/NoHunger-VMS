@@ -368,7 +368,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* KPI Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
           {kpis.map((kpi) => {
             const KpiIcon = kpi.icon;
             return (
@@ -397,7 +397,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Link
             href="/admin/volunteers?panel=message"
             className="flex items-center gap-3 p-4 bg-card border border-border rounded-2xl shadow-card hover:border-primary/30 hover:shadow-[0_4px_16px_0_rgba(22,101,52,0.10)] transition-all group"
@@ -439,7 +439,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Charts Row 1: Hours + Champion Growth */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {/* Monthly hours chart */}
           <div className="bg-card border border-border rounded-2xl shadow-card p-5">
             <div className="flex items-center justify-between mb-1">

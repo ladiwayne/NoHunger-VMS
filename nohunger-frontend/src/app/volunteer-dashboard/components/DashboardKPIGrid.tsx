@@ -16,7 +16,7 @@ const kpiCards = [
     icon: Clock,
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
-    colSpan: 'col-span-1 md:col-span-2 xl:col-span-2',
+    colSpan: 'col-span-1',
     hero: true,
     href: '/hours-tracking',
   },
@@ -82,11 +82,8 @@ const kpiCards = [
 
 export default function DashboardKPIGrid() {
   return (
-    // 4-column grid: hero spans 2 cols, 3 regular cards fill remaining 2 cols per row
-    // Row 1: [hero 2-col] [events] [hours-month]
-    // Row 2: [pending-invitations] [streak] + 2 empty = need to span
-    // Adjusted: 4-col grid, hero=2col, 4 singles. Row1: hero+events+month = 4col ✓, Row2: invites+streak+2col-spacer — make invites+streak span 2 each
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-4">
+    // Mobile-first responsive grid: 1 col on mobile, 2 on tablet, 4 on desktop
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {kpiCards?.map((card) => {
         const Icon = card?.icon;
         return (

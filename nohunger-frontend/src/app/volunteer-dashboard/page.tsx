@@ -182,25 +182,23 @@ export default function VolunteerDashboardPage() {
 
   return (
     <AppLayout activePath="/volunteer-dashboard">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-700 text-foreground">
-              {greeting()}, {profile?.full_name?.split(' ')[0] || 'No Hunger Champion'} 👋
-            </h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">
-              {new Date().toLocaleDateString('en', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-              {profile?.region ? ` · ${profile.region}` : ''}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-700 text-foreground">
+            {greeting()}, {profile?.full_name?.split(' ')[0] || 'No Hunger Champion'} 👋
+          </h1>
+          <p className="text-[13px] sm:text-[14px] text-muted-foreground mt-1">
+            {new Date().toLocaleDateString('en', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+            {profile?.region ? ` · ${profile.region}` : ''}
+          </p>
           {profile?.volunteer_status === 'pending' && (
-            <div className="flex items-center gap-2 text-[12px] text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-[12px] text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2 mt-2">
               <AlertTriangle size={14} />
               <span className="font-600">Pending admin approval for No Hunger Champion access</span>
             </div>

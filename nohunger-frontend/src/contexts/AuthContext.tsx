@@ -150,7 +150,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string, metadata: any = {}) => {
     const result = await apiRegister(email, password, {
       fullName: metadata?.fullName || '',
-      role: metadata?.role || 'volunteer',
       phone: metadata?.phone || '',
       region: metadata?.region || '',
       skills: metadata?.skills || [],

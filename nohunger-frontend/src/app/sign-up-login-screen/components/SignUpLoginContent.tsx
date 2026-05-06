@@ -176,6 +176,7 @@ export default function SignUpLoginContent() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotValidated, setForgotValidated] = useState(false);
   const [resetPasswordToken, setResetPasswordToken] = useState('');
+  const [allowDirectReset, setAllowDirectReset] = useState(false);
   const [forgotError, setForgotError] = useState('');
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [resetPasswordForm, setResetPasswordForm] = useState({
@@ -322,22 +323,19 @@ export default function SignUpLoginContent() {
     try {
       const result = await requestPasswordReset(data.email, data.securityQuestion, data.securityAnswer);
 
-      if (result?.resetToken && result?.allowDirectReset) {
-        // Direct reset after security verification
+      if (result?.resetToken) {
+        // Direct reset when backend returns a token for development/testing
         setResetPasswordToken(result.resetToken);
-        setForgotValidated(true);
-        toast.success('Security verified!', {
-          description: 'You can now set your new password.',
-          duration: 3000,
-        });
-      } else {
-        // Fallback for older API response
-        toast.success('Security verified!', {
-          description: 'Check your email for instructions.',
-          duration: 3000,
-        });
-        setForgotValidated(true);
       }
+      setAllowDirectReset(!!result?.allowDirectReset);
+
+      setForgotValidated(true);
+      toast.success('Security verified!', {
+        description: result?.resetToken || result?.allowDirectReset
+          ? 'You can now set your new password.'
+          : 'Check your email for instructions.',
+        duration: 3000,
+      });
       setForgotLoading(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
@@ -514,7 +512,9 @@ export default function SignUpLoginContent() {
                   <div className="mb-6">
                     <h2 className="text-2xl font-700 text-foreground">Set new password</h2>
                     <p className="text-[14px] text-muted-foreground mt-1">
-                      Choose a strong password for your account
+                      {resetPasswordToken || allowDirectReset
+                        ? 'Choose a strong password for your account'
+                        : 'Check your email for the password reset link.'}
                     </p>
                   </div>
 
@@ -525,11 +525,12 @@ export default function SignUpLoginContent() {
                     </div>
                   )}
 
-                  <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
-                    <div>
-                      <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                        New password
-                      </label>
+                  {(resetPasswordToken || allowDirectReset) ? (
+                    <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
+                      <div>
+                        <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                          New password
+                        </label>
                       <div className="relative">
                         <Lock
                           size={16}
@@ -593,6 +594,14 @@ export default function SignUpLoginContent() {
                       )}
                     </button>
                   </form>
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-muted p-5 text-[14px] text-foreground">
+                      <p className="font-medium mb-2">Reset link sent</p>
+                      <p className="text-sm text-muted-foreground">
+                        We have sent an email with your password reset link. Open that link to set your new password.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>

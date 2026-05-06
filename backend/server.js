@@ -46,6 +46,15 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ message: 'Server is running' });
 });
 
+// Root health check for Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Request timing middleware for performance monitoring
 app.use((req, res, next) => {
   const startTime = Date.now();

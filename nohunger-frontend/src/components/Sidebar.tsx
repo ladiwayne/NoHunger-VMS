@@ -194,10 +194,7 @@ export default function Sidebar({
                     <>
                       <span className="text-[13.5px] flex-1 min-w-0 truncate">{item.label}</span>
                       {item.badge && (
-                        <span
-                          className={`text-[10px] font-700 px-1.5 py-0.5 rounded-full min-w-[18px] text-center
-                          ${item.badgeVariant === 'warning' ? 'bg-warning/15 text-warning' : 'bg-primary/15 text-primary'}`}
-                        >
+                        <span className="text-[10px] font-700 px-1.5 py-0.5 rounded-full min-w-[18px] text-center bg-primary/15 text-primary">
                           {item.badge}
                         </span>
                       )}

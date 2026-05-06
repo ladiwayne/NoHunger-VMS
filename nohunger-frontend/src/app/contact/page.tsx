@@ -153,7 +153,63 @@ export default function ContactPage() {
               <h3 className="font-600 text-foreground mb-4">Office Address</h3>
               <div className="text-sm text-muted-foreground">
                 <p>No Hunger Initiatives Nigeria</p>
-                <p>Lagos, Nigeria</p>
+                <p>Corporate 14, Dubai-Abuja International Market, Behind Games Village, Kaura, Abuja, Nigeria</p>
+              </div>
+            </div>
+
+            {/* Social Media Links */}
+            <div className="bg-white border border-border rounded-xl p-6">
+              <h3 className="font-600 text-foreground mb-4">Follow Us</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <a
+                  href="https://www.facebook.com/nohunger.foodbank.5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group"
+                >
+                  <ExternalLink size={20} className="text-blue-600" />
+                  <span className="text-sm font-600 text-foreground">Facebook</span>
+                </a>
+
+                <a
+                  href="https://www.instagram.com/nohungerfoodbank/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group"
+                >
+                  <ExternalLink size={20} className="text-pink-600" />
+                  <span className="text-sm font-600 text-foreground">Instagram</span>
+                </a>
+
+                <a
+                  href="http://x.com/nfoodbank/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group"
+                >
+                  <ExternalLink size={20} className="text-gray-600" />
+                  <span className="text-sm font-600 text-foreground">X (Twitter)</span>
+                </a>
+
+                <a
+                  href="https://www.linkedin.com/in/no-hunger-foodbank-b802051a9/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group"
+                >
+                  <ExternalLink size={20} className="text-blue-700" />
+                  <span className="text-sm font-600 text-foreground">LinkedIn</span>
+                </a>
+
+                <a
+                  href="https://www.youtube.com/channel/UCqdWkgY1x8nzliHfXV6WeCw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group col-span-2"
+                >
+                  <ExternalLink size={20} className="text-red-600" />
+                  <span className="text-sm font-600 text-foreground">YouTube</span>
+                </a>
               </div>
             </div>
           </div>

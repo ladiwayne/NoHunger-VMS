@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7-jammy
+    container_name: nohunger-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: changeme123
+      MONGO_INITDB_DATABASE: nohunger-vms
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - nohunger-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nohunger-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:changeme123@mongodb:27017/nohunger-vms?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-your-secure-jwt-secret-key-here}
+      - JWT_EXPIRE=7d
+      - ALLOWED_ORIGINS=https://your-frontend-domain.com
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - nohunger-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend App
+  frontend:
+    build:
+      context: ./nohunger-frontend
+      dockerfile: Dockerfile
+    container_name: nohunger-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000/api
+      - NEXT_PUBLIC_SITE_URL=https://your-frontend-domain.com
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - nohunger-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  nohunger-network:
+    driver: bridge

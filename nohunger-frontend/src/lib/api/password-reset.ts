@@ -4,8 +4,6 @@
  */
 import { apiFetch } from './client';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
 export interface ForgotPasswordResponse {
   message: string;
   resetToken?: string; // Only in development
@@ -37,7 +35,7 @@ export async function requestPasswordReset(
   securityAnswer: string
 ): Promise<ForgotPasswordResponse | null> {
   try {
-    const response = await apiFetch<ForgotPasswordResponse>(`${BASE_URL}/auth/forgot-password`, {
+    const response = await apiFetch<ForgotPasswordResponse>('/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, securityQuestion, securityAnswer }),
@@ -57,7 +55,7 @@ export async function requestPasswordReset(
 export async function verifyResetToken(token: string): Promise<VerifyTokenResponse | null> {
   try {
     const response = await apiFetch<VerifyTokenResponse>(
-      `${BASE_URL}/auth/verify-reset-token`,
+      '/auth/verify-reset-token',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -84,7 +82,7 @@ export async function resetPassword(
   confirmPassword: string
 ): Promise<ResetPasswordResponse | null> {
   try {
-    const response = await apiFetch<ResetPasswordResponse>(`${BASE_URL}/auth/reset-password`, {
+    const response = await apiFetch<ResetPasswordResponse>('/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -20,8 +20,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: 'New password must be at least 8 characters' }, { status: 400 });
     }
 
-    // Get the token from cookies
-    const token = getToken();
+    // Get the token from cookies (httpOnly cookie set by login)
+    const token = request.cookies.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }

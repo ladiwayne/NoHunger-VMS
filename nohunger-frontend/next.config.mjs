@@ -4,7 +4,6 @@ import { imageHosts } from './image-hosts.config.mjs';
 const nextConfig = {
   productionBrowserSourceMaps: true,
   // distDir: process.env.DIST_DIR || '.next',
-  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -13,9 +12,7 @@ const nextConfig = {
     remotePatterns: imageHosts,
   },
 
-  turbopack: {
-    root: 'C:\\Users\\Dell Precision\\Desktop\\App Build\\NoHunger VMS',
-  },
+
 
   async redirects() {
     return [

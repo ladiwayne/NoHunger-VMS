@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "projectSettings": {
+    "rootDirectory": "nohunger-frontend",
+    "nodeVersion": "20.x"
+  }
+}

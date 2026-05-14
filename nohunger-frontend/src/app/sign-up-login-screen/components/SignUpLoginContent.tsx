@@ -254,6 +254,24 @@ export default function SignUpLoginContent() {
     });
   };
 
+  const addCustomSkill = () => {
+    const trimmed = customSkill.trim();
+    if (!trimmed) return;
+    setSelectedSkills((prev) => {
+      if (prev.includes(trimmed)) return prev;
+      return [...prev, trimmed];
+    });
+    setCustomSkill('');
+    setSkillsError('');
+  };
+
+  const handleSkillInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomSkill();
+    }
+  };
+
   const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
 
   const handleLogin = async (data: LoginFormData) => {
@@ -399,10 +417,10 @@ export default function SignUpLoginContent() {
       });
       setSignupLoading(false);
       setSignupSuccess(true);
-      toast.success('Account created! Welcome to the No Hunger Initiatives Nigeria family.', {
+      toast.success('Account created! Complete your volunteer profile to get matched quickly.', {
         duration: 4000,
       });
-      setTimeout(() => router.push('/volunteer-dashboard'), 1500);
+      setTimeout(() => router.push('/onboarding'), 1500);
     } catch (err: any) {
       setSignupLoading(false);
       if (isRateLimitError(err)) {
@@ -1008,7 +1026,7 @@ export default function SignUpLoginContent() {
                       <label className="block text-[13px] font-600 text-foreground mb-2">
                         Skills{' '}
                         <span className="text-muted-foreground font-400">
-                          (select all that apply)
+                          (type your skills or select from suggestions)
                         </span>
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -1035,24 +1053,20 @@ export default function SignUpLoginContent() {
                       {/* Others input */}
                       <div className="mt-3">
                         <label className="block text-[12px] font-600 text-foreground mb-1.5">
-                          Others (please specify)
+                          Add your own skills
                         </label>
                         <input
                           type="text"
                           value={customSkill}
                           onChange={(e) => setCustomSkill(e.target.value)}
-                          placeholder="e.g., Event Planning, Social Media, Fundraising..."
+                          onKeyDown={handleSkillInputKey}
+                          placeholder="Type a skill and press Enter or click Add"
                           className={`w-full pl-3 pr-4 py-2.5 bg-muted border border-border rounded-xl text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all ${skillsError ? 'border-destructive/30' : ''}`}
                         />
                         {customSkill.trim() && (
                           <button
                             type="button"
-                            onClick={() => {
-                              if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
-                                setSelectedSkills(prev => [...prev, customSkill.trim()]);
-                                setCustomSkill('');
-                              }
-                            }}
+                            onClick={addCustomSkill}
                             className="mt-2 px-3 py-1.5 text-[12px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-lg hover:bg-[hsl(142,72%,22%)] transition-colors"
                           >
                             Add Skill

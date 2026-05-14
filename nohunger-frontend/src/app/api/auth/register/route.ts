@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await backendRes.json();
+    const data = await backendRes.json().catch(() => ({ message: 'Failed to parse backend response' }));
 
     if (!backendRes.ok) {
+      console.error('[Register] Backend error:', backendRes.status, data);
       return NextResponse.json(data, { status: backendRes.status });
     }
 
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (err: any) {
+    console.error('[Register] Server error:', err.message);
     return NextResponse.json(
       { message: err.message || 'Internal server error' },
       { status: 500 }

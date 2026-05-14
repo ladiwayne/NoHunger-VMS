@@ -79,6 +79,7 @@ export default function ProfilePage() {
     bio: '',
     skills: [] as string[],
   });
+  const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState({ totalHours: 0, eventsAttended: 0 });
@@ -192,6 +193,16 @@ export default function ProfilePage() {
       ...p,
       skills: p.skills.includes(skill) ? p.skills.filter((s) => s !== skill) : [...p.skills, skill],
     }));
+  };
+
+  const addSkill = () => {
+    const trimmed = skillInput.trim();
+    if (!trimmed) return;
+    setForm((p) => {
+      if (p.skills.includes(trimmed)) return p;
+      return { ...p, skills: [...p.skills, trimmed] };
+    });
+    setSkillInput('');
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -650,8 +661,45 @@ export default function ProfilePage() {
                 <h2 className="text-[15px] font-700 text-foreground">Skills</h2>
               </div>
               <p className="text-[12px] text-muted-foreground mb-3">
-                Select all skills that apply to you
+                Type your skills and click Add, or choose from suggested skills below.
               </p>
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="text"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSkill();
+                    }
+                  }}
+                  placeholder="e.g. Community outreach, Training, Design"
+                  className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={addSkill}
+                  className="px-4 py-2 text-[13px] font-600 text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {form.skills
+                  .filter((skill) => !SKILL_OPTIONS.includes(skill))
+                  .map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, skills: p.skills.filter((s) => s !== skill) }))}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(142,72%,92%)] text-[hsl(142,72%,20%)] border border-[hsl(142,72%,65%)] text-[13px] font-600"
+                    >
+                      {skill}
+                      ×
+                    </button>
+                  ))}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {SKILL_OPTIONS.map((skill) => {
                   const selected = form.skills.includes(skill);

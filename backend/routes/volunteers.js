@@ -149,6 +149,11 @@ router.put('/:id', auth, [
   body('twitterHandle').optional().trim().isLength({ max: 100 }),
   body('shirtSize').optional().isIn(['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']),
   body('whyVolunteer').optional().trim().isLength({ max: 500 }),
+  body('skills').optional().isArray().withMessage('Skills must be an array of strings'),
+  body('skills.*').optional().trim().isString().withMessage('Each skill must be a string'),
+  body('availability').optional().isArray().withMessage('Availability must be an array of strings'),
+  body('availability.*').optional().trim().isString().withMessage('Each availability item must be a string'),
+  body('onboardingCompleted').optional().isBoolean().withMessage('onboardingCompleted must be a boolean'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -192,7 +197,11 @@ router.put('/:id', auth, [
     if (alternatePhone !== undefined) volunteer.alternatePhone = alternatePhone;
     if (gender !== undefined) volunteer.gender = gender;
     if (bio) volunteer.bio = bio;
-    if (skills) volunteer.skills = skills;
+    if (skills !== undefined) {
+      volunteer.skills = Array.isArray(skills)
+        ? skills.map((skill) => String(skill).trim()).filter(Boolean)
+        : volunteer.skills;
+    }
     if (profilePicture) volunteer.profilePicture = profilePicture;
     if (region !== undefined) volunteer.region = region;
     if (streetAddress !== undefined) volunteer.streetAddress = streetAddress;
@@ -207,7 +216,11 @@ router.put('/:id', auth, [
     if (twitterHandle !== undefined) volunteer.twitterHandle = twitterHandle;
     if (shirtSize !== undefined) volunteer.shirtSize = shirtSize;
     if (whyVolunteer !== undefined) volunteer.whyVolunteer = whyVolunteer;
-    if (availability !== undefined) volunteer.availability = availability;
+    if (availability !== undefined) {
+      volunteer.availability = Array.isArray(availability)
+        ? availability.map((item) => String(item).trim()).filter(Boolean)
+        : volunteer.availability;
+    }
     if (onboardingCompleted !== undefined) volunteer.onboardingCompleted = onboardingCompleted;
 
     await volunteer.save();

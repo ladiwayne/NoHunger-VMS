@@ -24,6 +24,8 @@ const sanitizeRegister = [
   body('phone').optional().trim().isLength({ max: 20 }),
   body('country').optional().trim().isLength({ max: 100 }),
   body('region').optional().trim().isLength({ max: 100 }),
+  body('skills').optional().isArray().withMessage('Skills must be an array of strings'),
+  body('skills.*').optional().trim().isString().withMessage('Each skill must be a string'),
   body('securityQuestion').notEmpty().withMessage('Security question is required'),
   body('securityAnswer').notEmpty().withMessage('Security answer is required'),
 ];
@@ -49,6 +51,10 @@ router.post('/register', sanitizeRegister, async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    const normalizedSkills = Array.isArray(skills)
+      ? skills.map((skill) => String(skill).trim()).filter(Boolean)
+      : [];
+
     // Create new user
     user = new User({
       firstName,
@@ -59,7 +65,7 @@ router.post('/register', sanitizeRegister, async (req, res) => {
       gender: gender || '',
       role: 'volunteer',
       status: 'approved',
-      skills,
+      skills: normalizedSkills,
       region: region || country || '',
       securityQuestion,
       securityAnswer: securityAnswer.toLowerCase().trim(), // Normalize answer

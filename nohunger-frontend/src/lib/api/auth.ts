@@ -18,14 +18,28 @@ export interface SignUpOptions {
 
 /** Helper for calling the Next.js auth API routes (same-origin, httpOnly cookie handling). */
 async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...((options.headers as Record<string, string>) || {}) },
-    credentials: 'include',
-  });
-  const data = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
-  if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
-  return data;
+  const suppressAuthMeErrors = path === '/api/auth/me';
+
+  try {
+    const response = await fetch(path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...((options.headers as Record<string, string>) || {}) },
+      credentials: 'include',
+    });
+    const data = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+    if (!response.ok) {
+      if (!(response.status === 401 && suppressAuthMeErrors)) {
+        console.error(`[authFetch] Error on ${path}:`, response.status, data);
+      }
+      throw new Error(data.message || `HTTP ${response.status}`);
+    }
+    return data;
+  } catch (error: any) {
+    if (!(suppressAuthMeErrors && error?.message === 'Not authenticated')) {
+      console.error(`[authFetch] Request failed for ${path}:`, error.message);
+    }
+    throw error;
+  }
 }
 
 export async function login(email: string, password: string): Promise<LoginResult | null> {

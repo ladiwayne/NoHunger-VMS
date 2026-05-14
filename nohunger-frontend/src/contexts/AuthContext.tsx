@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // On mount: restore session from localStorage JWT
   useEffect(() => {
     const initAuth = async () => {
-      // If no stored profile, user was never logged in — skip the server round-trip
+      // Temporarily skip the getMe() call to debug page load issues
       const stored = localStorage.getItem('auth-user');
       if (!stored) {
         setLoading(false);
@@ -111,24 +111,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(p);
       } catch {
         /* ignore malformed storage */
-      }
-
-      try {
-        // getMe reads the httpOnly cookie (server-side) and restores the memory token
-        const freshProfile = await getMe();
-        if (freshProfile) {
-          setUser({ id: freshProfile.id, email: freshProfile.email });
-          setProfile(freshProfile);
-          localStorage.setItem('auth-user', JSON.stringify(freshProfile));
-        } else {
-          apiLogout();
-          setUser(null);
-          setProfile(null);
-        }
-      } catch {
-        apiLogout();
-        setUser(null);
-        setProfile(null);
       } finally {
         setLoading(false);
       }

@@ -147,7 +147,12 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState('');
   const [errors, setErrors] = useState<ProfileErrors>({});
+
+  const totalSteps = 3;
+  const currentStepIndex = ['welcome', 'profile', 'skills'].indexOf(step) + 1;
+  const progress = Math.round((currentStepIndex / totalSteps) * 100);
 
   const [form, setForm] = useState<ProfileForm>({
     email: '',
@@ -247,6 +252,23 @@ export default function OnboardingPage() {
     setSelectedSkills((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
   };
 
+  const addCustomSkill = () => {
+    const trimmed = customSkill.trim();
+    if (!trimmed) return;
+    setSelectedSkills((prev) => {
+      if (prev.includes(trimmed)) return prev;
+      return [...prev, trimmed];
+    });
+    setCustomSkill('');
+  };
+
+  const handleSkillInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomSkill();
+    }
+  };
+
   const toggleAvailability = (id: string) => {
     setSelectedAvailability((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
@@ -325,31 +347,42 @@ export default function OnboardingPage() {
             </div>
           </div>
           {step !== 'pending' && (
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              {(['welcome', 'profile', 'skills'] as Step[]).map((s, i) => (
-                <div key={s} className="flex items-center gap-1 sm:gap-1.5">
-                  <div
-                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-700 transition-colors ${
-                      step === s
-                        ? 'bg-[hsl(142,72%,29%)] text-white'
-                        : ['welcome', 'profile', 'skills'].indexOf(step) > i
-                          ? 'bg-[hsl(142,72%,90%)] text-[hsl(142,72%,22%)]'
-                          : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {['welcome', 'profile', 'skills'].indexOf(step) > i ? (
-                      <CheckCircle2 size={12} />
-                    ) : (
-                      i + 1
+            <div className="flex flex-col gap-4 w-full">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                {(['welcome', 'profile', 'skills'] as Step[]).map((s, i) => (
+                  <div key={s} className="flex items-center gap-1 sm:gap-1.5">
+                    <div
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-700 transition-colors ${
+                        step === s
+                          ? 'bg-[hsl(142,72%,29%)] text-white'
+                          : ['welcome', 'profile', 'skills'].indexOf(step) > i
+                            ? 'bg-[hsl(142,72%,90%)] text-[hsl(142,72%,22%)]'
+                            : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {['welcome', 'profile', 'skills'].indexOf(step) > i ? (
+                        <CheckCircle2 size={12} />
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                    {i < 2 && (
+                      <div
+                        className={`w-5 sm:w-8 h-0.5 rounded-full ${['welcome', 'profile', 'skills'].indexOf(step) > i ? 'bg-[hsl(142,72%,29%)]' : 'bg-border'}`}
+                      />
                     )}
                   </div>
-                  {i < 2 && (
-                    <div
-                      className={`w-5 sm:w-8 h-0.5 rounded-full ${['welcome', 'profile', 'skills'].indexOf(step) > i ? 'bg-[hsl(142,72%,29%)]' : 'bg-border'}`}
-                    />
-                  )}
+                ))}
+              </div>
+              <div className="w-full">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>Step {currentStepIndex} of {totalSteps}</span>
+                  <span>{progress}% complete</span>
                 </div>
-              ))}
+                <div className="w-full h-2 rounded-full bg-muted overflow-hidden border border-border mt-2">
+                  <div className="h-full bg-[hsl(142,72%,29%)] transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -864,6 +897,47 @@ export default function OnboardingPage() {
                 <p className="text-[13px] font-700 text-foreground mb-3">
                   Skill Areas <span className="text-destructive">*</span>
                 </p>
+                <p className="text-[12px] text-muted-foreground mb-4">
+                  Type the skills you have and press Enter, or choose from the suggestions below.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        onKeyDown={handleSkillInputKey}
+                        placeholder="e.g. Curriculum design, Community organising"
+                        className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={addCustomSkill}
+                        className="px-4 py-2 text-[13px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-xl hover:bg-[hsl(142,72%,22%)] transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {selectedSkills.filter((skill) => !SKILLS.some((s) => s.id === skill)).length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedSkills
+                          .filter((skill) => !SKILLS.some((s) => s.id === skill))
+                          .map((skill) => (
+                            <button
+                              key={skill}
+                              type="button"
+                              onClick={() => setSelectedSkills((prev) => prev.filter((s) => s !== skill))}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(142,72%,92%)] text-[13px] font-600 text-[hsl(142,72%,20%)] border border-[hsl(142,72%,65%)]"
+                            >
+                              {skill}
+                              ×
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {SKILLS.map((skill) => {
                     const SkillIcon = skill.icon;

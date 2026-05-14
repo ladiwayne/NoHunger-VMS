@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const requirePermission = require('../middleware/permission');
 const { body, validationResult } = require('express-validator');
 const Activity = require('../models/Activity');
 const { generateCheckInCode, generateCheckInLink } = require('../utils/helpers');
 const Invitation = require('../models/Invitation');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { logAudit } = require('../utils/auditLogger');
 
 const sanitizeActivity = [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
@@ -17,7 +18,7 @@ const sanitizeActivity = [
 ];
 
 // Create activity
-router.post('/', adminAuth, sanitizeActivity, async (req, res) => {
+router.post('/', requirePermission('manage_activities'), sanitizeActivity, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: errors.array()[0].msg });
@@ -44,6 +45,14 @@ router.post('/', adminAuth, sanitizeActivity, async (req, res) => {
     });
 
     await activity.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'create_activity',
+      entityType: 'Activity',
+      entityId: activity._id,
+      details: { title: activity.title, category: activity.category },
+    });
 
     res.status(201).json({
       message: 'Activity created successfully',
@@ -124,7 +133,7 @@ router.get('/code/:code', async (req, res) => {
 });
 
 // Update activity
-router.put('/:id', adminAuth, sanitizeActivity, async (req, res) => {
+router.put('/:id', requirePermission('manage_activities'), sanitizeActivity, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: errors.array()[0].msg });
@@ -149,6 +158,14 @@ router.put('/:id', adminAuth, sanitizeActivity, async (req, res) => {
     if (status) activity.status = status;
 
     await activity.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'update_activity',
+      entityType: 'Activity',
+      entityId: activity._id,
+      details: { title: activity.title, status: activity.status },
+    });
 
     res.status(200).json({
       message: 'Activity updated successfully',
@@ -163,7 +180,7 @@ router.put('/:id', adminAuth, sanitizeActivity, async (req, res) => {
 });
 
 // Reset check-in code
-router.put('/:id/reset-checkin-code', adminAuth, async (req, res) => {
+router.put('/:id/reset-checkin-code', requirePermission('manage_activities'), async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id);
     if (!activity) {
@@ -174,6 +191,14 @@ router.put('/:id/reset-checkin-code', adminAuth, async (req, res) => {
     activity.checkInCode = newCode;
     activity.checkInLink = newLink;
     await activity.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'reset_checkin_code',
+      entityType: 'Activity',
+      entityId: activity._id,
+      details: { checkInCode: newCode },
+    });
     res.status(200).json({ message: 'Check-in code reset successfully', activity });
   } catch (error) {
     res.status(500).json({ message: 'Error resetting check-in code', error: error.message });
@@ -181,7 +206,7 @@ router.put('/:id/reset-checkin-code', adminAuth, async (req, res) => {
 });
 
 // Approve volunteer for activity
-router.post('/:id/approve-volunteer', adminAuth, async (req, res) => {
+router.post('/:id/approve-volunteer', requirePermission('manage_activities'), async (req, res) => {
   try {
     const { volunteerId } = req.body;
 
@@ -199,9 +224,18 @@ router.post('/:id/approve-volunteer', adminAuth, async (req, res) => {
     }
 
     activity.volunteersApproved.push(volunteerId);
-    activity.volunteersApplied = activity.volunteersApplied.filter(v => v.toString() !== volunteerId);
+    activity.volunteersApplied = activity.volunteersApplied.filter((v) => v.toString() !== volunteerId);
 
     await activity.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'approve_activity_volunteer',
+      entityType: 'Activity',
+      entityId: activity._id,
+      targetUserId: volunteerId,
+      details: { activityTitle: activity.title },
+    });
 
     res.status(200).json({
       message: 'Volunteer approved for activity',
@@ -213,7 +247,7 @@ router.post('/:id/approve-volunteer', adminAuth, async (req, res) => {
 });
 
 // Send invitations to approved volunteers for an activity
-router.post('/:id/send-invites', adminAuth, async (req, res) => {
+router.post('/:id/send-invites', requirePermission('manage_activities'), async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id);
     if (!activity) {
@@ -246,6 +280,14 @@ router.post('/:id/send-invites', adminAuth, async (req, res) => {
         Notification.insertMany(notificationRows, { ordered: false }),
       ]);
     }
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'send_activity_invites',
+      entityType: 'Activity',
+      entityId: activity._id,
+      details: { count: invitationRows.length },
+    });
 
     res.status(201).json({ message: 'Invitations sent', count: invitationRows.length });
   } catch (error) {
@@ -254,12 +296,20 @@ router.post('/:id/send-invites', adminAuth, async (req, res) => {
 });
 
 // Delete activity
-router.delete('/:id', adminAuth, async (req, res) => {
+router.delete('/:id', requirePermission('manage_activities'), async (req, res) => {
   try {
     const activity = await Activity.findByIdAndDelete(req.params.id);
     if (!activity) {
       return res.status(404).json({ message: 'Activity not found' });
     }
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'delete_activity',
+      entityType: 'Activity',
+      entityId: activity._id,
+      details: { title: activity.title },
+    });
     res.status(200).json({ message: 'Activity deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting activity', error: error.message });

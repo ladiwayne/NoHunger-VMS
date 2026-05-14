@@ -6,11 +6,13 @@
 // ---------- User / Profile ----------
 export function adaptUser(u: any) {
   if (!u) return null;
+  const fullName =
+    u.full_name ||
+    (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName || '');
+
   return {
     id: u._id || u.id,
-    full_name:
-      u.full_name ||
-      (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName || ''),
+    full_name: u.role === 'super_admin' ? 'NHI ADMIN' : fullName,
     email: u.email,
     gender: u.gender || '',
     role: u.role,

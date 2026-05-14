@@ -62,6 +62,7 @@ const volunteerNavGroups = [
     items: [
       { label: 'My Profile', icon: UserCircle, href: '/profile', badge: null },
       { label: 'Notifications', icon: Bell, href: '/notifications', badge: null },
+      { label: 'Activity Logs', icon: ClipboardList, href: '/audit-logs', badge: null },
       { label: 'Contact & Support', icon: MessageCircle, href: '/contact', badge: null },
       { label: 'Achievements', icon: Award, href: '/profile?tab=achievements', badge: null },
     ],
@@ -98,7 +99,10 @@ const adminNavGroups = [
 
 const superAdminExtraGroup = {
   label: 'System',
-  items: [{ label: 'Manage Admins', icon: UserCog, href: '/admin/manage-admins', badge: null }],
+  items: [
+    { label: 'Manage Admins', icon: UserCog, href: '/admin/manage-admins', badge: null },
+    { label: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs', badge: null },
+  ],
 };
 
 export default function Sidebar({
@@ -114,10 +118,10 @@ export default function Sidebar({
   const router = useRouter();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
   const isSuperAdmin = profile?.role === 'super_admin';
-  const navGroups = isAdmin
-    ? isSuperAdmin
-      ? [...adminNavGroups, superAdminExtraGroup]
-      : adminNavGroups
+  const navGroups = isSuperAdmin
+    ? [...adminNavGroups, superAdminExtraGroup]
+    : isAdmin
+    ? [...adminNavGroups, ...volunteerNavGroups]
     : volunteerNavGroups;
 
   const isActive = (href: string) => currentPath === href || currentPath.startsWith(href + '/');

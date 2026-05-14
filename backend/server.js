@@ -37,6 +37,7 @@ app.use('/api/activities', require('./routes/activities'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/checkins', require('./routes/checkins'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/audit', require('./routes/audit'));
 app.use('/api/invitations', require('./routes/invitations'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/notifications', require('./routes/notifications'));
@@ -80,8 +81,6 @@ const seedSuperAdmin = async () => {
   try {
     const User = require('./models/User');
     const existing = await User.findOne({ role: 'super_admin' });
-    if (existing) return; // already seeded
-
     const email = process.env.SUPER_ADMIN_EMAIL;
     const password = process.env.SUPER_ADMIN_PASSWORD;
     const firstName = process.env.SUPER_ADMIN_FIRST_NAME || 'Super';
@@ -89,6 +88,23 @@ const seedSuperAdmin = async () => {
 
     if (!email || !password) {
       console.warn('[seed] SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD not set — skipping super admin seed.');
+      return;
+    }
+
+    if (existing) {
+      let shouldSave = false;
+      if (firstName && existing.firstName !== firstName) {
+        existing.firstName = firstName;
+        shouldSave = true;
+      }
+      if (lastName && existing.lastName !== lastName) {
+        existing.lastName = lastName;
+        shouldSave = true;
+      }
+      if (shouldSave) {
+        await existing.save();
+        console.log(`[seed] Updated existing super admin name to: ${firstName} ${lastName}`);
+      }
       return;
     }
 

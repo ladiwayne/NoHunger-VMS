@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const requirePermission = require('../middleware/permission');
 const CheckIn = require('../models/CheckIn');
 const User = require('../models/User');
+const { logAudit } = require('../utils/auditLogger');
 
 // Check in volunteer
 router.post('/checkin', auth, async (req, res) => {
@@ -56,7 +57,7 @@ router.put('/:id/checkout', auth, async (req, res) => {
 });
 
 // Approve check-in
-router.put('/:id/approve-checkin', adminAuth, async (req, res) => {
+router.put('/:id/approve-checkin', requirePermission('manage_checkins'), async (req, res) => {
   try {
     const checkin = await CheckIn.findById(req.params.id);
     if (!checkin) {
@@ -67,6 +68,15 @@ router.put('/:id/approve-checkin', adminAuth, async (req, res) => {
     checkin.approvedBy = req.user.id;
 
     await checkin.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'approve_checkin',
+      entityType: 'CheckIn',
+      entityId: checkin._id,
+      targetUserId: checkin.volunteerId,
+      details: { activityId: checkin.activityId },
+    });
 
     res.status(200).json({
       message: 'Check-in approved',
@@ -78,7 +88,7 @@ router.put('/:id/approve-checkin', adminAuth, async (req, res) => {
 });
 
 // Approve check-out
-router.put('/:id/approve-checkout', adminAuth, async (req, res) => {
+router.put('/:id/approve-checkout', requirePermission('manage_checkins'), async (req, res) => {
   try {
     const checkin = await CheckIn.findById(req.params.id);
     if (!checkin) {
@@ -96,6 +106,16 @@ router.put('/:id/approve-checkout', adminAuth, async (req, res) => {
       volunteer.totalVolunteeringHours += checkin.hoursSpent;
       await volunteer.save();
     }
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'approve_checkout',
+      entityType: 'CheckIn',
+      entityId: checkin._id,
+      targetUserId: checkin.volunteerId,
+      details: { hoursAdded: checkin.hoursSpent },
+    });
 
     res.status(200).json({
       message: 'Check-out approved',
@@ -152,7 +172,7 @@ router.get('/my', auth, async (req, res) => {
 });
 
 // Reject check-in request
-router.put('/:id/reject', adminAuth, async (req, res) => {
+router.put('/:id/reject', requirePermission('manage_checkins'), async (req, res) => {
   try {
     const checkin = await CheckIn.findById(req.params.id);
     if (!checkin) {
@@ -161,6 +181,17 @@ router.put('/:id/reject', adminAuth, async (req, res) => {
     checkin.checkInStatus = 'rejected';
     checkin.approvedBy = req.user.id;
     await checkin.save();
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'reject_checkin',
+      entityType: 'CheckIn',
+      entityId: checkin._id,
+      targetUserId: checkin.volunteerId,
+      details: { reason: 'rejected_by_admin' },
+    });
+
     res.status(200).json({ message: 'Check-in rejected', checkin });
   } catch (error) {
     res.status(500).json({ message: 'Error rejecting check-in', error: error.message });

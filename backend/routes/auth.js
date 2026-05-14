@@ -90,6 +90,7 @@ router.post('/register', sanitizeRegister, async (req, res) => {
         gender: user.gender,
         role: user.role,
         status: user.status,
+        permissions: user.permissions || [],
       },
     });
   } catch (error) {
@@ -151,6 +152,7 @@ router.post('/setup-super-admin', async (req, res) => {
         email: user.email,
         role: user.role,
         status: user.status,
+        permissions: user.permissions || [],
       },
     });
   } catch (error) {
@@ -204,6 +206,7 @@ router.post('/login', loginLimiter, sanitizeLogin, async (req, res) => {
         gender: user.gender,
         role: user.role,
         status: user.status,
+        permissions: user.permissions || [],
       },
     });
   } catch (error) {

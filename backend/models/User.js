@@ -1,6 +1,22 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const defaultAdminPermissions = [
+  'manage_activities',
+  'manage_volunteers',
+  'manage_tasks',
+  'manage_checkins',
+  'view_checkins',
+];
+
+const fullAdminPermissions = [
+  ...defaultAdminPermissions,
+  'send_broadcasts',
+  'view_audit_logs',
+  'reset_volunteer_password',
+  'manage_admins',
+];
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -96,6 +112,10 @@ const userSchema = new mongoose.Schema(
     },
     skills: [String],
     availability: [String],
+    permissions: {
+      type: [String],
+      default: [],
+    },
     onboardingCompleted: {
       type: Boolean,
       default: false,
@@ -143,9 +163,27 @@ userSchema.pre('save', async function (next) {
   }
 });
 
+userSchema.pre('save', function (next) {
+  if (!Array.isArray(this.permissions) || this.permissions.length === 0) {
+    if (this.role === 'super_admin') {
+      this.permissions = fullAdminPermissions;
+    } else if (this.role === 'admin') {
+      this.permissions = defaultAdminPermissions;
+    }
+  }
+  next();
+});
+
 // Method to compare passwords
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.hasPermission = function (permission) {
+  if (this.role === 'super_admin') {
+    return true;
+  }
+  return Array.isArray(this.permissions) && this.permissions.includes(permission);
 };
 
 // Add indexes for faster queries

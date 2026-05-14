@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const CheckIn = require('../models/CheckIn');
 const Invitation = require('../models/Invitation');
+const { logAudit } = require('../utils/auditLogger');
 
 // Get all volunteers
 router.get('/', async (req, res) => {
@@ -224,6 +225,16 @@ router.put('/:id', auth, [
     if (onboardingCompleted !== undefined) volunteer.onboardingCompleted = onboardingCompleted;
 
     await volunteer.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'update_profile',
+      entityType: 'User',
+      entityId: volunteer._id,
+      targetUserId: volunteer._id,
+      targetUserName: `${volunteer.firstName} ${volunteer.lastName}`,
+      details: { updatedFields: Object.keys(req.body) },
+    });
 
     res.status(200).json({
       message: 'Volunteer profile updated',
@@ -258,6 +269,16 @@ router.post('/:id/apply-activity', auth, async (req, res) => {
 
     await volunteer.save();
     await activity.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'apply_for_activity',
+      entityType: 'Activity',
+      entityId: activity._id,
+      targetUserId: volunteer._id,
+      targetUserName: `${volunteer.firstName} ${volunteer.lastName}`,
+      details: { activityTitle: activity.title },
+    });
 
     res.status(200).json({
       message: 'Successfully applied for activity',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateVolunteerProfile } from '@/lib/api/volunteers';
@@ -51,6 +51,16 @@ const SKILL_OPTIONS = [
 
 const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
+const inputBase = 'w-full px-3 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground focus:outline-none transition-all';
+const inputOk = `${inputBase} border-border focus:ring-primary/30 focus:border-primary`;
+const inputErr = `${inputBase} border-destructive/60 bg-destructive/5 focus:ring-destructive/20 focus:border-destructive`;
+const fieldCls = (hasError = false) => (hasError ? inputErr : inputOk);
+const fieldIconCls = (hasError = false) => `${fieldCls(hasError)} pl-9`;
+const textAreaCls = (hasError = false) => (hasError ? inputErr : inputOk);
+
+const FieldError = ({ msg }: { msg?: string }) =>
+  msg ? <p className="text-[12px] text-destructive mt-1">{msg}</p> : null;
+
 type Panel = 'profile' | 'achievements' | 'security';
 
 export default function ProfilePage() {
@@ -82,6 +92,7 @@ export default function ProfilePage() {
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [stats, setStats] = useState({ totalHours: 0, eventsAttended: 0 });
   const [sessions, setSessions] = useState<any[]>([]);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -90,38 +101,80 @@ export default function ProfilePage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isProfileComplete = profile?.onboarding_completed ?? false;
+
+  const resetProfileForm = useCallback(() => {
+    if (!profile) return;
+    const birthday = profile.birthday ? new Date(profile.birthday) : null;
+    setForm({
+      full_name: profile.full_name || '',
+      phone: profile.phone || '',
+      alternatePhone: profile.alternate_phone || '',
+      region: profile.region || '',
+      streetAddress: profile.street_address || '',
+      addressLine2: profile.address_line2 || '',
+      city: profile.city || '',
+      stateProvRegion: profile.state_prov_region || '',
+      postalZip: profile.postal_zip || '',
+      gender: profile.gender || '',
+      birthdayMM: birthday ? (birthday.getMonth() + 1).toString().padStart(2, '0') : '',
+      birthdayDD: birthday ? birthday.getDate().toString().padStart(2, '0') : '',
+      birthdayYYYY: birthday ? birthday.getFullYear().toString() : '',
+      occupation: profile.occupation || '',
+      organization: profile.organization || '',
+      instagramHandle: profile.instagram_handle || '',
+      twitterHandle: profile.twitter_handle || '',
+      shirtSize: profile.shirt_size || '',
+      whyVolunteer: profile.why_volunteer || '',
+      bio: profile.bio || '',
+      skills: profile.skills || [],
+    });
+  }, [profile]);
 
   useEffect(() => {
     if (profile) {
-      // Parse birthday if available
-      const birthday = profile.birthday ? new Date(profile.birthday) : null;
-      
-      setForm({
-        full_name: profile.full_name || '',
-        phone: profile.phone || '',
-        alternatePhone: profile.alternate_phone || '',
-        region: profile.region || '',
-        streetAddress: profile.street_address || '',
-        addressLine2: profile.address_line2 || '',
-        city: profile.city || '',
-        stateProvRegion: profile.state_prov_region || '',
-        postalZip: profile.postal_zip || '',
-        gender: profile.gender || '',
-        birthdayMM: birthday ? (birthday.getMonth() + 1).toString().padStart(2, '0') : '',
-        birthdayDD: birthday ? birthday.getDate().toString().padStart(2, '0') : '',
-        birthdayYYYY: birthday ? birthday.getFullYear().toString() : '',
-        occupation: profile.occupation || '',
-        organization: profile.organization || '',
-        instagramHandle: profile.instagram_handle || '',
-        twitterHandle: profile.twitter_handle || '',
-        shirtSize: profile.shirt_size || '',
-        whyVolunteer: profile.why_volunteer || '',
-        bio: profile.bio || '',
-        skills: profile.skills || [],
-      });
+      resetProfileForm();
+      setIsEditing(!profile.onboarding_completed);
     }
     if (user) fetchStats();
-  }, [profile, user]);
+  }, [profile, user, resetProfileForm]);
+
+  const handleCancelEdit = () => {
+    resetProfileForm();
+    if (profile?.onboarding_completed) {
+      setIsEditing(false);
+    }
+  };
+
+  const validateProfile = (): boolean => {
+    const nextErrors: Record<string, string> = {};
+    if (!form.full_name.trim()) nextErrors.full_name = 'Full name is required';
+    if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
+    if (!form.streetAddress.trim()) nextErrors.streetAddress = 'Street address is required';
+    if (!form.city.trim()) nextErrors.city = 'City is required';
+    if (!form.stateProvRegion) nextErrors.stateProvRegion = 'Please select a state';
+    if (!form.shirtSize) nextErrors.shirtSize = 'Please choose a shirt size';
+    if (!form.whyVolunteer.trim()) nextErrors.whyVolunteer = 'Tell us why you want to volunteer';
+    const anyBirthday = form.birthdayMM || form.birthdayDD || form.birthdayYYYY;
+    if (anyBirthday) {
+      const mm = parseInt(form.birthdayMM, 10);
+      const dd = parseInt(form.birthdayDD, 10);
+      const yyyy = parseInt(form.birthdayYYYY, 10);
+      if (!form.birthdayMM || mm < 1 || mm > 12) nextErrors.birthdayMM = 'Invalid month';
+      if (!form.birthdayDD || dd < 1 || dd > 31) nextErrors.birthdayDD = 'Invalid day';
+      if (!form.birthdayYYYY || form.birthdayYYYY.length !== 4 || yyyy < 1900 || yyyy > new Date().getFullYear()) {
+        nextErrors.birthdayYYYY = 'Invalid year';
+      }
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      toast.error('Please fix highlighted profile errors before saving.');
+      return false;
+    }
+    return true;
+  };
 
   const fetchStats = async () => {
     const data = await getMyCheckins();
@@ -133,6 +186,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!validateProfile()) return;
     setSaving(true);
     try {
       const nameParts = form.full_name.trim().split(' ');
@@ -180,6 +234,7 @@ export default function ProfilePage() {
         onboardingCompleted: true, // Mark as completed when saving from profile page
       } as any);
       await refreshProfile?.();
+      setIsEditing(false);
       toast.success('Profile saved successfully!');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save profile.');
@@ -277,10 +332,12 @@ export default function ProfilePage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">My Profile</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Manage your volunteer profile and view achievements
+              {isProfileComplete
+                ? 'Your volunteer profile is complete. Click Edit to update any details.'
+                : 'Complete your volunteer details below so we can match you with the right opportunities.'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleShare}
               className="flex items-center gap-2 px-3.5 py-2 bg-card border border-border rounded-xl text-[13px] font-600 text-foreground hover:bg-muted transition-all"
@@ -297,6 +354,21 @@ export default function ProfilePage() {
                 <ExternalLink size={14} />
                 View Public
               </Link>
+            )}
+            {activePanel === 'profile' && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isEditing) {
+                    handleCancelEdit();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all"
+              >
+                {isEditing ? 'Cancel' : 'Edit'}
+              </button>
             )}
           </div>
         </div>
@@ -320,8 +392,10 @@ export default function ProfilePage() {
 
         {/* Edit Profile Panel */}
         {activePanel === 'profile' && (
-          <div className="space-y-5">
-            {/* Avatar */}
+          <>
+            {isEditing ? (
+              <fieldset className="space-y-5 border-0 p-0">
+              {/* Avatar */}
             <div className="bg-card border border-border rounded-2xl shadow-card p-5">
               <div className="flex items-center gap-4">
                 <div className="relative">
@@ -344,7 +418,7 @@ export default function ProfilePage() {
                     {form.full_name || 'Your Name'}
                   </p>
                   <p className="text-[12px] text-muted-foreground">{profile?.email}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-[11px] font-600 text-primary bg-primary/8 px-2 py-0.5 rounded-full capitalize">
                       {profile?.volunteer_status}
                     </span>
@@ -352,6 +426,11 @@ export default function ProfilePage() {
                       {stats.totalHours} hrs · {stats.eventsAttended} events
                     </span>
                   </div>
+                  {isProfileComplete && (
+                    <p className="mt-2 text-[12px] text-muted-foreground">
+                      Your volunteer profile is complete. Click Edit to make updates.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -374,9 +453,10 @@ export default function ProfilePage() {
                       value={form.full_name}
                       onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
                       placeholder="Your full name"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                      className={fieldIconCls(!!errors.full_name)}
                     />
                   </div>
+                  <FieldError msg={errors.full_name} />
                 </div>
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">Phone</label>
@@ -389,9 +469,10 @@ export default function ProfilePage() {
                       value={form.phone}
                       onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                       placeholder="+234 (0) 800 000 0000"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                      className={fieldIconCls(!!errors.phone)}
                     />
                   </div>
+                  <FieldError msg={errors.phone} />
                 </div>
               </div>
 
@@ -408,13 +489,10 @@ export default function ProfilePage() {
                     value={form.region}
                     onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
                     placeholder="e.g. Lagos State, Nigeria"
-                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">Bio</label>
+                      className={fieldIconCls(!!errors.region)}
+                    />
+                  </div>
+                  <FieldError msg={errors.region} />
                 <div className="relative">
                   <FileText size={15} className="absolute left-3 top-3 text-muted-foreground" />
                   <textarea
@@ -717,17 +795,92 @@ export default function ProfilePage() {
             </div>
 
             {/* Save */}
-            <div className="flex justify-end">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[14px]"
-              >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
+            {isEditing && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[14px]"
+                >
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+          </fieldset>
+          ) : (
+            <div className="space-y-5">
+              <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-[15px] font-700 text-foreground">Volunteer profile summary</h2>
+                    <p className="text-[13px] text-muted-foreground mt-1">
+                      Your profile is saved and locked for edits. Click Edit to update your details.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Name</p>
+                    <p className="text-[14px] font-600 text-foreground">{profile?.full_name || '—'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Email</p>
+                    <p className="text-[14px] font-600 text-foreground">{profile?.email || '—'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Phone</p>
+                    <p className="text-[14px] font-600 text-foreground">{profile?.phone || '—'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Location</p>
+                    <p className="text-[14px] font-600 text-foreground">
+                      {profile?.street_address || profile?.region || '—'}
+                      {profile?.city ? `, ${profile.city}` : ''}
+                      {profile?.state_prov_region ? `, ${profile.state_prov_region}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Shirt size</p>
+                    <p className="text-[14px] font-600 text-foreground">{profile?.shirt_size || '—'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Volunteer focus</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(profile?.skills || []).length > 0 ? (
+                        profile.skills.map((skill: string) => (
+                          <span key={skill} className="px-3 py-1 rounded-full bg-[hsl(142,72%,92%)] text-[12px] text-[hsl(142,72%,22%)] font-600">
+                            {skill.replace(/-/g, ' ')}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[13px] text-muted-foreground">No skills saved yet</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-5">
+                  <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Why volunteer</p>
+                  <p className="text-[14px] font-600 text-foreground leading-relaxed">
+                    {profile?.why_volunteer || 'No motivation provided yet.'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+            )}
+          </>
         )}
 
         {/* Security Panel */}

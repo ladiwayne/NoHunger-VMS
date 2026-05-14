@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const requirePermission = require('../middleware/permission');
 const { body, validationResult } = require('express-validator');
 const Task = require('../models/Task');
+const { logAudit } = require('../utils/auditLogger');
 
 // Create task
-router.post('/', adminAuth, [
+router.post('/', requirePermission('manage_tasks'), [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
   body('description').optional().trim().isLength({ max: 1000 }),
 ], async (req, res) => {
@@ -29,6 +30,14 @@ router.post('/', adminAuth, [
     });
 
     await task.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'create_task',
+      entityType: 'Task',
+      entityId: task._id,
+      details: { title: task.title, assignedTo: task.assignedTo },
+    });
 
     res.status(201).json({
       message: 'Task created successfully',
@@ -95,7 +104,7 @@ router.put('/:id/status', auth, async (req, res) => {
 });
 
 // Full task update (admin)
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', requirePermission('manage_tasks'), async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {
@@ -116,6 +125,14 @@ router.put('/:id', adminAuth, async (req, res) => {
     }
 
     await task.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'update_task',
+      entityType: 'Task',
+      entityId: task._id,
+      details: { title: task.title, status: task.status },
+    });
     res.status(200).json({ message: 'Task updated successfully', task });
   } catch (error) {
     res.status(500).json({ message: 'Error updating task', error: error.message });
@@ -123,12 +140,20 @@ router.put('/:id', adminAuth, async (req, res) => {
 });
 
 // Delete task (admin)
-router.delete('/:id', adminAuth, async (req, res) => {
+router.delete('/:id', requirePermission('manage_tasks'), async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'delete_task',
+      entityType: 'Task',
+      entityId: task._id,
+      details: { title: task.title },
+    });
     res.status(200).json({ message: 'Task deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting task', error: error.message });

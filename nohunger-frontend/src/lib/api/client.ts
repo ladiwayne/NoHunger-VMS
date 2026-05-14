@@ -73,6 +73,11 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
     throw new Error(err.message || `HTTP ${response.status}`);
   }
 
+  // Invalidate cached GET responses after any write operation.
+  if (options.method && options.method.toUpperCase() !== 'GET') {
+    invalidateCache();
+  }
+
   // Handle empty responses (204 No Content)
   const text = await response.text();
   const data = text ? JSON.parse(text) : ({} as T);

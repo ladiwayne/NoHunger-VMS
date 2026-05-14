@@ -17,8 +17,9 @@ setInterval(() => {
 
 const cacheMiddleware = (duration = 120000) => {
   return (req, res, next) => {
-    // Only cache GET requests
+    // Invalidate cached GET data on any write operations so the frontend sees fresh state quickly.
     if (req.method !== 'GET') {
+      cache.clear();
       return next();
     }
 

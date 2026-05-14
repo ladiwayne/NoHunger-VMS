@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
 const superAdminAuth = require('../middleware/superAdminAuth');
+const requirePermission = require('../middleware/permission');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Activity = require('../models/Activity');
 const Event = require('../models/Event');
 const CheckIn = require('../models/CheckIn');
 const Notification = require('../models/Notification');
+const { logAudit } = require('../utils/auditLogger');
 
 // Dashboard stats
 router.get('/dashboard/stats', adminAuth, async (req, res) => {
@@ -54,7 +56,7 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
 });
 
 // Approve volunteer
-router.put('/volunteers/:id/approve', adminAuth, async (req, res) => {
+router.put('/volunteers/:id/approve', requirePermission('manage_volunteers'), async (req, res) => {
   try {
     const volunteer = await User.findById(req.params.id);
     if (!volunteer) {
@@ -65,6 +67,15 @@ router.put('/volunteers/:id/approve', adminAuth, async (req, res) => {
     volunteer.approvedBy = req.user.id;
 
     await volunteer.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'approve_volunteer',
+      entityType: 'User',
+      targetUserId: volunteer._id,
+      targetUserName: `${volunteer.firstName} ${volunteer.lastName}`,
+      details: { status: volunteer.status },
+    });
 
     res.status(200).json({
       message: 'Volunteer approved',
@@ -76,7 +87,7 @@ router.put('/volunteers/:id/approve', adminAuth, async (req, res) => {
 });
 
 // Reject volunteer
-router.put('/volunteers/:id/reject', adminAuth, async (req, res) => {
+router.put('/volunteers/:id/reject', requirePermission('manage_volunteers'), async (req, res) => {
   try {
     const volunteer = await User.findById(req.params.id);
     if (!volunteer) {
@@ -87,6 +98,15 @@ router.put('/volunteers/:id/reject', adminAuth, async (req, res) => {
     volunteer.approvedBy = req.user.id;
 
     await volunteer.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'reject_volunteer',
+      entityType: 'User',
+      targetUserId: volunteer._id,
+      targetUserName: `${volunteer.firstName} ${volunteer.lastName}`,
+      details: { status: volunteer.status },
+    });
 
     res.status(200).json({
       message: 'Volunteer rejected',
@@ -98,7 +118,7 @@ router.put('/volunteers/:id/reject', adminAuth, async (req, res) => {
 });
 
 // Get volunteer hours
-router.get('/volunteers/:id/hours', adminAuth, async (req, res) => {
+router.get('/volunteers/:id/hours', requirePermission('view_volunteer_hours'), async (req, res) => {
   try {
     const checkins = await CheckIn.find({
       volunteerId: req.params.id,
@@ -118,7 +138,7 @@ router.get('/volunteers/:id/hours', adminAuth, async (req, res) => {
 });
 
 // Top volunteers
-router.get('/top-volunteers', adminAuth, async (req, res) => {
+router.get('/top-volunteers', requirePermission('view_volunteers'), async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 5, 50));
     const volunteers = await User.find({ role: 'volunteer' })
@@ -132,7 +152,7 @@ router.get('/top-volunteers', adminAuth, async (req, res) => {
 });
 
 // Create broadcast/direct message
-router.post('/broadcasts', adminAuth, [
+router.post('/broadcasts', requirePermission('send_broadcasts'), [
   body('message').trim().isLength({ min: 1, max: 2000 }).withMessage('Message is required (max 2000 chars)'),
   body('subject').optional().trim().isLength({ max: 200 }),
   body('recipientType').optional().trim(),
@@ -174,7 +194,7 @@ router.post('/broadcasts', adminAuth, [
 });
 
 // List recent broadcasts
-router.get('/broadcasts', adminAuth, async (req, res) => {
+router.get('/broadcasts', requirePermission('send_broadcasts'), async (req, res) => {
   try {
     const notifications = await Notification.find({ type: { $in: ['broadcast', 'direct'] } })
       .sort({ createdAt: -1 })
@@ -222,6 +242,15 @@ router.put('/approve-admin/:id', superAdminAuth, async (req, res) => {
     admin.status = 'approved';
     admin.approvedBy = req.user.id;
     await admin.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'approve_admin_request',
+      entityType: 'User',
+      targetUserId: admin._id,
+      targetUserName: `${admin.firstName} ${admin.lastName}`,
+      details: { status: admin.status },
+    });
     res.status(200).json({
       message: 'Admin approved',
       admin: {
@@ -244,6 +273,15 @@ router.put('/reject-admin/:id', superAdminAuth, async (req, res) => {
     admin.status = 'rejected';
     admin.approvedBy = req.user.id;
     await admin.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'reject_admin_request',
+      entityType: 'User',
+      targetUserId: admin._id,
+      targetUserName: `${admin.firstName} ${admin.lastName}`,
+      details: { status: admin.status },
+    });
     res.status(200).json({ message: 'Admin request rejected' });
   } catch (error) {
     res.status(500).json({ message: 'Error rejecting admin', error: error.message });
@@ -259,7 +297,17 @@ router.delete('/revoke-admin/:id', superAdminAuth, async (req, res) => {
     }
     admin.role = 'volunteer';
     admin.status = 'approved';
+    admin.permissions = [];
     await admin.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'revoke_admin',
+      entityType: 'User',
+      targetUserId: admin._id,
+      targetUserName: `${admin.firstName} ${admin.lastName}`,
+      details: { role: admin.role },
+    });
     res.status(200).json({ message: 'Admin access revoked' });
   } catch (error) {
     res.status(500).json({ message: 'Error revoking admin access', error: error.message });
@@ -279,7 +327,22 @@ router.put('/promote-to-admin/:id', superAdminAuth, async (req, res) => {
     user.role = 'admin';
     user.status = 'approved';
     user.approvedBy = req.user.id;
+    user.permissions = [
+      'manage_activities',
+      'manage_volunteers',
+      'manage_tasks',
+      'view_checkins',
+    ];
     await user.save();
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'promote_to_admin',
+      entityType: 'User',
+      targetUserId: user._id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      details: { role: user.role },
+    });
     res.status(200).json({
       message: `${user.firstName} ${user.lastName} has been promoted to admin`,
       user: {
@@ -313,6 +376,16 @@ router.post('/reset-volunteer-password/:id', superAdminAuth, async (req, res) =>
     // Update password (pre-save hook will hash it)
     user.password = newPassword;
     await user.save();
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'reset_volunteer_password',
+      entityType: 'User',
+      targetUserId: user._id,
+      targetUserName: `${user.firstName} ${user.lastName}`,
+      details: { method: 'super_admin_reset' },
+    });
 
     res.status(200).json({
       message: 'Password reset successfully',

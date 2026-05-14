@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = useCallback(async () => {
     clearTimers();
     apiLogout();
+    localStorage.removeItem('auth-user');
     setUser(null);
     setProfile(null);
     if (typeof window !== 'undefined') {
@@ -97,20 +98,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // On mount: restore session from localStorage JWT
   useEffect(() => {
     const initAuth = async () => {
-      // Temporarily skip the getMe() call to debug page load issues
       const stored = localStorage.getItem('auth-user');
       if (!stored) {
         setLoading(false);
         return;
       }
 
-      // Show stored profile immediately for instant UI, then verify via httpOnly cookie
+      // Show stored profile immediately for instant UI, then restore the bearer token
       try {
         const p = JSON.parse(stored);
         setUser({ id: p.id, email: p.email });
         setProfile(p);
       } catch {
         /* ignore malformed storage */
+      }
+
+      try {
+        const fresh = await getMe();
+        if (fresh) {
+          setUser({ id: fresh.id, email: fresh.email });
+          setProfile(fresh);
+          localStorage.setItem('auth-user', JSON.stringify(fresh));
+        } else {
+          localStorage.removeItem('auth-user');
+          setUser(null);
+          setProfile(null);
+        }
+      } catch {
+        localStorage.removeItem('auth-user');
+        setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }

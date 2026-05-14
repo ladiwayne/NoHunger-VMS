@@ -25,6 +25,7 @@ import {
   rejectAdmin,
   revokeAdmin,
   promoteToAdmin,
+  resetVolunteerPassword,
   getAdminVolunteers,
 } from '@/lib/api/admin';
 
@@ -51,6 +52,7 @@ export default function ManageAdminsPage() {
   const [volunteerSearch, setVolunteerSearch] = useState('');
   const [fetching, setFetching] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState<string | null>(null);
 
   // Redirect non-super-admins
   useEffect(() => {
@@ -131,6 +133,22 @@ export default function ManageAdminsPage() {
       toast.error(err?.message || 'Failed to revoke admin access');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleResetPassword = async (id: string, name: string) => {
+    if (!confirm(`Reset password for ${name}? A new password will be generated.`)) return;
+    setResetLoading(id);
+    try {
+      const result = await resetVolunteerPassword(id);
+      toast.success(`Password reset for ${name}. New password copied to clipboard.`);
+      if (result?.newPassword && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(result.newPassword);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || `Failed to reset password for ${name}`);
+    } finally {
+      setResetLoading(null);
     }
   };
 
@@ -311,18 +329,32 @@ export default function ManageAdminsPage() {
                           <p className="text-[12px] text-muted-foreground mt-0.5">{vol.email}</p>
                           {vol.phone && <p className="text-[11px] text-muted-foreground mt-0.5">{vol.phone}</p>}
                         </div>
-                        <button
-                          onClick={() => handlePromote(vol.id, vol.full_name || vol.email)}
-                          disabled={!!actionLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-lg hover:bg-[hsl(142,72%,22%)] transition-colors disabled:opacity-50 flex-shrink-0"
-                        >
-                          {actionLoading === vol.id + '-promote' ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <UserPlus size={13} />
-                          )}
-                          Make Admin
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => handlePromote(vol.id, vol.full_name || vol.email)}
+                            disabled={!!actionLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-lg hover:bg-[hsl(142,72%,22%)] transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === vol.id + '-promote' ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <UserPlus size={13} />
+                            )}
+                            Make Admin
+                          </button>
+                          <button
+                            onClick={() => handleResetPassword(vol.id, vol.full_name || vol.email)}
+                            disabled={!!actionLoading || resetLoading === vol.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-600 text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/90 transition-colors disabled:opacity-50"
+                          >
+                            {resetLoading === vol.id ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <ShieldCheck size={13} />
+                            )}
+                            Reset Password
+                          </button>
+                        </div>
                       </div>
                     ));
                   })()}

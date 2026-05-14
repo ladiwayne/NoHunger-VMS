@@ -96,3 +96,7 @@ export async function revokeAdmin(id: string): Promise<any> {
 export async function promoteToAdmin(id: string): Promise<any> {
   return apiFetch(`/admin/promote-to-admin/${id}`, { method: 'PUT' });
 }
+
+export async function resetVolunteerPassword(id: string): Promise<any> {
+  return apiFetch(`/admin/reset-volunteer-password/${id}`, { method: 'POST' });
+}

@@ -1,3 +1,164 @@
+ 'use client';
+
+import React, { useEffect, useState } from 'react';
+import AppLayout from '@/components/AppLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  getVolunteers,
+  approveVolunteer,
+  rejectVolunteer,
+  bulkApproveVolunteers,
+} from '@/lib/api/volunteers';
+import { COUNTRIES } from '@/lib/constants/countries';
+import { toast } from 'sonner';
+
+export default function AdminVolunteersPage() {
+  const { profile, loading, isAdmin, isSuperAdmin } = useAuth();
+  const [filters, setFilters] = useState({ status: '', country: '', search: '', page: 1, limit: 20 });
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<{ total: number; page: number; limit: number; pages: number } | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [fetching, setFetching] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin()) return;
+    fetchList();
+  }, [filters, profile]);
+
+  const fetchList = async () => {
+    setFetching(true);
+    try {
+      const res = await getVolunteers({ status: filters.status || undefined, page: filters.page, limit: filters.limit });
+      // getVolunteers returns adapted list only; use api directly for pagination
+      const params = new URLSearchParams();
+      if (filters.status) params.set('status', filters.status);
+      if (filters.country) params.set('country', filters.country);
+      if (filters.search) params.set('search', filters.search);
+      params.set('page', String(filters.page));
+      params.set('limit', String(filters.limit));
+      const query = params.toString() ? `?${params}` : '';
+      const raw = await fetch(`/api/admin/volunteers${query}`);
+      const body = await raw.json();
+      setVolunteers(body.data || []);
+      setPagination(body.pagination || null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load volunteers');
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  };
+
+  const doApprove = async (id: string) => {
+    try {
+      await approveVolunteer(id);
+      toast.success('Volunteer approved');
+      fetchList();
+    } catch (err) {
+      toast.error('Failed to approve');
+    }
+  };
+
+  const doReject = async (id: string) => {
+    try {
+      await rejectVolunteer(id);
+      toast.success('Volunteer rejected');
+      fetchList();
+    } catch (err) {
+      toast.error('Failed to reject');
+    }
+  };
+
+  const doBulkApprove = async () => {
+    if (selected.length === 0) return toast('No volunteers selected');
+    try {
+      await bulkApproveVolunteers(selected);
+      toast.success('Selected volunteers approved');
+      setSelected([]);
+      fetchList();
+    } catch (err) {
+      toast.error('Bulk approve failed');
+    }
+  };
+
+  if (loading) return <AppLayout><div className="p-6">Loading…</div></AppLayout>;
+  if (!isAdmin()) return <AppLayout><div className="p-6">Access denied</div></AppLayout>;
+
+  return (
+    <AppLayout>
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Volunteer Approval Queue</h1>
+          <div>
+            <button onClick={doBulkApprove} className="rounded bg-primary px-3 py-2 text-white">Approve Selected</button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value, page: 1 }))} className="rounded border px-3 py-2">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select value={filters.country} onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value, page: 1 }))} className="rounded border px-3 py-2">
+            <option value="">All countries</option>
+            {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input className="rounded border px-3 py-2" placeholder="Search" value={filters.search} onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))} />
+        </div>
+
+        <div className="mt-4">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="text-left">
+                <th></th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Country</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {volunteers.map((v: any) => (
+                <tr key={v._id} className="border-t">
+                  <td><input type="checkbox" checked={selected.includes(v._id)} onChange={() => toggleSelect(v._id)} /></td>
+                  <td>{v.firstName} {v.lastName}</td>
+                  <td>{v.email}</td>
+                  <td>{v.country}</td>
+                  <td>{v.status}</td>
+                  <td>{new Date(v.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button onClick={() => doApprove(v._id)} className="rounded bg-emerald-600 px-2 py-1 text-white">Approve</button>
+                      <button onClick={() => doReject(v._id)} className="rounded bg-rose-600 px-2 py-1 text-white">Reject</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4">
+          {pagination && (
+            <div className="flex items-center gap-2">
+              <button disabled={pagination.page <= 1} onClick={() => setFilters((f) => ({ ...f, page: pagination.page - 1 }))} className="rounded border px-3 py-1">Prev</button>
+              <div>Page {pagination.page} of {pagination.pages}</div>
+              <button disabled={pagination.page >= pagination.pages} onClick={() => setFilters((f) => ({ ...f, page: pagination.page + 1 }))} className="rounded border px-3 py-1">Next</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
 'use client';
 
 import React, { useEffect, useState } from 'react';

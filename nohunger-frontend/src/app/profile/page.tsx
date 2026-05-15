@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateVolunteerProfile } from '@/lib/api/volunteers';
@@ -98,7 +99,6 @@ export default function ProfilePage() {
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
   const [skillSearch, setSkillSearch] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState('');
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -275,8 +275,7 @@ export default function ProfilePage() {
         onboardingCompleted: isComplete,
       });
       await refreshProfile();
-      setSuccessMessage('Profile updated successfully');
-      setTimeout(() => setSuccessMessage(''), 4000);
+        toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Failed to save profile', error);
     } finally {

@@ -1,1090 +1,649 @@
-'use client';
+﻿'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateVolunteerProfile } from '@/lib/api/volunteers';
-import { getMyCheckins } from '@/lib/api/checkins';
+import { COUNTRIES } from '@/lib/constants/countries';
+import { NIGERIA_STATES } from '@/lib/constants/nigeria';
 import {
   UserCircle,
   Save,
   Loader2,
-  Camera,
   MapPin,
   Phone,
-  FileText,
-  Wrench,
-  Share2,
-  Check,
-  Award,
-  Clock,
-  CalendarCheck,
-  ExternalLink,
-  Heart,
-  Shirt,
-  Calendar,
-  AtSign,
-  Link2,
-  Building2,
-  MessageSquare,
-  Briefcase,
+  Mail,
+  CheckCircle2,
   Shield,
+  Info,
+  Sparkles,
+  Building2,
+  Plus,
+  X,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
-import { GENDER_OPTIONS, NIGERIA_STATES } from '@/lib/constants/nigeria';
 
-const SKILL_OPTIONS = [
-  'cooking',
-  'driving',
-  'logistics',
-  'teaching',
-  'medical',
-  'counseling',
-  'fundraising',
-  'social-media',
-  'photography',
-  'translation',
-  'administration',
-  'construction',
+const SKILLS = [
+  'Food Packing',
+  'Logistics',
+  'Community Outreach',
+  'Medical Outreach',
+  'Cooking',
+  'Event Planning',
+  'Research',
+  'Fundraising',
+  'Social Media',
+  'Content Creation',
+  'Videography/Photography',
+  'Administration',
 ];
 
-const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+const AVAILABILITY_OPTIONS = ['Weekdays', 'Weekends', 'Anyday'];
 
-const inputBase = 'w-full px-3 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground focus:outline-none transition-all';
-const inputOk = `${inputBase} border-border focus:ring-primary/30 focus:border-primary`;
-const inputErr = `${inputBase} border-destructive/60 bg-destructive/5 focus:ring-destructive/20 focus:border-destructive`;
-const fieldCls = (hasError = false) => (hasError ? inputErr : inputOk);
-const fieldIconCls = (hasError = false) => `${fieldCls(hasError)} pl-9`;
-const textAreaCls = (hasError = false) => (hasError ? inputErr : inputOk);
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
+  'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
+  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
+  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania',
+  'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+];
 
-const FieldError = ({ msg }: { msg?: string }) =>
-  msg ? <p className="text-[12px] text-destructive mt-1">{msg}</p> : null;
+const CANADA_PROVINCES = [
+  'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador',
+  'Nova Scotia', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan',
+];
 
-type Panel = 'profile' | 'achievements' | 'security';
+const AUSTRALIA_STATES = [
+  'New South Wales', 'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia',
+  'Northern Territory', 'Australian Capital Territory',
+];
+
+const UK_REGIONS = ['England', 'Scotland', 'Wales', 'Northern Ireland'];
+
+const INDIA_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
+  'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
+  'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+  'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh',
+];
+
+const GHANA_REGIONS = [
+  'Greater Accra', 'Ashanti', 'Eastern', 'Western', 'Northern', 'Volta', 'Central',
+  'Upper East', 'Upper West', 'Bono', 'Ahafo', 'Oti', 'North East', 'Savannah', 'Bono East',
+];
+
+const COUNTRY_STATE_MAP: Record<string, string[]> = {
+  Nigeria: NIGERIA_STATES as unknown as string[],
+  'United States': US_STATES,
+  Canada: CANADA_PROVINCES,
+  Australia: AUSTRALIA_STATES,
+  'United Kingdom': UK_REGIONS,
+  India: INDIA_STATES,
+  Ghana: GHANA_REGIONS,
+};
+
+const fieldClass =
+  'w-full rounded-2xl border border-border bg-muted px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
+
+const chipClass =
+  'inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-sm text-foreground';
 
 export default function ProfilePage() {
-  const { user, profile, refreshProfile } = useAuth();
-  const [activePanel, setActivePanel] = useState<Panel>('profile');
+  const { profile, loading, refreshProfile } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [customSkill, setCustomSkill] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
   const [form, setForm] = useState({
-    full_name: '',
+    fullName: '',
     phone: '',
     alternatePhone: '',
-    region: '',
-    streetAddress: '',
-    addressLine2: '',
-    city: '',
-    stateProvRegion: '',
-    postalZip: '',
     gender: '',
-    birthdayMM: '',
-    birthdayDD: '',
-    birthdayYYYY: '',
+    birthday: '',
     occupation: '',
     organization: '',
     instagramHandle: '',
     twitterHandle: '',
+    country: '',
+    region: '',
+    city: '',
+    streetAddress: '',
+    addressLine2: '',
+    postalZip: '',
     shirtSize: '',
     whyVolunteer: '',
     bio: '',
-    skills: [] as string[],
   });
-  const [skillInput, setSkillInput] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [stats, setStats] = useState({ totalHours: 0, eventsAttended: 0 });
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const normalizeDateValue = (d?: string) => {
+    if (!d) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    if (typeof d === 'string' && d.includes('T')) return d.split('T')[0];
+    const dt = new Date(d);
+    if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+    return '';
+  };
 
-  const isProfileComplete = profile?.onboarding_completed ?? false;
-
-  const resetProfileForm = useCallback(() => {
+  useEffect(() => {
     if (!profile) return;
-    const birthday = profile.birthday ? new Date(profile.birthday) : null;
     setForm({
-      full_name: profile.full_name || '',
+      fullName: profile.full_name || '',
       phone: profile.phone || '',
       alternatePhone: profile.alternate_phone || '',
-      region: profile.region || '',
-      streetAddress: profile.street_address || '',
-      addressLine2: profile.address_line2 || '',
-      city: profile.city || '',
-      stateProvRegion: profile.state_prov_region || '',
-      postalZip: profile.postal_zip || '',
       gender: profile.gender || '',
-      birthdayMM: birthday ? (birthday.getMonth() + 1).toString().padStart(2, '0') : '',
-      birthdayDD: birthday ? birthday.getDate().toString().padStart(2, '0') : '',
-      birthdayYYYY: birthday ? birthday.getFullYear().toString() : '',
+      birthday: normalizeDateValue(profile.birthday || ''),
       occupation: profile.occupation || '',
       organization: profile.organization || '',
       instagramHandle: profile.instagram_handle || '',
       twitterHandle: profile.twitter_handle || '',
+      country: profile.country || '',
+      region: profile.region || '',
+      city: profile.city || '',
+      streetAddress: profile.street_address || '',
+      addressLine2: profile.address_line2 || '',
+      postalZip: profile.postal_zip || '',
       shirtSize: profile.shirt_size || '',
       whyVolunteer: profile.why_volunteer || '',
       bio: profile.bio || '',
-      skills: profile.skills || [],
     });
+    setSelectedSkills(profile.skills || []);
+    setSelectedAvailability(profile.availability || []);
   }, [profile]);
 
-  useEffect(() => {
-    if (profile) {
-      resetProfileForm();
-      setIsEditing(!profile.onboarding_completed);
-    }
-    if (user) fetchStats();
-  }, [profile, user, resetProfileForm]);
+  const regionOptions = useMemo(() => COUNTRY_STATE_MAP[form.country] || [], [form.country]);
 
-  const handleCancelEdit = () => {
-    resetProfileForm();
-    if (profile?.onboarding_completed) {
-      setIsEditing(false);
-    }
+  const missingFields = useMemo(() => {
+    return [
+      { label: 'Full name', value: form.fullName },
+      { label: 'Phone', value: form.phone },
+      { label: 'Gender', value: form.gender },
+      { label: 'Country', value: form.country },
+      { label: 'Region / State', value: form.region },
+      { label: 'City', value: form.city },
+      { label: 'Street address', value: form.streetAddress },
+      { label: 'Postal / Zip', value: form.postalZip },
+      { label: 'Skills', value: selectedSkills.length ? selectedSkills.join(', ') : '' },
+      { label: 'Shirt size', value: form.shirtSize },
+    ]
+      .filter((item) => !item.value || !String(item.value).trim())
+      .map((item) => item.label);
+  }, [form, selectedSkills]);
+
+  const isComplete = missingFields.length === 0;
+
+  const setField = (key: keyof typeof form, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
   };
 
-  const validateProfile = (): boolean => {
-    const nextErrors: Record<string, string> = {};
-    if (!form.full_name.trim()) nextErrors.full_name = 'Full name is required';
-    if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
-    if (!form.streetAddress.trim()) nextErrors.streetAddress = 'Street address is required';
-    if (!form.city.trim()) nextErrors.city = 'City is required';
-    if (!form.stateProvRegion) nextErrors.stateProvRegion = 'Please select a state';
-    if (!form.shirtSize) nextErrors.shirtSize = 'Please choose a shirt size';
-    if (!form.whyVolunteer.trim()) nextErrors.whyVolunteer = 'Tell us why you want to volunteer';
-    const anyBirthday = form.birthdayMM || form.birthdayDD || form.birthdayYYYY;
-    if (anyBirthday) {
-      const mm = parseInt(form.birthdayMM, 10);
-      const dd = parseInt(form.birthdayDD, 10);
-      const yyyy = parseInt(form.birthdayYYYY, 10);
-      if (!form.birthdayMM || mm < 1 || mm > 12) nextErrors.birthdayMM = 'Invalid month';
-      if (!form.birthdayDD || dd < 1 || dd > 31) nextErrors.birthdayDD = 'Invalid day';
-      if (!form.birthdayYYYY || form.birthdayYYYY.length !== 4 || yyyy < 1900 || yyyy > new Date().getFullYear()) {
-        nextErrors.birthdayYYYY = 'Invalid year';
-      }
-    }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
-      toast.error('Please fix highlighted profile errors before saving.');
-      return false;
-    }
-    return true;
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills((current) =>
+      current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill]
+    );
   };
 
-  const fetchStats = async () => {
-    const data = await getMyCheckins();
-    const records = (data || []).filter((r) => r.status === 'checked_out');
-    const totalHours = records.reduce((s: number, r: any) => s + (r.hours_spent || 0), 0);
-    setStats({ totalHours: Math.round(totalHours * 10) / 10, eventsAttended: records.length });
-    setSessions(records.slice(0, 5));
+  const removeSkill = (skill: string) => {
+    setSelectedSkills((current) => current.filter((item) => item !== skill));
+  };
+
+  const addCustomSkill = () => {
+    const trimmed = customSkill.trim();
+    if (!trimmed || selectedSkills.includes(trimmed)) return;
+    setSelectedSkills((current) => [...current, trimmed]);
+    setCustomSkill('');
+  };
+
+  const toggleAvailability = (option: string) => {
+    setSelectedAvailability((current) =>
+      current.includes(option) ? current.filter((item) => item !== option) : [option]
+    );
   };
 
   const handleSave = async () => {
-    if (!user) return;
-    if (!validateProfile()) return;
+    if (!profile?.id) return;
     setSaving(true);
     try {
-      const nameParts = form.full_name.trim().split(' ');
-      
-      // Construct birthday
-      const birthday = form.birthdayMM && form.birthdayDD && form.birthdayYYYY
-        ? `${form.birthdayYYYY}-${form.birthdayMM.padStart(2, '0')}-${form.birthdayDD.padStart(2, '0')}`
-        : null;
+      const [firstName, ...rest] = form.fullName.trim().split(' ');
+      const lastName = rest.join(' ');
 
-      // Construct full address
-      const fullAddress = [form.streetAddress, form.addressLine2, form.city, form.stateProvRegion]
-        .filter(Boolean)
-        .join(', ');
-
-      // Construct bio from why volunteer and other info
-      const bioText = [
-        form.whyVolunteer,
-        form.occupation ? `Occupation: ${form.occupation}` : '',
-        form.organization ? `Organization: ${form.organization}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n\n');
-
-      await updateVolunteerProfile(user.id, {
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
+      await updateVolunteerProfile(profile.id, {
+        firstName: firstName || '',
+        lastName,
         phone: form.phone,
         alternatePhone: form.alternatePhone,
-        region: fullAddress || form.region,
-        streetAddress: form.streetAddress,
-        addressLine2: form.addressLine2,
-        city: form.city,
-        stateProvRegion: form.stateProvRegion,
-        postalZip: form.postalZip,
         gender: form.gender,
-        birthday,
+        birthday: form.birthday,
         occupation: form.occupation,
         organization: form.organization,
         instagramHandle: form.instagramHandle,
         twitterHandle: form.twitterHandle,
+        country: form.country,
+        region: form.region,
+        city: form.city,
+        streetAddress: form.streetAddress,
+        addressLine2: form.addressLine2,
+        postalZip: form.postalZip,
         shirtSize: form.shirtSize,
         whyVolunteer: form.whyVolunteer,
-        bio: bioText || form.bio,
-        skills: form.skills,
-        onboardingCompleted: true, // Mark as completed when saving from profile page
-      } as any);
-      await refreshProfile?.();
-      setIsEditing(false);
-      toast.success('Profile saved successfully!');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to save profile.');
+        bio: form.bio,
+        skills: selectedSkills,
+        availability: selectedAvailability,
+        onboardingCompleted: isComplete,
+      });
+      await refreshProfile();
+    } catch (error) {
+      console.error('Failed to save profile', error);
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleSkill = (skill: string) => {
-    setForm((p) => ({
-      ...p,
-      skills: p.skills.includes(skill) ? p.skills.filter((s) => s !== skill) : [...p.skills, skill],
-    }));
-  };
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="min-h-[60vh] flex items-center justify-center p-6">
+          <Loader2 size={32} className="animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
-  const addSkill = () => {
-    const trimmed = skillInput.trim();
-    if (!trimmed) return;
-    setForm((p) => {
-      if (p.skills.includes(trimmed)) return p;
-      return { ...p, skills: [...p.skills, trimmed] };
-    });
-    setSkillInput('');
-  };
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match.');
-      return;
-    }
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters.');
-      return;
-    }
-    setChangingPassword(true);
-    try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-          confirmPassword: passwordForm.confirmPassword,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message);
-      toast.success('Password changed successfully!');
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to change password.');
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  const handleShare = async () => {
-    if (!user) return;
-    const url = `${window.location.origin}/profile/${user.id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success('Public profile link copied!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error('Could not copy link');
-    }
-  };
-
-  const achievementBadges = [
-    { label: 'First Event', icon: '🎉', threshold: 1, unit: 'events', value: stats.eventsAttended },
-    { label: '10 Hours', icon: '⏱️', threshold: 10, unit: 'hours', value: stats.totalHours },
-    { label: '5 Events', icon: '🌟', threshold: 5, unit: 'events', value: stats.eventsAttended },
-    { label: '25 Hours', icon: '🏆', threshold: 25, unit: 'hours', value: stats.totalHours },
-    { label: '50 Hours', icon: '💎', threshold: 50, unit: 'hours', value: stats.totalHours },
-    { label: '10 Events', icon: '🎖️', threshold: 10, unit: 'events', value: stats.eventsAttended },
-    { label: '100 Hours', icon: '👑', threshold: 100, unit: 'hours', value: stats.totalHours },
-    { label: '20 Events', icon: '🌈', threshold: 20, unit: 'events', value: stats.eventsAttended },
-  ];
-
-  const earnedBadges = achievementBadges.filter((b) => b.value >= b.threshold);
-
-  const panels: { id: Panel; label: string; icon: React.ElementType }[] = [
-    { id: 'profile', label: 'Edit Profile', icon: UserCircle },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'achievements', label: 'Achievements', icon: Award },
-  ];
+  if (!profile) {
+    return (
+      <AppLayout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+          <Shield size={36} className="text-muted-foreground mb-4" />
+          <h1 className="text-xl font-semibold text-foreground">Profile unavailable</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No volunteer profile is loaded. Please sign in again or refresh the page.
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
-    <AppLayout activePath="/profile">
-      <div className="space-y-6 animate-fade-in max-w-3xl">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-700 text-foreground">My Profile</h1>
-            <p className="text-[14px] text-muted-foreground mt-0.5">
-              {isProfileComplete
-                ? 'Your volunteer profile is complete. Click Edit to update any details.'
-                : 'Complete your volunteer details below so we can match you with the right opportunities.'}
-            </p>
+    <AppLayout>
+      <div className="space-y-6 p-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="flex items-center gap-3">
+                <UserCircle size={24} className="text-primary" />
+                <div>
+                  <h1 className="text-2xl font-bold">Champion Profile</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Edit your volunteer details and complete onboarding information.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${isComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                  <CheckCircle2 size={16} /> {isComplete ? 'Complete' : 'Incomplete'}
+                </span>
+                {!isComplete && <p className="text-sm text-muted-foreground">Required volunteer fields are still missing.</p>}
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 px-3.5 py-2 bg-card border border-border rounded-xl text-[13px] font-600 text-foreground hover:bg-muted transition-all"
-            >
-              {copied ? <Check size={14} className="text-success" /> : <Share2 size={14} />}
-              {copied ? 'Copied!' : 'Share Profile'}
-            </button>
-            {user && (
-              <Link
-                href={`/profile/${user.id}`}
-                target="_blank"
-                className="flex items-center gap-2 px-3.5 py-2 bg-card border border-border rounded-xl text-[13px] font-600 text-foreground hover:bg-muted transition-all"
-              >
-                <ExternalLink size={14} />
-                View Public
-              </Link>
-            )}
-            {activePanel === 'profile' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (isEditing) {
-                    handleCancelEdit();
-                  } else {
-                    setIsEditing(true);
-                  }
-                }}
-                className="flex items-center gap-2 px-3.5 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all"
-              >
-                {isEditing ? 'Cancel' : 'Edit'}
-              </button>
-            )}
-          </div>
-        </div>
 
-        {/* Panel Tabs */}
-        <div className="flex gap-2 border-b border-border">
-          {panels.map((p) => {
-            const Icon = p.icon;
-            return (
-              <button
-                key={p.id}
-                onClick={() => setActivePanel(p.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-[13.5px] font-600 border-b-2 transition-all -mb-px ${activePanel === p.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-              >
-                <Icon size={15} />
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Edit Profile Panel */}
-        {activePanel === 'profile' && (
-          <>
-            {isEditing ? (
-              <fieldset className="space-y-5 border-0 p-0">
-              {/* Avatar */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center">
-                    <span className="text-xl font-800 text-primary">
-                      {form.full_name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2) || 'V'}
-                    </span>
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <Camera size={11} className="text-white" />
+          <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+            <div className="space-y-4">
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Personal Details</h2>
+                    <p className="text-sm text-muted-foreground">Editable personal and volunteer profile information.</p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-[14px] font-700 text-foreground">
-                    {form.full_name || 'Your Name'}
-                  </p>
-                  <p className="text-[12px] text-muted-foreground">{profile?.email}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[11px] font-600 text-primary bg-primary/8 px-2 py-0.5 rounded-full capitalize">
-                      {profile?.volunteer_status}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {stats.totalHours} hrs · {stats.eventsAttended} events
-                    </span>
+
+                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Full name</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.fullName}
+                      onChange={(e) => setField('fullName', e.target.value)}
+                      placeholder="Jane Doe"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Email</span>
+                    <input type="email" className={`${fieldClass} cursor-not-allowed bg-slate-100`} value={profile.email || ''} readOnly />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Phone</span>
+                    <input
+                      type="tel"
+                      className={fieldClass}
+                      value={form.phone}
+                      onChange={(e) => setField('phone', e.target.value)}
+                      placeholder="+234 800 000 0000"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Alternate phone</span>
+                    <input
+                      type="tel"
+                      className={fieldClass}
+                      value={form.alternatePhone}
+                      onChange={(e) => setField('alternatePhone', e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Gender</span>
+                    <select
+                      value={form.gender}
+                      onChange={(e) => setField('gender', e.target.value)}
+                      className={fieldClass}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="other">Other</option>
+                      <option value="prefer_not_to_say">Prefer not to say</option>
+                    </select>
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Birthday</span>
+                    <input
+                      type="date"
+                      className={fieldClass}
+                      value={form.birthday}
+                      onChange={(e) => setField('birthday', e.target.value)}
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Occupation</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.occupation}
+                      onChange={(e) => setField('occupation', e.target.value)}
+                      placeholder="Occupation"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Organization</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.organization}
+                      onChange={(e) => setField('organization', e.target.value)}
+                      placeholder="Organization"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Location</h2>
+                    <p className="text-sm text-muted-foreground">Your address and region for local volunteer matching.</p>
                   </div>
-                  {isProfileComplete && (
-                    <p className="mt-2 text-[12px] text-muted-foreground">
-                      Your volunteer profile is complete. Click Edit to make updates.
-                    </p>
+                </div>
+
+                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Country</span>
+                    <select
+                      value={form.country}
+                      onChange={(e) => {
+                        setField('country', e.target.value);
+                        setField('region', '');
+                      }}
+                      className={fieldClass}
+                    >
+                      <option value="">Select country</option>
+                      {COUNTRIES.map((country) => (
+                        <option key={country} value={country}>
+                          {country}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Region / State</span>
+                    {regionOptions.length > 0 ? (
+                      <select
+                        value={form.region}
+                        onChange={(e) => setField('region', e.target.value)}
+                        className={fieldClass}
+                      >
+                        <option value="">Select region / state</option>
+                        {regionOptions.map((regionOption) => (
+                          <option key={regionOption} value={regionOption}>
+                            {regionOption}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        className={fieldClass}
+                        value={form.region}
+                        onChange={(e) => setField('region', e.target.value)}
+                        placeholder="Region / province / state"
+                      />
+                    )}
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">City</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.city}
+                      onChange={(e) => setField('city', e.target.value)}
+                      placeholder="Ikeja"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Postal / Zip</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.postalZip}
+                      onChange={(e) => setField('postalZip', e.target.value)}
+                      placeholder="Postal code"
+                    />
+                  </label>
+                  <label className="space-y-2 lg:col-span-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Street address</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.streetAddress}
+                      onChange={(e) => setField('streetAddress', e.target.value)}
+                      placeholder="123 Main St"
+                    />
+                  </label>
+                  <label className="space-y-2 lg:col-span-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Address line 2</span>
+                    <input
+                      type="text"
+                      className={fieldClass}
+                      value={form.addressLine2}
+                      onChange={(e) => setField('addressLine2', e.target.value)}
+                      placeholder="Suite, apartment, etc."
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Volunteer Details</h2>
+                    <p className="text-sm text-muted-foreground">Skills, availability, and volunteer preference data.</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Skills</span>
+                      <span className="text-xs text-muted-foreground">Tap a skill or add your own</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {SKILLS.map((skill) => {
+                        const active = selectedSkills.includes(skill);
+                        return (
+                          <button
+                            key={skill}
+                            type="button"
+                            onClick={() => toggleSkill(skill)}
+                            className={`rounded-full border px-3 py-1 text-sm transition ${active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-foreground'}`}
+                          >
+                            {skill}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedSkills.map((skill) => (
+                        <span key={skill} className={chipClass}>
+                          {skill}
+                          <button type="button" onClick={() => removeSkill(skill)} className="rounded-full p-1 text-muted-foreground hover:text-foreground">
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        type="text"
+                        className={fieldClass}
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="Add a custom skill"
+                      />
+                      <button
+                        type="button"
+                        onClick={addCustomSkill}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+                      >
+                        <Plus size={14} /> Add skill
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Availability</span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {AVAILABILITY_OPTIONS.map((option) => {
+                        const active = selectedAvailability.includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => toggleAvailability(option)}
+                            className={`rounded-full border px-3 py-1 text-sm transition ${active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-foreground'}`}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Shirt size</span>
+                      <select
+                        value={form.shirtSize}
+                        onChange={(e) => setField('shirtSize', e.target.value)}
+                        className={fieldClass}
+                      >
+                        <option value="">Select size</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="XXL">XXL</option>
+                      </select>
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Why volunteer?</span>
+                      <input
+                        type="text"
+                        className={fieldClass}
+                        value={form.whyVolunteer}
+                        onChange={(e) => setField('whyVolunteer', e.target.value)}
+                        placeholder="What motivates you"
+                      />
+                    </label>
+                  </div>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Bio</span>
+                    <textarea
+                      className={`${fieldClass} min-h-[112px] resize-none`}
+                      value={form.bio}
+                      onChange={(e) => setField('bio', e.target.value)}
+                      placeholder="Write a short bio or volunteer summary"
+                    />
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <aside className="space-y-4">
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <MapPin size={16} /> Summary
+                </div>
+                <div className="mt-4 space-y-3 text-sm text-foreground">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} /> {profile.volunteer_status?.toUpperCase() || 'PENDING'} status
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} /> {form.region || 'Region not set'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone size={16} /> {form.phone || 'No phone'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail size={16} /> {profile.email || 'No email'}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <Building2 size={16} /> Required fields
+                </div>
+                <div className="mt-4 text-sm text-foreground space-y-2">
+                  {missingFields.length > 0 ? (
+                    <>
+                      <p className="text-sm font-medium">These fields are required:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                        {missingFields.map((label) => (
+                          <li key={label}>{label}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">All required volunteer fields are completed.</p>
                   )}
                 </div>
-              </div>
-            </div>
+              </section>
 
-            {/* Form */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-4 sm:p-5 space-y-4">
-              <h2 className="text-[15px] font-700 text-foreground">Personal Information</h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <UserCircle
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <input
-                      value={form.full_name}
-                      onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
-                      placeholder="Your full name"
-                      className={fieldIconCls(!!errors.full_name)}
-                    />
-                  </div>
-                  <FieldError msg={errors.full_name} />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Phone</label>
-                  <div className="relative">
-                    <Phone
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <input
-                      value={form.phone}
-                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                      placeholder="+234 (0) 800 000 0000"
-                      className={fieldIconCls(!!errors.phone)}
-                    />
-                  </div>
-                  <FieldError msg={errors.phone} />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Region / Location
-                </label>
-                <div className="relative">
-                  <MapPin
-                    size={15}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
-                  <input
-                    value={form.region}
-                    onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
-                    placeholder="e.g. Lagos State, Nigeria"
-                      className={fieldIconCls(!!errors.region)}
-                    />
-                  </div>
-                  <FieldError msg={errors.region} />
-                <div className="relative">
-                  <FileText size={15} className="absolute left-3 top-3 text-muted-foreground" />
-                  <textarea
-                    value={form.bio}
-                    onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value }))}
-                    rows={3}
-                    placeholder="Tell us about yourself and your Nohunger Champion story…"
-                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Profile Information */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <Heart size={16} className="text-primary mt-0.5" />
-                <div>
-                  <h2 className="text-[15px] font-700 text-foreground">Complete Your Profile</h2>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">
-                    Help us get to know you better! These details are optional but help us match you with the perfect volunteering opportunities and create a more personalized experience.
-                  </p>
-                </div>
-              </div>
-
-              {/* Birthday */}
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Birthday <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <input
-                      value={form.birthdayMM}
-                      onChange={(e) => setForm((p) => ({ ...p, birthdayMM: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
-                      placeholder="MM"
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      value={form.birthdayDD}
-                      onChange={(e) => setForm((p) => ({ ...p, birthdayDD: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
-                      placeholder="DD"
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      value={form.birthdayYYYY}
-                      onChange={(e) => setForm((p) => ({ ...p, birthdayYYYY: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-                      placeholder="YYYY"
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Gender and Shirt Size */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Gender <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </label>
-                  <select
-                    value={form.gender}
-                    onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  >
-                    <option value="">Select gender</option>
-                    {GENDER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Shirt Size <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Shirt size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      value={form.shirtSize}
-                      onChange={(e) => setForm((p) => ({ ...p, shirtSize: e.target.value }))}
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    >
-                      <option value="">Select size</option>
-                      {SHIRT_SIZES.map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Address <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="space-y-2">
-                  <input
-                    value={form.streetAddress}
-                    onChange={(e) => setForm((p) => ({ ...p, streetAddress: e.target.value }))}
-                    placeholder="Street address"
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                  <input
-                    value={form.addressLine2}
-                    onChange={(e) => setForm((p) => ({ ...p, addressLine2: e.target.value }))}
-                    placeholder="Address line 2 (optional)"
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      value={form.city}
-                      onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
-                      placeholder="City"
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                    <select
-                      value={form.stateProvRegion}
-                      onChange={(e) => setForm((p) => ({ ...p, stateProvRegion: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    >
-                      <option value="">State/Province</option>
-                      {NIGERIA_STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={form.postalZip}
-                      onChange={(e) => setForm((p) => ({ ...p, postalZip: e.target.value }))}
-                      placeholder="Postal/Zip"
-                      className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Alternate Phone <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={form.alternatePhone}
-                      onChange={(e) => setForm((p) => ({ ...p, alternatePhone: e.target.value }))}
-                      placeholder="+234 (0) 800 000 0000"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Occupation <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Briefcase size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={form.occupation}
-                      onChange={(e) => setForm((p) => ({ ...p, occupation: e.target.value }))}
-                      placeholder="Your profession"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Organization */}
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Organization <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="relative">
-                  <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={form.organization}
-                    onChange={(e) => setForm((p) => ({ ...p, organization: e.target.value }))}
-                    placeholder="School, company, or organization you represent"
-                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Social Media */}
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Social Media <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="relative">
-                    <AtSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={form.instagramHandle}
-                      onChange={(e) => setForm((p) => ({ ...p, instagramHandle: e.target.value }))}
-                      placeholder="@yourinstagram or full URL"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      value={form.twitterHandle}
-                      onChange={(e) => setForm((p) => ({ ...p, twitterHandle: e.target.value }))}
-                      placeholder="@yourtwitter or full URL"
-                      className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Why Volunteer */}
-              <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Why do you want to volunteer? <span className="text-muted-foreground font-normal">(Optional)</span>
-                </label>
-                <div className="relative">
-                  <MessageSquare size={15} className="absolute left-3 top-3 text-muted-foreground" />
-                  <textarea
-                    value={form.whyVolunteer}
-                    onChange={(e) => setForm((p) => ({ ...p, whyVolunteer: e.target.value }))}
-                    rows={3}
-                    placeholder="Share your motivation for volunteering with No Hunger Initiatives Nigeria..."
-                    className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Skills */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Wrench size={15} className="text-primary" />
-                <h2 className="text-[15px] font-700 text-foreground">Skills</h2>
-              </div>
-              <p className="text-[12px] text-muted-foreground mb-3">
-                Type your skills and click Add, or choose from suggested skills below.
-              </p>
-              <div className="flex items-center gap-2 mb-3">
-                <input
-                  type="text"
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addSkill();
-                    }
-                  }}
-                  placeholder="e.g. Community outreach, Training, Design"
-                  className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
                 <button
                   type="button"
-                  onClick={addSkill}
-                  className="px-4 py-2 text-[13px] font-600 text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {form.skills
-                  .filter((skill) => !SKILL_OPTIONS.includes(skill))
-                  .map((skill) => (
-                    <button
-                      key={skill}
-                      type="button"
-                      onClick={() => setForm((p) => ({ ...p, skills: p.skills.filter((s) => s !== skill) }))}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(142,72%,92%)] text-[hsl(142,72%,20%)] border border-[hsl(142,72%,65%)] text-[13px] font-600"
-                    >
-                      {skill}
-                      ×
-                    </button>
-                  ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {SKILL_OPTIONS.map((skill) => {
-                  const selected = form.skills.includes(skill);
-                  return (
-                    <button
-                      key={skill}
-                      onClick={() => toggleSkill(skill)}
-                      className={`px-3 py-1.5 rounded-full text-[12.5px] font-600 transition-all border ${selected ? 'bg-primary text-white border-primary' : 'bg-muted text-muted-foreground border-border hover:border-primary/30'}`}
-                    >
-                      {skill.replace(/-/g, ' ')}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Save */}
-            {isEditing && (
-              <div className="flex justify-end">
-                <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[14px]"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {saving ? 'Saving…' : 'Save Changes'}
+                  {saving ? 'Saving…' : 'Save Profile'}
                 </button>
-              </div>
-            )}
-          </fieldset>
-          ) : (
-            <div className="space-y-5">
-              <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-[15px] font-700 text-foreground">Volunteer profile summary</h2>
-                    <p className="text-[13px] text-muted-foreground mt-1">
-                      Your profile is saved and locked for edits. Click Edit to update your details.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all"
-                  >
-                    Edit Profile
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Name</p>
-                    <p className="text-[14px] font-600 text-foreground">{profile?.full_name || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Email</p>
-                    <p className="text-[14px] font-600 text-foreground">{profile?.email || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Phone</p>
-                    <p className="text-[14px] font-600 text-foreground">{profile?.phone || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Location</p>
-                    <p className="text-[14px] font-600 text-foreground">
-                      {profile?.street_address || profile?.region || '—'}
-                      {profile?.city ? `, ${profile.city}` : ''}
-                      {profile?.state_prov_region ? `, ${profile.state_prov_region}` : ''}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Shirt size</p>
-                    <p className="text-[14px] font-600 text-foreground">{profile?.shirt_size || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Volunteer focus</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(profile?.skills || []).length > 0 ? (
-                        profile.skills.map((skill: string) => (
-                          <span key={skill} className="px-3 py-1 rounded-full bg-[hsl(142,72%,92%)] text-[12px] text-[hsl(142,72%,22%)] font-600">
-                            {skill.replace(/-/g, ' ')}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[13px] text-muted-foreground">No skills saved yet</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-5">
-                  <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Why volunteer</p>
-                  <p className="text-[14px] font-600 text-foreground leading-relaxed">
-                    {profile?.why_volunteer || 'No motivation provided yet.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            )}
-          </>
-        )}
-
-        {/* Security Panel */}
-        {activePanel === 'security' && (
-          <div className="space-y-5">
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield size={18} className="text-primary" />
-                <h2 className="text-[15px] font-700 text-foreground">Change Password</h2>
-              </div>
-              <p className="text-[12px] text-muted-foreground mb-4">
-                Update your password to keep your account secure.
-              </p>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
-                    placeholder="Enter your current password"
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
-                    placeholder="Enter a new password"
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                    placeholder="Confirm your new password"
-                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    required
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={changingPassword}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[14px]"
-                  >
-                    {changingPassword ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                    {changingPassword ? 'Changing…' : 'Change Password'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              </section>
+            </aside>
           </div>
-        )}
-
-        {/* Achievements Panel */}
-        {activePanel === 'achievements' && (
-          <div className="space-y-5">
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: 'Total Hours', value: stats.totalHours, unit: 'hrs', icon: Clock },
-                {
-                  label: 'Events Attended',
-                  value: stats.eventsAttended,
-                  unit: 'events',
-                  icon: CalendarCheck,
-                },
-                {
-                  label: 'Badges Earned',
-                  value: earnedBadges.length,
-                  unit: `/ ${achievementBadges.length}`,
-                  icon: Award,
-                },
-              ].map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <div
-                    key={stat.label}
-                    className="bg-card border border-border rounded-2xl p-4 text-center shadow-card"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                      <Icon size={18} className="text-primary" />
-                    </div>
-                    <div className="text-2xl font-800 font-tabular text-foreground">
-                      {stat.value}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">{stat.unit}</div>
-                    <div className="text-[10px] font-600 text-muted-foreground uppercase tracking-wide mt-0.5">
-                      {stat.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Badges */}
-            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-              <h2 className="text-[15px] font-700 text-foreground mb-4">Achievement Badges</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {achievementBadges.map((badge) => {
-                  const earned = badge.value >= badge.threshold;
-                  return (
-                    <div
-                      key={badge.label}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${earned ? 'bg-primary/6 border-primary/20' : 'bg-muted/50 border-border opacity-50'}`}
-                    >
-                      <span className="text-3xl">{badge.icon}</span>
-                      <span className="text-[12px] font-700 text-center text-foreground">
-                        {badge.label}
-                      </span>
-                      <span
-                        className={`text-[10px] font-600 ${earned ? 'text-success' : 'text-muted-foreground'}`}
-                      >
-                        {earned ? '✓ Earned' : `${badge.threshold} ${badge.unit} needed`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Recent Sessions */}
-            {sessions.length > 0 && (
-              <div className="bg-card border border-border rounded-2xl shadow-card p-5">
-                <h2 className="text-[15px] font-700 text-foreground mb-4">Recent Sessions</h2>
-                <div className="space-y-3">
-                  {sessions.map((s: any, i: number) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 py-2 border-b border-border last:border-0"
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-                        <CalendarCheck size={15} className="text-success" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-600 text-foreground truncate">
-                          {s.activity?.title || 'Event'}
-                        </p>
-                        {s.activity?.start_date && (
-                          <p className="text-[11px] text-muted-foreground">
-                            {new Date(s.activity.start_date).toLocaleDateString('en', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[13px] font-700 text-primary font-tabular">
-                        {s.hours_spent} hrs
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Certificate Download */}
-            {stats.totalHours >= 10 && (
-              <div className="bg-[hsl(142,72%,94%)] border border-[hsl(142,72%,78%)] rounded-2xl p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">🏅</span>
-                  <div>
-                    <p className="text-[14px] font-700 text-[hsl(142,72%,22%)]">
-                      Certificate of Volunteer Service
-                    </p>
-                    <p className="text-[12px] text-muted-foreground">
-                      You've earned a certificate for {stats.totalHours} hours of service
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    const cert = `CERTIFICATE OF VOLUNTEER SERVICE\n\nThis certifies that\n\n${profile?.full_name}\n\nhas volunteered ${stats.totalHours} hours across ${stats.eventsAttended} events\nwith the No Hunger Initiatives.\n\nIssued: ${new Date().toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                    const blob = new Blob([cert], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `nohunger-certificate-${profile?.full_name?.replace(' ', '-')}.txt`;
-                    a.click();
-                    toast.success('Certificate downloaded!');
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-[13px] font-600 hover:bg-primary-dark transition-all"
-                >
-                  <Award size={14} /> Download Certificate
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </div>
     </AppLayout>
   );

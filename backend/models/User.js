@@ -52,6 +52,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    country: {
+      type: String,
+      default: '',
+    },
     streetAddress: {
       type: String,
     },

@@ -38,8 +38,14 @@ import {
   Camera,
 } from 'lucide-react';
 import { GENDER_OPTIONS, NIGERIA_STATES } from '@/lib/constants/nigeria';
+import { COUNTRIES } from '@/lib/constants/countries';
 
 const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+
+const COUNTRY_STATE_MAP: Record<string, string[]> = {
+  Ghana: ['Accra', 'Kumasi', 'Cape Coast', 'Takoradi', 'Tamale', 'Koforidua', 'Sunyani', 'Ho', 'Bolgatanga'],
+  Nigeria: NIGERIA_STATES,
+};
 
 const SKILLS = [
   {
@@ -84,7 +90,7 @@ const AVAILABILITY = [
   { id: 'weekend-afternoon', label: 'Weekend Afternoons' },
 ];
 
-type Step = 'welcome' | 'profile' | 'skills' | 'pending';
+type Step = 'welcome' | 'profile' | 'skills' | 'review' | 'pending';
 
 interface ProfileForm {
   email: string;
@@ -93,6 +99,7 @@ interface ProfileForm {
   streetAddress: string;
   addressLine2: string;
   city: string;
+  country: string;
   stateProvRegion: string;
   postalZip: string;
   gender: string;
@@ -105,7 +112,6 @@ interface ProfileForm {
   instagramHandle: string;
   twitterHandle: string;
   shirtSize: string;
-  whyVolunteer: string;
   organization: string;
 }
 
@@ -115,6 +121,7 @@ interface ProfileErrors {
   lastName?: string;
   streetAddress?: string;
   city?: string;
+  country?: string;
   stateProvRegion?: string;
   gender?: string;
   phone?: string;
@@ -122,7 +129,6 @@ interface ProfileErrors {
   birthdayDD?: string;
   birthdayYYYY?: string;
   shirtSize?: string;
-  whyVolunteer?: string;
 }
 
 const inputBase =
@@ -150,8 +156,8 @@ export default function OnboardingPage() {
   const [customSkill, setCustomSkill] = useState('');
   const [errors, setErrors] = useState<ProfileErrors>({});
 
-  const totalSteps = 3;
-  const currentStepIndex = ['welcome', 'profile', 'skills'].indexOf(step) + 1;
+  const totalSteps = 4;
+  const currentStepIndex = ['welcome', 'profile', 'skills', 'review'].indexOf(step) + 1;
   const progress = Math.round((currentStepIndex / totalSteps) * 100);
 
   const [form, setForm] = useState<ProfileForm>({
@@ -162,7 +168,8 @@ export default function OnboardingPage() {
     addressLine2: '',
     city: '',
     stateProvRegion: '',
-    postalZip: '',
+    country: '',
+  postalZip: '',
     gender: '',
     phone: '',
     birthdayMM: '',
@@ -173,7 +180,6 @@ export default function OnboardingPage() {
     instagramHandle: '',
     twitterHandle: '',
     shirtSize: '',
-    whyVolunteer: '',
     organization: '',
   });
 
@@ -211,7 +217,7 @@ export default function OnboardingPage() {
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
-  const validateProfile = (): boolean => {
+  const getProfileErrors = (): ProfileErrors => {
     const e: ProfileErrors = {};
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = 'Valid email address is required';
@@ -219,11 +225,11 @@ export default function OnboardingPage() {
     if (!form.lastName.trim()) e.lastName = 'Last name is required';
     if (!form.streetAddress.trim()) e.streetAddress = 'Street address is required';
     if (!form.city.trim()) e.city = 'City is required';
-    if (!form.stateProvRegion) e.stateProvRegion = 'Please select a state';
+    if (!form.country) e.country = 'Please select a country / region';
+    if (!form.stateProvRegion) e.stateProvRegion = 'Please select a state / area';
     if (!form.gender) e.gender = 'Please select your gender';
     if (!form.phone.trim()) e.phone = 'Phone number is required';
     if (!form.shirtSize) e.shirtSize = 'Please select a shirt size';
-    if (!form.whyVolunteer.trim()) e.whyVolunteer = 'Please tell us why you want to volunteer';
     // Birthday validation (if any part is filled, all must be valid)
     const anyBirthday = form.birthdayMM || form.birthdayDD || form.birthdayYYYY;
     if (anyBirthday) {
@@ -240,12 +246,25 @@ export default function OnboardingPage() {
       )
         e.birthdayYYYY = 'Invalid year';
     }
+    return e;
+  };
+
+  const validateProfile = (): boolean => {
+    const e = getProfileErrors();
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleProfileNext = () => {
-    if (validateProfile()) setStep('skills');
+    const errorsResult = getProfileErrors();
+    setErrors(errorsResult);
+    if (Object.keys(errorsResult).length === 0) {
+      setStep('skills');
+      return;
+    }
+
+    const firstError = Object.values(errorsResult).find((message) => message);
+    toast.error(firstError || 'Please fix the highlighted fields before continuing.');
   };
 
   const toggleSkill = (id: string) => {
@@ -275,12 +294,20 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSkillsNext = () => {
     if (selectedSkills.length === 0) {
       toast.error('Please select at least one skill area');
       return;
     }
+    setStep('review');
+  };
+
+  const handleSubmit = async () => {
     if (!user) return;
+    if (selectedSkills.length === 0) {
+      toast.error('Please select at least one skill area');
+      return;
+    }
     setSaving(true);
     try {
       const fullName = `${form.firstName} ${form.lastName}`.trim();
@@ -293,8 +320,11 @@ export default function OnboardingPage() {
         .filter(Boolean)
         .join(', ');
 
+      const regionValue = form.country
+        ? `${form.country} – ${form.stateProvRegion || form.city}`
+        : fullAddress || form.stateProvRegion;
+
       const bioText = [
-        form.whyVolunteer,
         form.occupation ? `Occupation: ${form.occupation}` : '',
         form.organization ? `Organization: ${form.organization}` : '',
       ]
@@ -306,7 +336,7 @@ export default function OnboardingPage() {
         lastName: form.lastName,
         phone: form.phone,
         gender: form.gender,
-        region: fullAddress || form.stateProvRegion,
+        region: regionValue,
         bio: bioText,
         skills: selectedSkills,
         availability: selectedAvailability,
@@ -349,26 +379,26 @@ export default function OnboardingPage() {
           {step !== 'pending' && (
             <div className="flex flex-col gap-4 w-full">
               <div className="flex items-center gap-1 sm:gap-1.5">
-                {(['welcome', 'profile', 'skills'] as Step[]).map((s, i) => (
+                {(['welcome', 'profile', 'skills', 'review'] as Step[]).map((s, i) => (
                   <div key={s} className="flex items-center gap-1 sm:gap-1.5">
                     <div
                       className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-700 transition-colors ${
                         step === s
                           ? 'bg-[hsl(142,72%,29%)] text-white'
-                          : ['welcome', 'profile', 'skills'].indexOf(step) > i
+                          : ['welcome', 'profile', 'skills', 'review'].indexOf(step) > i
                             ? 'bg-[hsl(142,72%,90%)] text-[hsl(142,72%,22%)]'
                             : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {['welcome', 'profile', 'skills'].indexOf(step) > i ? (
+                      {['welcome', 'profile', 'skills', 'review'].indexOf(step) > i ? (
                         <CheckCircle2 size={12} />
                       ) : (
                         i + 1
                       )}
                     </div>
-                    {i < 2 && (
+                    {i < 3 && (
                       <div
-                        className={`w-5 sm:w-8 h-0.5 rounded-full ${['welcome', 'profile', 'skills'].indexOf(step) > i ? 'bg-[hsl(142,72%,29%)]' : 'bg-border'}`}
+                        className={`w-5 sm:w-8 h-0.5 rounded-full ${['welcome', 'profile', 'skills', 'review'].indexOf(step) > i ? 'bg-[hsl(142,72%,29%)]' : 'bg-border'}`}
                       />
                     )}
                   </div>
@@ -438,6 +468,7 @@ export default function OnboardingPage() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setStep('profile')}
                 className="inline-flex items-center gap-2 bg-[hsl(142,72%,29%)] hover:bg-[hsl(142,72%,24%)] text-white font-600 px-8 py-3 rounded-xl transition-colors text-[15px]"
               >
@@ -684,7 +715,7 @@ export default function OnboardingPage() {
                       <label className="block text-[13px] font-600 text-foreground mb-1.5">
                         Shirt Size <span className="text-destructive">*</span>
                       </label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className={`flex flex-wrap gap-2 p-2 rounded-2xl ${errors.shirtSize ? 'border border-destructive/40 bg-destructive/10' : ''}`}>
                         {SHIRT_SIZES.map((size) => (
                           <button
                             key={size}
@@ -693,9 +724,7 @@ export default function OnboardingPage() {
                             className={`px-4 py-2 rounded-xl border text-[13px] font-600 transition-all ${
                               form.shirtSize === size
                                 ? 'bg-[hsl(142,72%,29%)] text-white border-[hsl(142,72%,29%)]'
-                                : errors.shirtSize
-                                  ? 'bg-destructive/5 border-destructive/30 text-muted-foreground hover:border-[hsl(142,72%,60%)]'
-                                  : 'bg-muted border-border text-foreground hover:border-[hsl(142,72%,60%)]'
+                                : 'bg-muted border-border text-foreground hover:border-[hsl(142,72%,60%)]'
                             }`}
                           >
                             {size}
@@ -784,39 +813,58 @@ export default function OnboardingPage() {
 
                     {/* City + State */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                          City <span className="text-destructive">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="New York"
-                          value={form.city}
-                          onChange={(e) => setField('city', e.target.value)}
-                          className={fieldCls(!!errors.city)}
-                        />
-                        <FieldError msg={errors.city} />
+                        <div>
+                          <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                            Country / Region <span className="text-destructive">*</span>
+                          </label>
+                          <select
+                            value={form.country}
+                            onChange={(e) => {
+                              setField('country', e.target.value);
+                              if (e.target.value) {
+                                setField('stateProvRegion', '');
+                              }
+                            }}
+                            className={fieldCls(!!errors.country)}
+                          >
+                            <option value="">Select country</option>
+                            {COUNTRIES.map((country) => (
+                              <option key={country} value={country}>
+                                {country}
+                              </option>
+                            ))}
+                          </select>
+                          <FieldError msg={errors.country} />
+                        </div>
+                        <div>
+                          <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                            State / Area <span className="text-destructive">*</span>
+                          </label>
+                          {COUNTRY_STATE_MAP[form.country]?.length ? (
+                            <select
+                              value={form.stateProvRegion}
+                              onChange={(e) => setField('stateProvRegion', e.target.value)}
+                              className={fieldCls(!!errors.stateProvRegion)}
+                            >
+                              <option value="">Select state / area</option>
+                              {COUNTRY_STATE_MAP[form.country].map((state) => (
+                                <option key={state} value={state}>
+                                  {state}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="Enter state / region"
+                              value={form.stateProvRegion}
+                              onChange={(e) => setField('stateProvRegion', e.target.value)}
+                              className={fieldCls(!!errors.stateProvRegion)}
+                            />
+                          )}
+                          <FieldError msg={errors.stateProvRegion} />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                          State <span className="text-destructive">*</span>
-                        </label>
-                        <select
-                          value={form.stateProvRegion}
-                          onChange={(e) => setField('stateProvRegion', e.target.value)}
-                          className={fieldCls(!!errors.stateProvRegion)}
-                        >
-                          <option value="">Select state</option>
-                          {NIGERIA_STATES.map((state) => (
-                            <option key={state} value={state}>
-                              {state}
-                            </option>
-                          ))}
-                        </select>
-                        <FieldError msg={errors.stateProvRegion} />
-                      </div>
-                    </div>
-
                     {/* Postal */}
                     <div>
                       <label className="block text-[13px] font-600 text-foreground mb-1.5">
@@ -833,34 +881,6 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Section: Why Volunteer */}
-                <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
-                  <h3 className="text-[13px] font-700 text-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <MessageSquare size={14} className="text-[hsl(142,72%,29%)]" /> About Your
-                    No Hunger Champion Journey
-                  </h3>
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-[13px] font-600 text-foreground">
-                        Why do you want to join as a No Hunger Champion?{' '}
-                        <span className="text-destructive">*</span>
-                      </label>
-                      <span
-                        className={`text-[11px] ${form.whyVolunteer.length > 480 ? 'text-amber-500' : 'text-muted-foreground'}`}
-                      >
-                        {form.whyVolunteer.length}/500
-                      </span>
-                    </div>
-                    <textarea
-                      placeholder="Tell us what motivates you to be a No Hunger Champion and what you hope to contribute..."
-                      value={form.whyVolunteer}
-                      onChange={(e) => setField('whyVolunteer', e.target.value.slice(0, 500))}
-                      rows={5}
-                      className={`w-full px-4 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 transition-all resize-none ${errors.whyVolunteer ? inputErr : inputOk}`}
-                    />
-                    <FieldError msg={errors.whyVolunteer} />
-                  </div>
-                </div>
               </div>
 
               <div className="flex items-center justify-between mt-6">
@@ -871,6 +891,7 @@ export default function OnboardingPage() {
                   <ArrowLeft size={15} /> Back
                 </button>
                 <button
+                  type="button"
                   onClick={handleProfileNext}
                   className="flex items-center gap-2 bg-[hsl(142,72%,29%)] hover:bg-[hsl(142,72%,24%)] text-white font-600 px-6 py-2.5 rounded-xl transition-colors text-[14px]"
                 >
@@ -1007,9 +1028,114 @@ export default function OnboardingPage() {
                   <ArrowLeft size={15} /> Back
                 </button>
                 <button
-                  onClick={handleSubmit}
-                  disabled={saving || selectedSkills.length === 0}
+                  type="button"
+                  onClick={handleSkillsNext}
+                  disabled={selectedSkills.length === 0}
                   className="flex items-center gap-2 bg-[hsl(142,72%,29%)] hover:bg-[hsl(142,72%,24%)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-600 px-6 py-2.5 rounded-xl transition-colors text-[14px]"
+                >
+                  Review Profile <ArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP: Review Summary */}
+          {step === 'review' && (
+            <div className="animate-fade-in max-w-2xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-800 text-foreground mb-2">Review Your Profile</h2>
+                <p className="text-muted-foreground text-[14px] sm:text-[15px]">
+                  Please review your information before submitting. You can edit it anytime in your profile later.
+                </p>
+              </div>
+
+              {/* Personal Info Summary */}
+              <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 mb-4 space-y-4">
+                <h3 className="text-[14px] font-700 text-foreground uppercase tracking-wide">Personal Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Name</p>
+                    <p className="text-[15px] font-600 text-foreground">{form.firstName} {form.lastName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Phone</p>
+                    <p className="text-[15px] font-600 text-foreground">{form.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Gender</p>
+                    <p className="text-[15px] font-600 text-foreground capitalize">{form.gender || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Shirt Size</p>
+                    <p className="text-[15px] font-600 text-foreground">{form.shirtSize}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Summary */}
+              <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 mb-4 space-y-4">
+                <h3 className="text-[14px] font-700 text-foreground uppercase tracking-wide">Location</h3>
+                <div className="space-y-3">
+                  {form.country && (
+                    <div>
+                      <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Country / Region</p>
+                      <p className="text-[15px] font-600 text-foreground">{form.country}</p>
+                    </div>
+                  )}
+                  {form.stateProvRegion && (
+                    <div>
+                      <p className="text-[12px] text-muted-foreground uppercase tracking-wide">State / Area</p>
+                      <p className="text-[15px] font-600 text-foreground">{form.stateProvRegion}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[12px] text-muted-foreground uppercase tracking-wide">Address</p>
+                    <p className="text-[15px] font-600 text-foreground">{form.streetAddress}, {form.city}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Skills Summary */}
+              <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 mb-4 space-y-4">
+                <h3 className="text-[14px] font-700 text-foreground uppercase tracking-wide">Volunteer Focus Areas</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedSkills.map((skill) => (
+                    <span key={skill} className="px-3 py-1.5 rounded-full bg-[hsl(142,72%,92%)] text-[13px] font-600 text-[hsl(142,72%,22%)]">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Availability Summary */}
+              {selectedAvailability.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 mb-4 space-y-4">
+                  <h3 className="text-[14px] font-700 text-foreground uppercase tracking-wide">Availability</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAvailability.map((slot) => {
+                      const label = AVAILABILITY.find((a) => a.id === slot)?.label;
+                      return (
+                        <span key={slot} className="px-3 py-1.5 rounded-full bg-muted text-[13px] font-600 text-foreground">
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  onClick={() => setStep('skills')}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-[14px] font-600 text-muted-foreground hover:text-foreground transition-colors px-4 py-2.5"
+                >
+                  <ArrowLeft size={15} /> Back to Skills
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[hsl(142,72%,29%)] hover:bg-[hsl(142,72%,24%)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-600 px-6 py-2.5 rounded-xl transition-colors text-[14px]"
                 >
                   {saving ? (
                     <>
@@ -1017,7 +1143,7 @@ export default function OnboardingPage() {
                     </>
                   ) : (
                     <>
-                      Submit Profile <ArrowRight size={15} />
+                      Complete Profile <CheckCircle2 size={15} />
                     </>
                   )}
                 </button>

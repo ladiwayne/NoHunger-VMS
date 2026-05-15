@@ -141,6 +141,7 @@ router.put('/:id', auth, [
   body('streetAddress').optional().trim().isLength({ max: 100 }),
   body('addressLine2').optional().trim().isLength({ max: 100 }),
   body('city').optional().trim().isLength({ max: 50 }),
+  body('country').optional().trim().isLength({ max: 100 }).withMessage('Country name must be 100 characters or less'),
   body('stateProvRegion').optional().trim().isLength({ max: 50 }),
   body('postalZip').optional().trim().isLength({ max: 20 }),
   body('birthday').optional().isISO8601(),
@@ -170,6 +171,7 @@ router.put('/:id', auth, [
       skills, 
       profilePicture, 
       region, 
+      country, 
       streetAddress,
       addressLine2,
       city,
@@ -205,6 +207,7 @@ router.put('/:id', auth, [
     }
     if (profilePicture) volunteer.profilePicture = profilePicture;
     if (region !== undefined) volunteer.region = region;
+    if (country !== undefined) volunteer.country = country;
     if (streetAddress !== undefined) volunteer.streetAddress = streetAddress;
     if (addressLine2 !== undefined) volunteer.addressLine2 = addressLine2;
     if (city !== undefined) volunteer.city = city;

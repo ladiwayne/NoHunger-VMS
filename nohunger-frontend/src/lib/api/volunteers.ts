@@ -43,6 +43,7 @@ export async function updateVolunteerProfile(
     skills?: string[];
     availability?: string[];
     region?: string;
+    country?: string;
     streetAddress?: string;
     addressLine2?: string;
     city?: string;

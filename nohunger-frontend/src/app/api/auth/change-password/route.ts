@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Call backend API
-    const response = await apiFetch('/api/auth/change-password', {
+    const response = await apiFetch('/auth/change-password', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

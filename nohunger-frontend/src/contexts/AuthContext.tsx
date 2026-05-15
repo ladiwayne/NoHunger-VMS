@@ -150,8 +150,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const result = await apiRegister(email, password, {
       fullName: metadata?.fullName || '',
       phone: metadata?.phone || '',
-      region: metadata?.region || '',
-      skills: metadata?.skills || [],
+      country: metadata?.country || '',
       securityQuestion: metadata?.securityQuestion || '',
       securityAnswer: metadata?.securityAnswer || '',
     });

@@ -63,10 +63,12 @@ router.post('/register', sanitizeRegister, async (req, res) => {
       password,
       phone,
       gender: gender || '',
+      country: country || '',
       role: 'volunteer',
       status: 'approved',
+      onboardingCompleted: true,
       skills: normalizedSkills,
-      region: region || country || '',
+      region: region || '',
       securityQuestion,
       securityAnswer: securityAnswer.toLowerCase().trim(), // Normalize answer
     });
@@ -88,6 +90,7 @@ router.post('/register', sanitizeRegister, async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         gender: user.gender,
+        country: user.country || '',
         role: user.role,
         status: user.status,
         permissions: user.permissions || [],

@@ -20,6 +20,7 @@ export function adaptUser(u: any) {
     phone: u.phone || '',
     alternate_phone: u.alternatePhone || '',
     region: u.region || u.country || '',
+    country: u.country || '',
     street_address: u.streetAddress || '',
     address_line2: u.addressLine2 || '',
     city: u.city || '',

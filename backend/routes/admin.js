@@ -26,9 +26,10 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
       ? { checkOutStatus: 'completed', createdAt: periodFilter }
       : { checkOutStatus: 'completed' };
 
-    const totalVolunteers = await User.countDocuments({ role: 'volunteer' });
+    const volunteerRoles = { role: { $in: ['volunteer', 'admin'] } };
+    const totalVolunteers = await User.countDocuments(volunteerRoles);
     const pendingApprovals = await User.countDocuments({ role: 'volunteer', status: 'pending' });
-    const approvedVolunteers = await User.countDocuments({ role: 'volunteer', status: 'approved' });
+    const approvedVolunteers = await User.countDocuments({ ...volunteerRoles, status: 'approved' });
     const totalActivities = await Activity.countDocuments();
     const completedActivities = await Activity.countDocuments({ status: 'completed' });
     const totalEvents = await Event.countDocuments();
@@ -141,7 +142,8 @@ router.get('/volunteers/:id/hours', requirePermission('view_volunteer_hours'), a
 router.get('/top-volunteers', requirePermission('view_volunteers'), async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 5, 50));
-    const volunteers = await User.find({ role: 'volunteer' })
+    const volunteerRoles = { role: { $in: ['volunteer', 'admin'] } };
+    const volunteers = await User.find(volunteerRoles)
       .select('-password')
       .sort({ totalVolunteeringHours: -1 })
       .limit(limit);

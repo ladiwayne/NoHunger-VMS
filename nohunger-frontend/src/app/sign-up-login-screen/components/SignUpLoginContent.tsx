@@ -61,21 +61,6 @@ type ForgotFormData = { email: string; securityQuestion: string; securityAnswer:
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
 
-const SKILLS = [
-  { id: 'food-packing', label: 'Food Packing', icon: Package },
-  { id: 'logistics', label: 'Logistics', icon: ClipboardList },
-  { id: 'community-outreach', label: 'Community Outreach', icon: Users },
-  { id: 'medical-outreach', label: 'Medical Outreach', icon: Heart },
-  { id: 'cooking', label: 'Cooking', icon: ChefHat },
-  { id: 'event-planning', label: 'Event Planning', icon: Calendar },
-  { id: 'research', label: 'Research', icon: Search },
-  { id: 'fundraising', label: 'Fundraising', icon: DollarSign },
-  { id: 'social-media', label: 'Social Media', icon: MessageSquare },
-  { id: 'content-creation', label: 'Content Creation', icon: FileText },
-  { id: 'videography-photography', label: 'Videography/Photography', icon: Camera },
-  { id: 'administration', label: 'Administration', icon: Briefcase },
-];
-
 const IMPACT_STATS = [
   { value: '10+', label: 'Active Programs' },
   { value: '10+', label: 'Causes we are handling' },
@@ -161,9 +146,6 @@ export default function SignUpLoginContent() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [customSkill, setCustomSkill] = useState('');
-  const [skillsError, setSkillsError] = useState('');
   const [loginError, setLoginError] = useState('');
 
   // Retry / lockout state
@@ -246,31 +228,6 @@ export default function SignUpLoginContent() {
 
   const watchedPassword = signupForm.watch('password');
   const passwordStrength = getPasswordStrength(watchedPassword);
-  const toggleSkill = (skillId: string) => {
-    setSelectedSkills((prev) => {
-      const next = prev.includes(skillId) ? prev.filter((s) => s !== skillId) : [...prev, skillId];
-      if (next.length > 0) setSkillsError('');
-      return next;
-    });
-  };
-
-  const addCustomSkill = () => {
-    const trimmed = customSkill.trim();
-    if (!trimmed) return;
-    setSelectedSkills((prev) => {
-      if (prev.includes(trimmed)) return prev;
-      return [...prev, trimmed];
-    });
-    setCustomSkill('');
-    setSkillsError('');
-  };
-
-  const handleSkillInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addCustomSkill();
-    }
-  };
 
   const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
 
@@ -397,10 +354,6 @@ export default function SignUpLoginContent() {
   };
 
   const handleSignup = async (data: SignupFormData) => {
-    if (selectedSkills.length === 0) {
-      setSkillsError('Please select at least one skill area');
-      return;
-    }
     if (data.password !== data.confirmPassword) {
       signupForm.setError('confirmPassword', { message: 'Passwords do not match' });
       return;
@@ -410,17 +363,16 @@ export default function SignUpLoginContent() {
       await signUp(data.email, data.password, {
         fullName: `${data.firstName} ${data.lastName}`,
         phone: data.phone,
-        region: data.country,
-        skills: selectedSkills,
+        country: data.country,
         securityQuestion: data.securityQuestion,
         securityAnswer: data.securityAnswer,
       });
       setSignupLoading(false);
       setSignupSuccess(true);
-      toast.success('Account created! Complete your volunteer profile to get matched quickly.', {
+      toast.success('Account created! You can update your profile from the dashboard anytime.', {
         duration: 4000,
       });
-      setTimeout(() => router.push('/onboarding'), 1500);
+      setTimeout(() => router.push('/volunteer-dashboard'), 1500);
     } catch (err: any) {
       setSignupLoading(false);
       if (isRateLimitError(err)) {
@@ -1019,88 +971,6 @@ export default function SignUpLoginContent() {
                         </div>
                         <FieldError message={signupForm.formState.errors.country?.message} />
                       </div>
-                    </div>
-
-                    {/* Skills */}
-                    <div>
-                      <label className="block text-[13px] font-600 text-foreground mb-2">
-                        Skills{' '}
-                        <span className="text-muted-foreground font-400">
-                          (type your skills or select from suggestions)
-                        </span>
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {SKILLS.map((skill) => {
-                          const SkillIcon = skill.icon;
-                          const selected = selectedSkills.includes(skill.id);
-                          return (
-                            <button
-                              key={skill.id}
-                              type="button"
-                              onClick={() => toggleSkill(skill.id)}
-                              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border text-[11px] font-600 transition-all ${selected ? 'bg-[hsl(142,72%,92%)] border-[hsl(142,72%,65%)] text-[hsl(142,72%,20%)] shadow-green-sm' : skillsError ? 'bg-destructive/5 border-destructive/30 text-muted-foreground hover:border-[hsl(142,72%,65%)]' : 'bg-muted border-border text-muted-foreground hover:border-[hsl(142,72%,65%)] hover:text-[hsl(142,72%,29%)]'}`}
-                            >
-                              <SkillIcon
-                                size={16}
-                                className={selected ? 'text-[hsl(142,72%,25%)]' : ''}
-                              />
-                              {skill.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Others input */}
-                      <div className="mt-3">
-                        <label className="block text-[12px] font-600 text-foreground mb-1.5">
-                          Add your own skills
-                        </label>
-                        <input
-                          type="text"
-                          value={customSkill}
-                          onChange={(e) => setCustomSkill(e.target.value)}
-                          onKeyDown={handleSkillInputKey}
-                          placeholder="Type a skill and press Enter or click Add"
-                          className={`w-full pl-3 pr-4 py-2.5 bg-muted border border-border rounded-xl text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(142,72%,29%)]/25 focus:border-[hsl(142,72%,29%)] transition-all ${skillsError ? 'border-destructive/30' : ''}`}
-                        />
-                        {customSkill.trim() && (
-                          <button
-                            type="button"
-                            onClick={addCustomSkill}
-                            className="mt-2 px-3 py-1.5 text-[12px] font-600 text-white bg-[hsl(142,72%,29%)] rounded-lg hover:bg-[hsl(142,72%,22%)] transition-colors"
-                          >
-                            Add Skill
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Selected custom skills */}
-                      {selectedSkills.filter(skill => !SKILLS.some(s => s.id === skill)).length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {selectedSkills.filter(skill => !SKILLS.some(s => s.id === skill)).map((skill) => (
-                            <span
-                              key={skill}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-600 bg-[hsl(142,72%,92%)] text-[hsl(142,72%,20%)] rounded-full"
-                            >
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
-                                className="ml-1 text-[hsl(142,72%,40%)] hover:text-[hsl(142,72%,20%)]"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {skillsError && (
-                        <p className="flex items-center gap-1 text-[12px] text-destructive mt-1.5">
-                          <AlertCircle size={11} className="flex-shrink-0" />
-                          {skillsError}
-                        </p>
-                      )}
                     </div>
 
                     {/* Security Question */}

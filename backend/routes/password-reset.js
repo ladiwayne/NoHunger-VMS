@@ -1,11 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 
 // Store reset tokens in memory (for production, use Redis)
 const resetTokens = new Map();
+
+// Rate limiter for password reset endpoints (protect against brute force)
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit to 10 requests per window per IP
+  message: { message: 'Too many password reset attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Clean up expired tokens every 10 minutes
 setInterval(() => {
@@ -23,6 +33,7 @@ setInterval(() => {
  */
 router.post(
   '/forgot-password',
+  passwordResetLimiter,
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('securityQuestion').notEmpty().withMessage('Security question is required'),
   body('securityAnswer').notEmpty().withMessage('Security answer is required'),
@@ -98,6 +109,7 @@ router.post(
  */
 router.post(
   '/verify-reset-token',
+  passwordResetLimiter,
   body('token').notEmpty().withMessage('Reset token is required'),
   async (req, res) => {
     const errors = validationResult(req);
@@ -149,6 +161,7 @@ router.post(
  */
 router.post(
   '/reset-password',
+  passwordResetLimiter,
   body('token').notEmpty().withMessage('Reset token is required'),
   body('password')
     .isLength({ min: 8 })

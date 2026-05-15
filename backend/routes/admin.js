@@ -153,6 +153,40 @@ router.get('/top-volunteers', requirePermission('view_volunteers'), async (req, 
   }
 });
 
+// Admin volunteer approval / listing with filters
+router.get('/volunteers', requirePermission('manage_volunteers'), async (req, res) => {
+  try {
+    const query: any = { role: 'volunteer' };
+    if (req.query.status) query.status = String(req.query.status);
+    if (req.query.country) query.country = String(req.query.country);
+    if (req.query.search) {
+      const s = String(req.query.search).trim();
+      query.$or = [
+        { firstName: { $regex: s, $options: 'i' } },
+        { lastName: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const page = Math.max(1, parseInt(String(req.query.page) || '1', 10));
+    const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit) || '50', 10)));
+    const skip = (page - 1) * limit;
+
+    const [total, volunteers] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query)
+        .select('-password -securityAnswer')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+    ]);
+
+    res.status(200).json({ data: volunteers, pagination: { total, page, limit, pages: Math.ceil(total / limit) } });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching volunteers (admin)', error: error.message });
+  }
+});
+
 // Create broadcast/direct message
 router.post('/broadcasts', requirePermission('send_broadcasts'), [
   body('message').trim().isLength({ min: 1, max: 2000 }).withMessage('Message is required (max 2000 chars)'),

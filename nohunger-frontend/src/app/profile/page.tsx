@@ -96,6 +96,9 @@ export default function ProfilePage() {
   const [customSkill, setCustomSkill] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
+  const [skillSearch, setSkillSearch] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState('');
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -153,6 +156,12 @@ export default function ProfilePage() {
 
   const regionOptions = useMemo(() => COUNTRY_STATE_MAP[form.country] || [], [form.country]);
 
+  const filteredSkills = useMemo(() => {
+    const q = skillSearch.trim().toLowerCase();
+    if (!q) return SKILLS;
+    return SKILLS.filter((s) => s.toLowerCase().includes(q));
+  }, [skillSearch]);
+
   const missingFields = useMemo(() => {
     return [
       { label: 'Full name', value: form.fullName },
@@ -193,6 +202,34 @@ export default function ProfilePage() {
     setCustomSkill('');
   };
 
+  const validateForm = () => {
+    const next: Record<string, string> = {};
+    // required fields
+    if (!form.fullName.trim()) next.fullName = 'Full name is required';
+    if (!form.phone.trim()) next.phone = 'Phone is required';
+    else if (!/^\+?[0-9 \-()]{7,20}$/.test(form.phone.trim())) next.phone = 'Enter a valid phone number';
+    if (form.birthday) {
+      const dt = new Date(form.birthday);
+      if (!isNaN(dt.getTime())) {
+        const today = new Date();
+        if (dt > today) next.birthday = 'Birthday cannot be in the future';
+      } else {
+        next.birthday = 'Enter a valid date';
+      }
+    }
+    if (!form.gender) next.gender = 'Please select your gender';
+    if (!form.country) next.country = 'Country is required';
+    if (!form.region) next.region = 'Region / State is required';
+    if (!form.city) next.city = 'City is required';
+    if (!form.streetAddress) next.streetAddress = 'Street address is required';
+    if (!form.postalZip) next.postalZip = 'Postal / Zip is required';
+    if (!form.shirtSize) next.shirtSize = 'Please select a shirt size';
+    if (selectedSkills.length === 0) next.skills = 'Add at least one skill';
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
   const toggleAvailability = (option: string) => {
     setSelectedAvailability((current) =>
       current.includes(option) ? current.filter((item) => item !== option) : [option]
@@ -202,6 +239,13 @@ export default function ProfilePage() {
   const handleSave = async () => {
     if (!profile?.id) return;
     setSaving(true);
+    setSuccessMessage('');
+    setErrors({});
+    const ok = validateForm();
+    if (!ok) {
+      setSaving(false);
+      return;
+    }
     try {
       const [firstName, ...rest] = form.fullName.trim().split(' ');
       const lastName = rest.join(' ');
@@ -231,6 +275,8 @@ export default function ProfilePage() {
         onboardingCompleted: isComplete,
       });
       await refreshProfile();
+      setSuccessMessage('Profile updated successfully');
+      setTimeout(() => setSuccessMessage(''), 4000);
     } catch (error) {
       console.error('Failed to save profile', error);
     } finally {
@@ -265,6 +311,9 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
+        {successMessage && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{successMessage}</div>
+        )}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -320,6 +369,7 @@ export default function ProfilePage() {
                       onChange={(e) => setField('phone', e.target.value)}
                       placeholder="+234 800 000 0000"
                     />
+                    {errors.phone && <p className="text-xs text-rose-600">{errors.phone}</p>}
                   </label>
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Alternate phone</span>
@@ -344,6 +394,7 @@ export default function ProfilePage() {
                       <option value="other">Other</option>
                       <option value="prefer_not_to_say">Prefer not to say</option>
                     </select>
+                    {errors.gender && <p className="text-xs text-rose-600">{errors.gender}</p>}
                   </label>
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Birthday</span>
@@ -353,6 +404,7 @@ export default function ProfilePage() {
                       value={form.birthday}
                       onChange={(e) => setField('birthday', e.target.value)}
                     />
+                    {errors.birthday && <p className="text-xs text-rose-600">{errors.birthday}</p>}
                   </label>
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Occupation</span>
@@ -403,6 +455,7 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
+                    {errors.country && <p className="text-xs text-rose-600">{errors.country}</p>}
                   </label>
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Region / State</span>
@@ -428,6 +481,7 @@ export default function ProfilePage() {
                         placeholder="Region / province / state"
                       />
                     )}
+                    {errors.region && <p className="text-xs text-rose-600">{errors.region}</p>}
                   </label>
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">City</span>
@@ -448,6 +502,7 @@ export default function ProfilePage() {
                       onChange={(e) => setField('postalZip', e.target.value)}
                       placeholder="Postal code"
                     />
+                    {errors.postalZip && <p className="text-xs text-rose-600">{errors.postalZip}</p>}
                   </label>
                   <label className="space-y-2 lg:col-span-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Street address</span>
@@ -458,6 +513,7 @@ export default function ProfilePage() {
                       onChange={(e) => setField('streetAddress', e.target.value)}
                       placeholder="123 Main St"
                     />
+                    {errors.streetAddress && <p className="text-xs text-rose-600">{errors.streetAddress}</p>}
                   </label>
                   <label className="space-y-2 lg:col-span-2">
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Address line 2</span>
@@ -486,20 +542,29 @@ export default function ProfilePage() {
                       <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Skills</span>
                       <span className="text-xs text-muted-foreground">Tap a skill or add your own</span>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {SKILLS.map((skill) => {
-                        const active = selectedSkills.includes(skill);
-                        return (
-                          <button
-                            key={skill}
-                            type="button"
-                            onClick={() => toggleSkill(skill)}
-                            className={`rounded-full border px-3 py-1 text-sm transition ${active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-foreground'}`}
-                          >
-                            {skill}
-                          </button>
-                        );
-                      })}
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        value={skillSearch}
+                        onChange={(e) => setSkillSearch(e.target.value)}
+                        placeholder="Search skills"
+                        className={`${fieldClass} mb-2`}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        {filteredSkills.map((skill) => {
+                          const active = selectedSkills.includes(skill);
+                          return (
+                            <button
+                              key={skill}
+                              type="button"
+                              onClick={() => toggleSkill(skill)}
+                              className={`rounded-full border px-3 py-1 text-sm transition ${active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-foreground'}`}
+                            >
+                              {skill}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {selectedSkills.map((skill) => (
@@ -511,6 +576,7 @@ export default function ProfilePage() {
                         </span>
                       ))}
                     </div>
+                    {errors.skills && <p className="text-xs text-rose-600 mt-2">{errors.skills}</p>}
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                       <input
                         type="text"
@@ -564,6 +630,7 @@ export default function ProfilePage() {
                         <option value="XL">XL</option>
                         <option value="XXL">XXL</option>
                       </select>
+                      {errors.shirtSize && <p className="text-xs text-rose-600">{errors.shirtSize}</p>}
                     </label>
                     <label className="space-y-2">
                       <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Why volunteer?</span>
@@ -606,6 +673,16 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail size={16} /> {profile.email || 'No email'}
+                  </div>
+                  <div className="pt-3">
+                    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Profile completeness</div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-primary"
+                        style={{ width: `${Math.round(((10 - missingFields.length) / 10) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{Math.round(((10 - missingFields.length) / 10) * 100)}% complete</div>
                   </div>
                 </div>
               </section>

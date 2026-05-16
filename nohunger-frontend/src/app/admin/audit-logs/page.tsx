@@ -93,6 +93,7 @@ export default function AdminAuditLogsPage() {
           </table>
         </div>
       )}
+      </div>
     </AppLayout>
   );
 }

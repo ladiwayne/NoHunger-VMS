@@ -222,6 +222,18 @@ router.post('/broadcasts', requirePermission('send_broadcasts'), [
     if (rows.length > 0) {
       await Notification.insertMany(rows);
     }
+    // Also create a single summary record so admins can see broadcast events in history
+    try {
+      await Notification.create({
+        userId: req.user.id,
+        type: 'broadcast_summary',
+        title: subject || 'Admin Broadcast',
+        message,
+        read: true,
+      });
+    } catch (err) {
+      console.warn('[broadcast] Failed to create summary record:', err?.message || err);
+    }
 
     res.status(201).json({ message: 'Broadcast sent', recipients: rows.length });
   } catch (error) {
@@ -232,7 +244,7 @@ router.post('/broadcasts', requirePermission('send_broadcasts'), [
 // List recent broadcasts
 router.get('/broadcasts', requirePermission('send_broadcasts'), async (req, res) => {
   try {
-    const notifications = await Notification.find({ type: { $in: ['broadcast', 'direct'] } })
+    const notifications = await Notification.find({ type: { $in: ['broadcast', 'direct', 'broadcast_summary'] } })
       .sort({ createdAt: -1 })
       .limit(200)
       .populate('userId', 'firstName lastName email');

@@ -98,7 +98,7 @@ export default function ProfilePage() {
   const [customSkill, setCustomSkill] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
-  const [skillSearch, setSkillSearch] = useState('');
+  // Removed skill search — show curated skills list for simplicity
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     fullName: '',
@@ -157,11 +157,7 @@ export default function ProfilePage() {
 
   const regionOptions = useMemo(() => COUNTRY_STATE_MAP[form.country] || [], [form.country]);
 
-  const filteredSkills = useMemo(() => {
-    const q = skillSearch.trim().toLowerCase();
-    if (!q) return SKILLS;
-    return SKILLS.filter((s) => s.toLowerCase().includes(q));
-  }, [skillSearch]);
+  const filteredSkills = SKILLS;
 
   const missingFields = useMemo(() => {
     return [
@@ -338,7 +334,7 @@ export default function ProfilePage() {
 
           <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
             <div className="space-y-4">
-              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+                  <section id="personal-details" className="rounded-3xl border border-border bg-card p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">Personal Details</h2>
@@ -544,13 +540,6 @@ export default function ProfilePage() {
                       <span className="text-xs text-muted-foreground">Tap a skill or add your own</span>
                     </div>
                     <div className="mt-3">
-                      <input
-                        type="text"
-                        value={skillSearch}
-                        onChange={(e) => setSkillSearch(e.target.value)}
-                        placeholder="Search skills"
-                        className={`${fieldClass} mb-2`}
-                      />
                       <div className="flex flex-wrap gap-2">
                         {filteredSkills.map((skill) => {
                           const active = selectedSkills.includes(skill);
@@ -683,7 +672,17 @@ export default function ProfilePage() {
                         style={{ width: `${Math.round(((10 - missingFields.length) / 10) * 100)}%` }}
                       />
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{Math.round(((10 - missingFields.length) / 10) * 100)}% complete</div>
+                      <div className="mt-1 flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">{Math.round(((10 - missingFields.length) / 10) * 100)}% complete</div>
+                        {!isComplete && (
+                          <button
+                            onClick={() => window.scrollTo({ top: document.getElementById('personal-details')?.offsetTop || 0, behavior: 'smooth' })}
+                            className="text-xs text-primary font-semibold hover:underline"
+                          >
+                            Complete required fields
+                          </button>
+                        )}
+                      </div>
                   </div>
                 </div>
               </section>

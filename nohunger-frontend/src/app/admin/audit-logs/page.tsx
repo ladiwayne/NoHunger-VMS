@@ -78,7 +78,7 @@ export default function AdminAuditLogsPage() {
                       <div className="font-medium text-foreground">{entry.actorName || entry.actorRole}</div>
                       <div className="text-[11px] text-muted-foreground">{entry.actorRole}</div>
                     </td>
-                    <td className="px-3 py-3 align-top text-foreground">{entry.action}</td>
+                    <td className="px-3 py-3 align-top text-foreground">{getAuditActionLabel(entry.action)}</td>
                     <td className="px-3 py-3 align-top">
                       <div>{entry.targetUserName || entry.targetUserId || '-'}</div>
                     </td>

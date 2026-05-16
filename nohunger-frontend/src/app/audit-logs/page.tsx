@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getMyAuditLogs } from '@/lib/api/audit';
+import AppLayout from '@/components/AppLayout';
+import { getMyAuditLogs, getAuditActionLabel, formatAuditLogDetails } from '@/lib/api/audit';
 
 export default function MyAuditLogsPage() {
   const { profile, loading } = useAuth();
@@ -30,11 +31,12 @@ export default function MyAuditLogsPage() {
   }, [loading, profile]);
 
   return (
-    <div className="space-y-6 py-6">
-      <div>
+    <AppLayout activePath="/audit-logs">
+      <div className="space-y-6 py-6">
+        <div>
         <h1 className="text-2xl font-semibold text-foreground">My Activity Log</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          A timeline of your recent actions and requests in the No Hunger volunteer system.
+          A simple list of the recent actions you took and the important events that affected your volunteer account.
         </p>
       </div>
 
@@ -70,10 +72,10 @@ export default function MyAuditLogsPage() {
                     <td className="px-3 py-3 align-top text-xs text-muted-foreground">
                       {new Date(entry.createdAt).toLocaleString()}
                     </td>
-                    <td className="px-3 py-3 align-top text-foreground">{entry.action}</td>
+                    <td className="px-3 py-3 align-top text-foreground">{getAuditActionLabel(entry.action)}</td>
                     <td className="px-3 py-3 align-top">{entry.entityType || '-'}</td>
                     <td className="px-3 py-3 align-top text-muted-foreground">
-                      {typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details || {})}
+                      {formatAuditLogDetails(entry)}
                     </td>
                   </tr>
                 ))
@@ -82,6 +84,7 @@ export default function MyAuditLogsPage() {
           </table>
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 }

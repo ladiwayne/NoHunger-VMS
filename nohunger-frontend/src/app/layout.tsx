@@ -4,23 +4,37 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'No Hunger Initiatives — No Hunger Champion Hub',
+  title: 'NHI - Champions Hub',
   description:
-    'The friendly home for No Hunger Champions to join activities, track hours, and make impact across Nigeria.',
+    'NHI Champions Hub empowers volunteers to join activities, track impact, and support food security across Nigeria.',
   icons: { icon: '/assets/images/NoHunger-Logo-Icon.png' },
+  keywords: [
+    'NHI',
+    'No Hunger Initiatives',
+    'volunteer management',
+    'food bank',
+    'volunteer activities',
+    'hours tracking',
+    'community service',
+    'Nigeria',
+  ],
+  robots: {
+    index: true,
+    follow: true,
+  },
   openGraph: {
-    title: 'No Hunger Initiatives — No Hunger Champion Hub',
+    title: 'NHI - Champions Hub',
     description:
-      'Join No Hunger Champions fighting hunger across Nigeria. Track events, log hours, and do good together.',
+      'NHI Champions Hub empowers volunteers to join activities, track impact, and support food security across Nigeria.',
     url: 'https://volunteer.nohungerfoodbank.org',
-    siteName: 'No Hunger Initiatives',
+    siteName: 'NHI - Champions Hub',
     locale: 'en_NG',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'No Hunger Initiatives — No Hunger Champion Hub',
-    description: 'Join No Hunger Champions fighting hunger across Nigeria.',
+    title: 'NHI - Champions Hub',
+    description: 'NHI Champions Hub empowers volunteers to join activities and track community impact.',
   },
   metadataBase: new URL('https://volunteer.nohungerfoodbank.org'),
 };

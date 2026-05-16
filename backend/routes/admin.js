@@ -156,7 +156,7 @@ router.get('/top-volunteers', requirePermission('view_volunteers'), async (req, 
 // Admin volunteer approval / listing with filters
 router.get('/volunteers', requirePermission('manage_volunteers'), async (req, res) => {
   try {
-    const query: any = { role: 'volunteer' };
+    const query = { role: 'volunteer' };
     if (req.query.status) query.status = String(req.query.status);
     if (req.query.country) query.country = String(req.query.country);
     if (req.query.search) {

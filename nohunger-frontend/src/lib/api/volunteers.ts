@@ -8,18 +8,25 @@ export interface PaginationMeta {
   pages: number;
 }
 
+export interface VolunteerListResponse {
+  data: any[];
+  pagination: PaginationMeta | null;
+}
+
 export async function getVolunteers(
-  filters?: { status?: string; page?: number; limit?: number }
-): Promise<any[]> {
+  filters?: { status?: string; country?: string; search?: string; page?: number; limit?: number }
+): Promise<VolunteerListResponse> {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
+  if (filters?.country) params.set('country', filters.country);
+  if (filters?.search) params.set('search', filters.search);
   if (filters?.page)   params.set('page',   String(filters.page));
   if (filters?.limit)  params.set('limit',  String(filters.limit));
   const query = params.toString() ? `?${params}` : '';
-  const res = await apiFetch<any>(`/volunteers${query}`);
-  // Handle both paginated { data, pagination } and legacy array responses
+  const res = await apiFetch<any>(`/admin/volunteers${query}`);
   const raw = Array.isArray(res) ? res : (res?.data ?? []);
-  return raw.map(adaptUser);
+  const pagination = Array.isArray(res) ? null : (res.pagination ?? null);
+  return { data: raw.map(adaptUser), pagination };
 }
 
 export async function getVolunteer(id: string): Promise<any | null> {

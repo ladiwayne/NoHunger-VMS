@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAuditLogs } from '@/lib/api/audit';
+import AppLayout from '@/components/AppLayout';
+import { getAuditLogs, getAuditActionLabel, formatAuditLogDetails } from '@/lib/api/audit';
 
 export default function AdminAuditLogsPage() {
   const { profile, loading } = useAuth();
@@ -30,11 +31,12 @@ export default function AdminAuditLogsPage() {
   }, [loading, profile]);
 
   return (
-    <div className="space-y-6 py-6">
-      <div>
+    <AppLayout activePath="/admin/audit-logs">
+      <div className="space-y-6 py-6">
+        <div>
         <h1 className="text-2xl font-semibold text-foreground">Audit Logs</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          A record of administrative and volunteer actions for your organisation.
+          A clear history of admin and volunteer actions, written in plain language.
         </p>
       </div>
 
@@ -82,7 +84,7 @@ export default function AdminAuditLogsPage() {
                     </td>
                     <td className="px-3 py-3 align-top">{entry.entityType || '-'}</td>
                     <td className="px-3 py-3 align-top text-muted-foreground">
-                      {typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details || {})}
+                      {formatAuditLogDetails(entry)}
                     </td>
                   </tr>
                 ))
@@ -91,6 +93,6 @@ export default function AdminAuditLogsPage() {
           </table>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

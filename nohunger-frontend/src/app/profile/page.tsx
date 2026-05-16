@@ -94,6 +94,7 @@ const chipClass =
 export default function ProfilePage() {
   const { profile, loading, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [customSkill, setCustomSkill] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
@@ -275,7 +276,8 @@ export default function ProfilePage() {
         onboardingCompleted: isComplete,
       });
       await refreshProfile();
-        toast.success('Profile updated successfully');
+      setSuccessMessage('Profile updated successfully');
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Failed to save profile', error);
     } finally {

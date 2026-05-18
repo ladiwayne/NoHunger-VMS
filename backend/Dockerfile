@@ -1,5 +1,5 @@
 # Backend Dockerfile for NoHunger VMS
-FROM node:18-alpine
+FROM node:18-bullseye
 
 # Set working directory
 WORKDIR /app
@@ -14,8 +14,8 @@ RUN npm ci --only=production
 COPY . .
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN groupadd -g 1001 nodejs
+RUN useradd -u 1001 -g nodejs -s /bin/bash -m nextjs
 
 # Change ownership of app directory
 RUN chown -R nextjs:nodejs /app

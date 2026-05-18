@@ -159,6 +159,12 @@ export default function VolunteerDashboardPage() {
     router.push(`/checkin/${code}`);
   };
 
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
   const formatTimer = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -247,9 +253,8 @@ export default function VolunteerDashboardPage() {
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-4xl font-700 font-tabular text-foreground">
-                  {stats.totalHours}
+                  {formatHours(stats.totalHours)}
                 </span>
-                <span className="text-[13px] font-500 text-muted-foreground">hrs</span>
               </div>
               <p className="text-[12.5px] font-600 text-muted-foreground mt-0.5 uppercase tracking-wide">
                 Total Hours Logged

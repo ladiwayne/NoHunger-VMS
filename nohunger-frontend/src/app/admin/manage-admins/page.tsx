@@ -17,6 +17,7 @@ import {
   Users,
   UserPlus,
   Search,
+  X,
 } from 'lucide-react';
 import {
   getPendingAdmins,
@@ -53,6 +54,7 @@ export default function ManageAdminsPage() {
   const [fetching, setFetching] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState<string | null>(null);
+  const [resetModalData, setResetModalData] = useState<{ name: string; password: string } | null>(null);
 
   // Redirect non-super-admins
   useEffect(() => {
@@ -141,9 +143,11 @@ export default function ManageAdminsPage() {
     setResetLoading(id);
     try {
       const result = await resetVolunteerPassword(id);
-      toast.success(`Password reset for ${name}. New password copied to clipboard.`);
-      if (result?.newPassword && typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(result.newPassword);
+      if (result?.newPassword) {
+        setResetModalData({ name, password: result.newPassword });
+        toast.success(`Password reset for ${name}.`);
+      } else {
+        toast.success(`Password reset for ${name}. Please copy the new password from the details modal.`);
       }
     } catch (err: any) {
       toast.error(err?.message || `Failed to reset password for ${name}`);
@@ -421,6 +425,59 @@ export default function ManageAdminsPage() {
                     );
                   })
                 )}
+              </div>
+            )}
+
+            {resetModalData && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-xl">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Password Reset Complete</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        The new password for {resetModalData.name} is shown below. Copy it before closing.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setResetModalData(null)}
+                      className="rounded-full p-2 text-muted-foreground hover:bg-muted transition"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                    <div className="font-semibold">Success</div>
+                    <div className="mt-1 text-sm text-foreground">The password has been reset successfully. Use the password below or copy it to the clipboard.</div>
+                  </div>
+                  <div className="mt-6 rounded-3xl border border-border bg-muted p-4 font-mono text-sm break-words">
+                    {resetModalData.password}
+                  </div>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      onClick={async () => {
+                        if (!navigator?.clipboard) {
+                          toast.error('Clipboard is unavailable in this browser.');
+                          return;
+                        }
+                        try {
+                          await navigator.clipboard.writeText(resetModalData.password);
+                          toast.success('Password copied to clipboard');
+                        } catch (copyError) {
+                          toast.error('Unable to copy password. Please copy it manually.');
+                        }
+                      }}
+                      className="inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition"
+                    >
+                      Copy password
+                    </button>
+                    <button
+                      onClick={() => setResetModalData(null)}
+                      className="inline-flex items-center justify-center rounded-2xl border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground hover:bg-border transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>

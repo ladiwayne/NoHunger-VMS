@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 import { updateVolunteerProfile } from '@/lib/api/volunteers';
 import { COUNTRIES } from '@/lib/constants/countries';
 import { NIGERIA_STATES } from '@/lib/constants/nigeria';
@@ -531,16 +532,23 @@ export default function ProfilePage() {
                     <h2 className="text-lg font-semibold text-foreground">Volunteer Details</h2>
                     <p className="text-sm text-muted-foreground">Skills, availability, and volunteer preference data.</p>
                   </div>
+                  <Link
+                    href={`/profile/${profile.id}`}
+                    target="_blank"
+                    className="rounded-full border border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition"
+                  >
+                    View public profile
+                  </Link>
                 </div>
-
-                <div className="mt-6 space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
+                <div className="mt-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
                       <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Skills</span>
                       <span className="text-xs text-muted-foreground">Tap a skill or add your own</span>
                     </div>
-                    <div className="mt-3">
-                      <div className="flex flex-wrap gap-2">
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex flex-wrap gap-2">
                         {filteredSkills.map((skill) => {
                           const active = selectedSkills.includes(skill);
                           return (
@@ -583,7 +591,6 @@ export default function ProfilePage() {
                         <Plus size={14} /> Add skill
                       </button>
                     </div>
-                  </div>
 
                   <div>
                     <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Availability</span>

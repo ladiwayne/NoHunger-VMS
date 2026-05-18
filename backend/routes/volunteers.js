@@ -87,25 +87,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get volunteer profile
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const volunteer = await User.findById(req.params.id)
-      .select('-password')
-      .populate('appliedActivities')
-      .populate('approvedBy', 'firstName lastName email');
-    
-    if (!volunteer) {
-      return res.status(404).json({ message: 'Volunteer not found' });
-    }
-
-    res.status(200).json(volunteer);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching volunteer', error: error.message });
-  }
-});
-
-// Public volunteer profile summary (no auth)
+// Public volunteer profile summary (no auth) - MUST come before /:id to avoid param matching
 router.get('/public-profile/:id', async (req, res) => {
   try {
     const volunteer = await User.findById(req.params.id)
@@ -127,6 +109,24 @@ router.get('/public-profile/:id', async (req, res) => {
     res.status(200).json({ volunteer, checkins });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching volunteer public profile', error: error.message });
+  }
+});
+
+// Get volunteer profile
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const volunteer = await User.findById(req.params.id)
+      .select('-password')
+      .populate('appliedActivities')
+      .populate('approvedBy', 'firstName lastName email');
+    
+    if (!volunteer) {
+      return res.status(404).json({ message: 'Volunteer not found' });
+    }
+
+    res.status(200).json(volunteer);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching volunteer', error: error.message });
   }
 });
 

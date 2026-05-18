@@ -64,9 +64,9 @@ export default function AdminTasksPage() {
         getVolunteers({ status: 'approved' }),
         getActivities(),
       ]);
-      setTasks(taskData || []);
-      setVolunteers(volData || []);
-      setActivities(actData || []);
+      setTasks(Array.isArray(taskData) ? taskData : []);
+      setVolunteers(Array.isArray(volData) ? volData : (volData?.data ?? []));
+      setActivities(Array.isArray(actData) ? actData : []);
     } catch (err) {
       console.log('Tasks fetch error:', err);
     } finally {

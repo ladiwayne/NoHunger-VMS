@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+function getBackendUrl(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:5000';
+  return `${proto}://${host}/api`;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +14,8 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
+
+    const BACKEND_URL = getBackendUrl(request);
 
     const backendRes = await fetch(`${BACKEND_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },

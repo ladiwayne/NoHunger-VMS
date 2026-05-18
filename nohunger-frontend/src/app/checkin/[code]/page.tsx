@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getActivityByCode } from '@/lib/api/activities';
-import { getMyCheckins, checkinWithCode } from '@/lib/api/checkins';
+import { getMyCheckins, checkinWithCode, checkoutFromActivity } from '@/lib/api/checkins';
 
 import {
   CheckCircle2,
@@ -82,11 +82,31 @@ export default function CheckinPage() {
     }
   };
 
+  const handleCheckout = async () => {
+    if (!checkinRecord?.id) return;
+    setActionLoading(true);
+    try {
+      const data = await checkoutFromActivity(checkinRecord.id);
+      setCheckinRecord(data);
+      toast.success('Check-out submitted! Awaiting admin approval.');
+    } catch (err: any) {
+      toast.error(err.message || 'Check-out failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatTimer = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   };
 
   if (authLoading || pageLoading) {
@@ -198,7 +218,7 @@ export default function CheckinPage() {
           </div>
         )}
 
-        {checkinRecord?.status === 'approved' && (
+        {checkinRecord?.status === 'approved' && !checkinRecord?.checkout_time && (
           <div className="bg-success/8 border border-success/25 rounded-2xl p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={28} className="text-success" />
@@ -207,8 +227,33 @@ export default function CheckinPage() {
             <div className="text-4xl font-800 font-tabular text-success mb-2">
               {formatTimer(timer)}
             </div>
-            <p className="text-[12px] text-muted-foreground">
-              Session timer · Admin will check you out after the event
+            <p className="text-[12px] text-muted-foreground mb-4">
+              Session timer started · Ready to checkout when done?
+            </p>
+            <button
+              onClick={handleCheckout}
+              disabled={actionLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[15px]"
+            >
+              {actionLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <>
+                  <LogOut size={18} /> Check Out Now
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {checkinRecord?.status === 'approved' && checkinRecord?.checkout_time && (
+          <div className="bg-warning/8 border border-warning/25 rounded-2xl p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
+              <Clock size={28} className="text-warning" />
+            </div>
+            <h3 className="text-[17px] font-700 text-foreground mb-2">Check-out Pending</h3>
+            <p className="text-[13px] text-muted-foreground">
+              Your check-out is awaiting admin approval. You logged approximately {formatHours(checkinRecord.hours_spent || 0)} hours.
             </p>
           </div>
         )}
@@ -223,7 +268,7 @@ export default function CheckinPage() {
               You&apos;re all checked out. Great job today.
             </p>
             <div className="text-3xl font-800 font-tabular text-primary mb-1">
-              {checkinRecord.hours_spent || 0} hrs
+              {formatHours(checkinRecord.hours_spent || 0)}
             </div>
             <p className="text-[12px] text-muted-foreground">Hours logged for this event</p>
           </div>

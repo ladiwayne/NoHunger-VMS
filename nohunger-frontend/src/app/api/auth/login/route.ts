@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
+function getBackendUrl(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:5000';
+  return `${proto}://${host}/api`;
+}
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -13,6 +17,8 @@ const COOKIE_OPTS = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    const BACKEND_URL = getBackendUrl(request);
 
     const backendRes = await fetch(`${BACKEND_URL}/auth/login`, {
       method: 'POST',

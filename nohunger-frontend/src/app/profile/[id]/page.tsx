@@ -46,6 +46,8 @@ export default function PublicProfilePage() {
         id: prof._id || prof.id,
         full_name: `${prof.firstName || ''} ${prof.lastName || ''}`.trim(),
         region: prof.region || '',
+        email: prof.email || '',
+        avatar_url: prof.profilePicture || prof.avatar_url || prof.profile_picture || '',
         bio: prof.bio || '',
         skills: prof.skills || [],
         volunteer_status: prof.status || 'pending',
@@ -87,6 +89,19 @@ export default function PublicProfilePage() {
     }
   };
 
+  const handleCopyEmail = async () => {
+    if (!profile?.email) {
+      toast.error('No email available');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(profile.email);
+      toast.success('Email copied!');
+    } catch {
+      toast.error('Could not copy email');
+    }
+  };
+
   const initials = profile?.full_name
     ? profile.full_name
         .split(' ')
@@ -95,6 +110,12 @@ export default function PublicProfilePage() {
         .toUpperCase()
         .slice(0, 2)
     : 'V';
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
 
   const achievementBadges = [
     { label: 'First Event', icon: '🎉', threshold: 1, unit: 'events', value: stats.eventsAttended },
@@ -122,13 +143,23 @@ export default function PublicProfilePage() {
           <AppLogo size={28} />
           <span className="font-display font-700 text-[15px] text-foreground">NoHunger</span>
         </Link>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-2 px-3.5 py-2 bg-primary text-white rounded-xl text-[13px] font-600 hover:bg-primary-dark transition-all"
-        >
-          {copied ? <Check size={14} /> : <Share2 size={14} />}
-          {copied ? 'Copied!' : 'Share Profile'}
-        </button>
+        <div className="flex items-center gap-2">
+          {profile.email && (
+            <button
+              onClick={handleCopyEmail}
+              className="flex items-center gap-2 px-3 py-2 bg-muted rounded-xl text-[13px] font-600 hover:bg-border transition"
+            >
+              <Copy size={14} /> Copy email
+            </button>
+          )}
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 px-3.5 py-2 bg-primary text-white rounded-xl text-[13px] font-600 hover:bg-primary-dark transition-all"
+          >
+            {copied ? <Check size={14} /> : <Share2 size={14} />}
+            {copied ? 'Copied!' : 'Share Profile'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
@@ -199,7 +230,7 @@ export default function PublicProfilePage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Hours Volunteered', value: stats.totalHours, unit: 'hrs', icon: Clock },
+            { label: 'Hours Volunteered', value: formatHours(stats.totalHours), unit: '', icon: Clock },
             {
               label: 'Events Attended',
               value: stats.eventsAttended,
@@ -282,7 +313,7 @@ export default function PublicProfilePage() {
                     )}
                   </div>
                   <span className="text-[13px] font-700 text-primary font-tabular">
-                    {c.hours_spent} hrs
+                    {formatHours(c.hours_spent || 0)}
                   </span>
                 </div>
               ))}

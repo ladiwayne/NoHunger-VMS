@@ -43,6 +43,12 @@ export default function AdminCheckinsPage() {
     }
   };
 
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
   const handleApprove = async (
     checkinId: string,
     volunteerId: string,
@@ -53,7 +59,7 @@ export default function AdminCheckinsPage() {
     setActionLoading(checkinId);
     try {
       await approveCheckin(checkinId);
-      toast.success(`${volunteerName}'s check-in approved!`);
+      toast.success(`✅ ${volunteerName} approved for "${activityTitle}"`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Failed to approve check-in.');
@@ -71,7 +77,7 @@ export default function AdminCheckinsPage() {
     setActionLoading(checkinId);
     try {
       await rejectCheckin(checkinId);
-      toast.success(`${volunteerName}'s check-in rejected.`);
+      toast.success(`❌ ${volunteerName}'s check-in for "${activityTitle}" declined.`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Failed to reject.');
@@ -86,7 +92,7 @@ export default function AdminCheckinsPage() {
       const record = checkins.find((c) => c.id === checkinId);
       const hours = record?.hours_spent || 0;
       await approveCheckout(checkinId, hours);
-      toast.success(`${volunteerName} checked out! Hours calculated.`);
+      toast.success(`🎉 ${volunteerName} logged ${formatHours(hours)} hours`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Failed to checkout.');

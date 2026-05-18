@@ -76,7 +76,7 @@ export default function ContactPage() {
                   className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors group"
                 >
                   <div>
-                    <p className="font-600 text-foreground">No Hunger Initiative WhatsApp Channel</p>
+                    <p className="font-600 text-foreground">No Hunger Initiatives WhatsApp Channel</p>
                     <p className="text-sm text-muted-foreground">Get more news and learn how we can reach our goal together</p>
                   </div>
                   <ExternalLink size={16} className="text-muted-foreground group-hover:text-foreground" />

@@ -241,7 +241,7 @@ export default function AdminActivitiesPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Activities & Events</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Create and manage No Hunger Initiative activities for No Hunger Champions
+              Create and manage No Hunger Initiatives activities for No Hunger Champions
             </p>
           </div>
           <button

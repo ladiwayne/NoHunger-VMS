@@ -389,12 +389,10 @@ export default function SignUpLoginContent() {
       <div className="hidden lg:flex flex-1 flex-col justify-center bg-gradient-to-br from-green-600 to-green-800 px-8 xl:px-12">
 
         <h1 className="text-3xl xl:text-5xl font-800 text-white leading-tight mb-4 xl:mb-5">
-              Feed a family.
-              <br />
-              <span className="text-green-200">Change a life.</span>
+              Nourishing Lives, Empowering Communities
             </h1>
             <p className="text-green-100/90 text-sm xl:text-[15px] leading-relaxed max-w-sm mb-6 xl:mb-8">
-              No Hunger Initiative is dedicated to ending hunger in Nigeria by delivering nutritious food to families in need, powered by caring Champions like you.
+              No Hunger Initiatives is committed to ending hunger and building stronger communities by providing nutritious food, hope, and practical support to vulnerable families, powered by caring Champions like you.
             </p>
 
             {/* Impact stats */}

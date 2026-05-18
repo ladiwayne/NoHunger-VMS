@@ -140,24 +140,25 @@ export default function Sidebar({
         .slice(0, 2)
     : 'U';
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ hideLogo }: { hideLogo?: boolean }) => (
     <>
-      {/* Logo */}
-      <div
-        className={`flex items-center gap-2.5 px-4 py-5 border-b border-border ${collapsed ? 'justify-center px-0' : ''}`}
-      >
-        <AppLogo size={32} />
-        {!collapsed && (
-          <div className="flex flex-col min-w-0">
-            <span className="font-display font-700 text-[15px] text-foreground leading-tight">
-              No Hunger
-            </span>
-            <span className="text-[10px] text-muted-foreground font-500 tracking-wide uppercase">
-              {isAdmin ? 'Initiative Admin' : 'No Hunger Champion Hub'}
-            </span>
-          </div>
-        )}
-      </div>
+      {!hideLogo && (
+        <div
+          className={`flex items-center gap-2.5 px-4 py-5 border-b border-border ${collapsed ? 'justify-center px-0' : ''}`}
+        >
+          <AppLogo size={32} />
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-display font-700 text-[15px] text-foreground leading-tight">
+                No Hunger
+              </span>
+              <span className="text-[10px] text-muted-foreground font-500 tracking-wide uppercase">
+                {isAdmin ? 'Initiatives Admin' : 'No Hunger Champion Hub'}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Role badge */}
       {!collapsed && isAdmin && (
@@ -304,7 +305,7 @@ export default function Sidebar({
             <div>
               <span className="font-display font-700 text-[15px] text-foreground">No Hunger</span>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                {isAdmin ? 'Initiative Admin' : 'No Hunger Champion Hub'}
+                {isAdmin ? 'Initiatives Admin' : 'No Hunger Champion Hub'}
               </p>
             </div>
           </div>
@@ -316,7 +317,7 @@ export default function Sidebar({
           </button>
         </div>
         <div className="flex-1 flex flex-col overflow-hidden">
-          <SidebarContent />
+          <SidebarContent hideLogo />
         </div>
       </aside>
     </>

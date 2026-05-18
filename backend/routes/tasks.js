@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const requirePermission = require('../middleware/permission');
 const { body, validationResult } = require('express-validator');
 const Task = require('../models/Task');
+const Notification = require('../models/Notification');
 const { logAudit } = require('../utils/auditLogger');
 
 // Create task
@@ -38,6 +39,22 @@ router.post('/', requirePermission('manage_tasks'), [
       entityId: task._id,
       details: { title: task.title, assignedTo: task.assignedTo },
     });
+
+    // Create a notification for the assigned volunteer (if any)
+    if (task.assignedTo) {
+      try {
+        await Notification.create({
+          userId: task.assignedTo,
+          type: 'task',
+          title: 'New Task Assigned',
+          message: `You have been assigned a new task: "${task.title}"`,
+          relatedId: task._id,
+          read: false,
+        });
+      } catch (notifyErr) {
+        console.error('[tasks] Failed to create assignment notification:', notifyErr?.message || notifyErr);
+      }
+    }
 
     res.status(201).json({
       message: 'Task created successfully',

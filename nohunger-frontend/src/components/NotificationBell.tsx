@@ -6,6 +6,7 @@ import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  getUnreadCount,
 } from '@/lib/api/notifications';
 import { Bell, X, Loader2 } from 'lucide-react';
 
@@ -14,12 +15,13 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 15000);
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 15000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -39,6 +41,9 @@ export default function NotificationBell() {
     try {
       const data = await getNotifications();
       setNotifications(data || []);
+      // ensure unreadCount is in sync when notifications are loaded
+      const unread = (data || []).filter((n: any) => !n.read).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.log('Notifications fetch error:', err);
     } finally {
@@ -46,10 +51,20 @@ export default function NotificationBell() {
     }
   };
 
+  const fetchUnreadCount = async () => {
+    try {
+      const count = await getUnreadCount();
+      setUnreadCount(count || 0);
+    } catch (err) {
+      console.log('Unread count fetch error:', err);
+    }
+  };
+
   const markAllRead = async () => {
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
     } catch (err) {
       console.log('Mark read error:', err);
     }
@@ -59,13 +74,11 @@ export default function NotificationBell() {
     try {
       await markNotificationRead(id);
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+      setUnreadCount((c) => Math.max(0, c - 1));
     } catch (err) {
       console.log('Mark read error:', err);
     }
   };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   const typeIcon = (type: string) => {
     const icons: Record<string, string> = {
       invitation: '📩',
@@ -84,7 +97,13 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={panelRef}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={async () => {
+          const newOpen = !open;
+          setOpen(newOpen);
+          if (newOpen) {
+            await fetchNotifications();
+          }
+        }}
         className="relative p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
         aria-label="Notifications"
       >

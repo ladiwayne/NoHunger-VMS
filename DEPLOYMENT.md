@@ -19,8 +19,8 @@ git clone <repository-url>
 cd nohunger-vms
 
 # Copy environment files
-cp backend/.env.production backend/.env
-cp nohunger-frontend/.env.production nohunger-frontend/.env.local
+cp backend/.env.example backend/.env
+cp nohunger-frontend/.env.example nohunger-frontend/.env.local
 ```
 
 ### 2. Configure Environment Variables

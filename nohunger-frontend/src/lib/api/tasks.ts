@@ -10,22 +10,6 @@ export async function getTasks(filters?: { assignedTo?: string; status?: string 
   return (Array.isArray(data) ? data : []).map(adaptTask);
 }
 
-export async function createTask(payload: {
-  title: string;
-  description?: string;
-  assignedTo?: string;
-  activityId?: string;
-  dueDate?: string;
-  priority?: string;
-  status?: string;
-}): Promise<any> {
-  const data = await apiFetch<any>('/tasks', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  return adaptTask(data.task || data);
-}
-
 export async function updateTask(id: string, payload: any): Promise<any> {
   const data = await apiFetch<any>(`/tasks/${id}`, {
     method: 'PUT',

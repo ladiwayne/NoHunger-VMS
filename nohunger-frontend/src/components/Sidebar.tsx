@@ -88,9 +88,9 @@ const adminNavGroups = [
         badge: null,
         badgeVariant: 'warning' as const,
       },
-      { label: 'Tasks', icon: ClipboardList, href: '/admin/tasks', badge: null },
     ],
   },
+
   {
     label: 'Communication',
     items: [{ label: 'Broadcasts', icon: Megaphone, href: '/admin/broadcasts', badge: null }],

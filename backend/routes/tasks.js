@@ -7,63 +7,8 @@ const Task = require('../models/Task');
 const Notification = require('../models/Notification');
 const { logAudit } = require('../utils/auditLogger');
 
-// Create task
-router.post('/', requirePermission('manage_tasks'), [
-  body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
-  body('description').optional().trim().isLength({ max: 1000 }),
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ message: errors.array()[0].msg });
-  }
-  try {
-    const { title, description, assignedTo, activityId, eventId, priority, dueDate } = req.body;
-
-    const task = new Task({
-      title,
-      description,
-      assignedTo,
-      assignedBy: req.user.id,
-      activityId,
-      eventId,
-      priority,
-      dueDate,
-    });
-
-    await task.save();
-    await logAudit({
-      actorId: req.user.id,
-      actorRole: req.user.role,
-      action: 'create_task',
-      entityType: 'Task',
-      entityId: task._id,
-      details: { title: task.title, assignedTo: task.assignedTo },
-    });
-
-    // Create a notification for the assigned volunteer (if any)
-    if (task.assignedTo) {
-      try {
-        await Notification.create({
-          userId: task.assignedTo,
-          type: 'task',
-          title: 'New Task Assigned',
-          message: `You have been assigned a new task: "${task.title}"`,
-          relatedId: task._id,
-          read: false,
-        });
-      } catch (notifyErr) {
-        console.error('[tasks] Failed to create assignment notification:', notifyErr?.message || notifyErr);
-      }
-    }
-
-    res.status(201).json({
-      message: 'Task created successfully',
-      task,
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating task', error: error.message });
-  }
-});
+// Task creation endpoint removed — task creation via admin UI is disabled.
+// If needed in future, restore creation logic from version control.
 
 // Get all tasks
 router.get('/', async (req, res) => {

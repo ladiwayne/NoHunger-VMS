@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTasks, createTask, updateTask, deleteTask } from '@/lib/api/tasks';
+import { getTasks, updateTask, deleteTask } from '@/lib/api/tasks';
 import { getVolunteers } from '@/lib/api/volunteers';
 import { getActivities } from '@/lib/api/activities';
 import {
@@ -91,13 +91,13 @@ export default function AdminTasksPage() {
         status: form.status === 'in_progress' ? 'in-progress' : form.status,
       };
 
-      if (editId) {
-        await updateTask(editId, payload);
-        toast.success('Task updated!');
-      } else {
-        await createTask(payload as any);
-        toast.success('Task created and volunteer notified!');
+      if (!editId) {
+        toast.error('Task creation is disabled. Please select an existing task to edit.');
+        setSaving(false);
+        return;
       }
+      await updateTask(editId, payload);
+      toast.success('Task updated!');
 
       setShowForm(false);
       setForm(defaultForm);
@@ -161,19 +161,12 @@ export default function AdminTasksPage() {
           <div>
             <h1 className="text-2xl font-700 text-foreground">Tasks</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Create and assign tasks to Nohunger Champions
+              Review and manage existing tasks for NoHunger Champions
             </p>
           </div>
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setEditId(null);
-              setForm(defaultForm);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all text-[13.5px]"
-          >
-            <Plus size={16} /> New Task
-          </button>
+          <span className="inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground">
+            Task creation is disabled in this view.
+          </span>
         </div>
 
         {/* Filter tabs */}

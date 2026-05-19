@@ -5,7 +5,8 @@ const generateCheckInCode = () => {
 };
 
 const generateCheckInLink = (code) => {
-  return `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkin/${code}`;
+  const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://volunteer.nohungerfoodbank.org';
+  return `${frontendUrl.replace(/\/+$/, '')}/checkin/${code}`;
 };
 
 const calculateHoursDifference = (startTime, endTime) => {

@@ -275,8 +275,9 @@ export default function ProfilePage() {
       await refreshProfile();
       setSuccessMessage('Profile updated successfully');
       toast.success('Profile updated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save profile', error);
+      toast.error(error?.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }
@@ -625,7 +626,8 @@ export default function ProfilePage() {
                         <option value="M">M</option>
                         <option value="L">L</option>
                         <option value="XL">XL</option>
-                        <option value="XXL">XXL</option>
+                        <option value="2XL">2XL</option>
+                        <option value="3XL">3XL</option>
                       </select>
                       {errors.shirtSize && <p className="text-xs text-rose-600">{errors.shirtSize}</p>}
                     </label>

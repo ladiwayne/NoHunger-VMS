@@ -53,6 +53,7 @@ const ACTIVITY_TYPES = [
   { value: 'training_education', label: 'Training & Education' },
   { value: 'agriculture', label: 'Agriculture' },
   { value: 'health', label: 'Health' },
+  { value: 'virtual', label: 'Virtual Event' },
 ];
 
 const TYPE_LABEL: Record<string, string> = Object.fromEntries(

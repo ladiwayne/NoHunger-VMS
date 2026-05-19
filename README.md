@@ -31,6 +31,26 @@ NODE_ENV=development
 
 Frontend runs on port 4028 by default.
 
+## Deployment
+
+For production deployment, use the provided `docker-compose.yml` and the example env files:
+
+- `backend/.env.example`
+- `nohunger-frontend/.env.example`
+
+Run:
+
+```bash
+docker-compose up -d --build
+```
+
+Then verify:
+
+```bash
+curl http://localhost:5000/health
+curl http://localhost:3000
+```
+
 ## Core Features
 
 - Authentication and role-based access (admin and volunteer)

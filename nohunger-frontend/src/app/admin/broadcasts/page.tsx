@@ -2,31 +2,38 @@
 
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { useAuth } from '@/contexts/AuthContext';
 import { getBroadcasts, sendBroadcast } from '@/lib/api/notifications';
 import { getActivities } from '@/lib/api/activities';
+import { getVolunteers } from '@/lib/api/volunteers';
 import { apiFetch } from '@/lib/api/client';
-import { Megaphone, Send, Users, Activity, Globe, Loader2, CheckCircle2 } from 'lucide-react';
+import { Megaphone, Send, Activity, Globe, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminBroadcastsPage() {
-  const { user } = useAuth();
   const [broadcasts, setBroadcasts] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [volunteerSearch, setVolunteerSearch] = useState('');
+  const [selectedVolunteerIds, setSelectedVolunteerIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(false);
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({
     title: '',
     message: '',
     target_type: 'all',
     target_activity_id: '',
-    target_group_id: '',
   });
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (form.target_type === 'selected') {
+      fetchVolunteers(volunteerSearch);
+    }
+  }, [form.target_type, volunteerSearch]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -34,11 +41,22 @@ export default function AdminBroadcastsPage() {
       const [bData, aData] = await Promise.all([getBroadcasts(), getActivities()]);
       setBroadcasts(bData || []);
       setActivities((aData || []).filter((a) => ['published', 'ongoing'].includes(a.status)));
-      setGroups([]);
     } catch (err) {
       console.log('Broadcasts fetch error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVolunteers = async (search = '') => {
+    setLoadingVolunteers(true);
+    try {
+      const result = await getVolunteers({ status: 'approved', search, limit: 100 });
+      setVolunteers(result.data || []);
+    } catch (err) {
+      console.log('Volunteer search error:', err);
+    } finally {
+      setLoadingVolunteers(false);
     }
   };
 
@@ -47,21 +65,23 @@ export default function AdminBroadcastsPage() {
       toast.error('Please fill in title and message.');
       return;
     }
+
+    if (form.target_type === 'selected' && selectedVolunteerIds.length === 0) {
+      toast.error('Please select at least one volunteer to send this broadcast.');
+      return;
+    }
+
     setSending(true);
     try {
-      if (form.target_type === 'group') {
-        toast.error('Group targeting is not configured in MongoDB mode yet.');
-        setSending(false);
-        return;
-      }
-
       let payload: any = {
         subject: form.title,
         message: form.message,
         recipientType: 'all',
       };
 
-      if (form.target_type === 'activity' && form.target_activity_id) {
+      if (form.target_type === 'selected') {
+        payload = { ...payload, recipientIds: selectedVolunteerIds, type: 'broadcast' };
+      } else if (form.target_type === 'activity' && form.target_activity_id) {
         const activity = await apiFetch<any>(`/activities/${form.target_activity_id}`);
         const ids = (activity?.volunteersApproved || [])
           .map((v: any) => v._id || v.id)
@@ -75,15 +95,11 @@ export default function AdminBroadcastsPage() {
       }
 
       await sendBroadcast(payload);
-
       toast.success('Broadcast sent successfully!');
-      setForm({
-        title: '',
-        message: '',
-        target_type: 'all',
-        target_activity_id: '',
-        target_group_id: '',
-      });
+      setForm({ title: '', message: '', target_type: 'all', target_activity_id: '' });
+      setSelectedVolunteerIds([]);
+      setVolunteerSearch('');
+      setVolunteers([]);
       fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to send broadcast.');
@@ -94,7 +110,6 @@ export default function AdminBroadcastsPage() {
 
   const targetIcon = (type: string) => {
     if (type === 'activity') return <Activity size={14} className="text-primary" />;
-    if (type === 'group') return <Users size={14} className="text-success" />;
     return <Globe size={14} className="text-muted-foreground" />;
   };
 
@@ -104,11 +119,10 @@ export default function AdminBroadcastsPage() {
         <div>
           <h1 className="text-2xl font-700 text-foreground">Broadcasts</h1>
           <p className="text-[14px] text-muted-foreground mt-0.5">
-            Send messages to Nohunger Champions by group or activity
+            Send messages to all Champions or selected volunteers by search and selection
           </p>
         </div>
 
-        {/* Compose form */}
         <div className="bg-card border border-border rounded-2xl shadow-card p-6">
           <h2 className="text-[16px] font-700 text-foreground mb-4">New Broadcast</h2>
           <div className="space-y-4">
@@ -133,31 +147,29 @@ export default function AdminBroadcastsPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                  Target Audience
-                </label>
+                <label className="block text-[13px] font-600 text-foreground mb-1.5">Target Audience</label>
                 <select
                   value={form.target_type}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setForm((p) => ({
                       ...p,
                       target_type: e.target.value,
                       target_activity_id: '',
-                      target_group_id: '',
-                    }))
-                  }
+                    }));
+                    setSelectedVolunteerIds([]);
+                    setVolunteerSearch('');
+                    setVolunteers([]);
+                  }}
                   className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 >
                   <option value="all">All Champions</option>
+                  <option value="selected">Selected Champions</option>
                   <option value="activity">By Activity</option>
-                  <option value="group">By Group</option>
                 </select>
               </div>
               {form.target_type === 'activity' && (
                 <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Select Activity
-                  </label>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Select Activity</label>
                   <select
                     value={form.target_activity_id}
                     onChange={(e) => setForm((p) => ({ ...p, target_activity_id: e.target.value }))}
@@ -165,41 +177,84 @@ export default function AdminBroadcastsPage() {
                   >
                     <option value="">Select activity…</option>
                     {activities.map((a) => (
-                      <option key={a._id || a.id} value={a._id || a.id}>
+                      <option key={a.id || a._id} value={a.id || a._id}>
                         {a.title}
                       </option>
                     ))}
                   </select>
                 </div>
               )}
-              {form.target_type === 'group' && (
-                <div>
-                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                    Select Group
-                  </label>
-                  <select
-                    value={form.target_group_id}
-                    onChange={(e) => setForm((p) => ({ ...p, target_group_id: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  >
-                    <option value="">Select group…</option>
-                    {groups.map((g) => (
-                      <option key={g._id || g.id} value={g._id || g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
+
+            {form.target_type === 'selected' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Search Champions</label>
+                  <input
+                    value={volunteerSearch}
+                    onChange={(e) => setVolunteerSearch(e.target.value)}
+                    placeholder="Search by name or email"
+                    className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </div>
+                <div className="grid gap-2 max-h-64 overflow-y-auto rounded-2xl border border-border bg-muted p-3">
+                  {loadingVolunteers ? (
+                    <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">Loading volunteers…</div>
+                  ) : volunteers.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">Search volunteers to select recipients.</div>
+                  ) : (
+                    volunteers.map((vol) => {
+                      const selected = selectedVolunteerIds.includes(vol.id);
+                      return (
+                        <button
+                          key={vol.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVolunteerIds((current) =>
+                              current.includes(vol.id)
+                                ? current.filter((id) => id !== vol.id)
+                                : [...current, vol.id]
+                            );
+                          }}
+                          className={`w-full rounded-2xl px-3 py-2 text-left text-sm transition ${selected ? 'bg-primary/10 border border-primary text-primary' : 'border border-border bg-white text-foreground hover:bg-muted'}`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span>{vol.full_name || vol.email}</span>
+                            {selected && <span className="text-[12px] font-semibold text-primary">Selected</span>}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                {selectedVolunteerIds.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedVolunteerIds.map((id) => {
+                      const vol = volunteers.find((v) => v.id === id);
+                      return (
+                        <span key={id} className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-sm">
+                          {vol?.full_name || 'Selected volunteer'}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVolunteerIds((current) => current.filter((item) => item !== id))}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.42 1.42L12 13.41l4.89 4.9a1 1 0 0 0 1.42-1.42L13.41 12l4.9-4.89a1 1 0 0 0 0-1.4z"/></svg>
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-between gap-4 pt-2">
-              <p className="text-[12px] text-muted-foreground">
-                📧 Will send in-app notification + email to all matching Champions
-              </p>
+              <p className="text-[12px] text-muted-foreground">📧 Sends in-app notification to the chosen volunteers.</p>
               <button
                 onClick={handleSend}
                 disabled={sending}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60 text-[13.5px]"
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-700 rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60"
               >
                 {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 Send Broadcast
@@ -208,7 +263,6 @@ export default function AdminBroadcastsPage() {
           </div>
         </div>
 
-        {/* Broadcast history */}
         <div className="bg-card border border-border rounded-2xl shadow-card overflow-hidden">
           <div className="p-5 border-b border-border">
             <h3 className="text-[15px] font-700 text-foreground">Broadcast History</h3>
@@ -227,20 +281,18 @@ export default function AdminBroadcastsPage() {
           ) : (
             <div className="divide-y divide-border">
               {broadcasts.map((b) => (
-                <div key={b._id || b.id} className="p-5 hover:bg-muted/30 transition-colors">
+                <div key={b.id || b._id} className="p-5 hover:bg-muted/30 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        {targetIcon(b.target_type)}
+                        {targetIcon(b.target_type || b.type || 'all')}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-700 text-foreground">{b.title}</p>
-                        <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">
-                          {b.message}
-                        </p>
+                        <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{b.message}</p>
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-[11px] text-muted-foreground">
-                            {new Date(b.createdAt || b.created_at || b.sent_at).toLocaleDateString('en', {
+                            {new Date(b.created_at || b.createdAt || b.sent_at || b.createdAt).toLocaleDateString('en', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',
@@ -248,9 +300,7 @@ export default function AdminBroadcastsPage() {
                               minute: '2-digit',
                             })}
                           </span>
-                          <span className="text-[11px] font-600 text-primary capitalize">
-                            {(b.type || b.target_type || 'broadcast').replace('_', ' ')}
-                          </span>
+                          <span className="text-[11px] font-600 text-primary capitalize">{(b.type || b.target_type || 'broadcast').replace('_', ' ')}</span>
                         </div>
                       </div>
                     </div>

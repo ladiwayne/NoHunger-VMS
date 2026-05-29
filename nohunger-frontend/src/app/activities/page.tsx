@@ -64,10 +64,10 @@ export default function ActivitiesPage() {
         method: 'POST',
         body: JSON.stringify({ activityId, message: message[activityId] || '' }),
       });
-      toast.success('Application submitted! Admin will review it shortly.');
+      toast.success('✅ Application submitted! Our team will review and notify you soon. Thank you for your interest!');
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to apply.');
+      toast.error(err.message || 'Unable to submit your application. Please try again.');
     } finally {
       setApplying(null);
     }

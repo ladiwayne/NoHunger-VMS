@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const Invitation = require('../models/Invitation');
+const { autoRejectStaleInvitations } = require('../utils/invitationUtils');
 
 // Create invitation (admin)
 router.post('/', adminAuth, async (req, res) => {
@@ -30,6 +31,8 @@ router.post('/', adminAuth, async (req, res) => {
 // Get volunteer invitations
 router.get('/', auth, async (req, res) => {
   try {
+    await autoRejectStaleInvitations();
+
     const invitations = await Invitation.find({ volunteerId: req.user.id })
       .populate('eventId', 'title description eventDate location')
       .populate('activityId', 'title description startDate endDate location');

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import {
   AreaChart,
   Area,
@@ -46,8 +47,8 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
         Week of {label}
       </p>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-[22px] font-800 text-primary font-tabular">{payload[0].value}</span>
-        <span className="text-[12px] text-muted-foreground font-500">hrs</span>
+        <span className="text-[22px] font-800 text-primary font-tabular">{formatHoursHHMM(payload[0].value)}</span>
+        <span className="text-[12px] text-muted-foreground font-500">HH:MM</span>
       </div>
       {payload[1] && (
         <p className="text-[12px] text-muted-foreground mt-1">

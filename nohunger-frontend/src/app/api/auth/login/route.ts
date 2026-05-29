@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendUrl } from '@/lib/api/backendUrl';
 
-function getBackendUrl(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:5000';
-  return `${proto}://${host}/api`;
-}
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',

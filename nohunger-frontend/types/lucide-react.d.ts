@@ -72,6 +72,8 @@ declare module 'lucide-react' {
   export const Share2: Icon;
   export const Shield: Icon;
   export const ShieldCheck: Icon;
+  export const Info: Icon;
+  export const Sparkles: Icon;
   export const Shirt: Icon;
   export const Star: Icon;
   export const Trash2: Icon;

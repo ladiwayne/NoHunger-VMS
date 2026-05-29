@@ -1,3 +1,20 @@
+// Admin: Check in a volunteer for event/activity
+export async function adminCheckin(volunteerId: string, eventId?: string, activityId?: string, checkInTime?: string): Promise<any> {
+  const data = await apiFetch<any>('/admin/admin-checkin', {
+    method: 'POST',
+    body: JSON.stringify({ volunteerId, eventId, activityId, checkInTime }),
+  });
+  return data.checkin || data;
+}
+
+// Admin: Check out a volunteer for event/activity
+export async function adminCheckout(checkinId: string, checkOutTime?: string): Promise<any> {
+  const data = await apiFetch<any>('/admin/admin-checkout', {
+    method: 'POST',
+    body: JSON.stringify({ checkinId, checkOutTime }),
+  });
+  return data.checkin || data;
+}
 import { apiFetch } from './client';
 import { adaptCheckin } from './adapters';
 

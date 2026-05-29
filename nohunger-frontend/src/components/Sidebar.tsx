@@ -47,6 +47,7 @@ const volunteerNavGroups = [
   {
     label: 'Activities',
     items: [
+      { label: 'Browse Events', icon: CalendarDays, href: '/events', badge: null },
       { label: 'Browse Activities', icon: Activity, href: '/activities', badge: null },
       {
         label: 'My Invitations',
@@ -79,7 +80,8 @@ const adminNavGroups = [
   {
     label: 'Management',
     items: [
-      { label: 'Activities & Events', icon: CalendarDays, href: '/admin/activities', badge: null },
+      { label: 'Events', icon: CalendarDays, href: '/admin/events', badge: null },
+      { label: 'Activities', icon: Activity, href: '/admin/activities', badge: null },
       { label: 'No Hunger Champions', icon: Users, href: '/admin/volunteers', badge: null },
       {
         label: 'Check-in Requests',

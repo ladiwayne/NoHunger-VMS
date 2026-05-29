@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import { MapPin, Clock, CheckCircle2, LogIn, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -55,8 +56,8 @@ export default function ActiveCheckInWidget() {
     setCheckInTime(timeStr);
     setCheckInState('checked-in');
     setLoading(false);
-    toast.success(`Checked in to ${ACTIVE_EVENT.name} at ${timeStr}`, {
-      description: 'Your attendance has been recorded. Have a great session!',
+    toast.success(`✅ Checked in to ${ACTIVE_EVENT.name} at ${timeStr}. Enjoy your session!`, {
+      description: 'Your attendance has been recorded successfully.',
       duration: 4000,
     });
   };
@@ -70,9 +71,9 @@ export default function ActiveCheckInWidget() {
     setCheckOutTime(timeStr);
     setCheckInState('checked-out');
     setLoading(false);
-    const hours = (elapsedSeconds / 3600).toFixed(2);
-    toast.success(`Checked out at ${timeStr} — ${hours} hrs logged!`, {
-      description: 'Your volunteer hours have been saved. Thank you for your service!',
+    const hours = elapsedSeconds / 3600;
+    toast.success(`✅ Checked out at ${timeStr}. ${formatHoursHHMM(hours)} logged.`, {
+      description: 'Your volunteer hours have been recorded successfully.',
       duration: 5000,
     });
   };

@@ -44,7 +44,7 @@ const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
 const COUNTRY_STATE_MAP: Record<string, string[]> = {
   Ghana: ['Accra', 'Kumasi', 'Cape Coast', 'Takoradi', 'Tamale', 'Koforidua', 'Sunyani', 'Ho', 'Bolgatanga'],
-  Nigeria: NIGERIA_STATES,
+  Nigeria: [...NIGERIA_STATES],
 };
 
 const SKILLS = [
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
       toast.success('Profile completed! Redirecting to your dashboard.', { duration: 3000 });
       router.push('/volunteer-dashboard');
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to save profile. Please try again.');
+      toast.error(err?.message || 'Unable to save your onboarding profile. Please try again.');
     } finally {
       setSaving(false);
     }

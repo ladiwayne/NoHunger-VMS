@@ -68,6 +68,26 @@ export function adaptActivity(a: any) {
   };
 }
 
+// ---------- Event ----------
+export function adaptEvent(e: any) {
+  if (!e) return null;
+  return {
+    id: e._id || e.id,
+    title: e.title,
+    description: e.description || '',
+    activity_type: 'event',
+    location: e.location || '',
+    start_date: e.eventDate || e.start_date || e.startDate || '',
+    end_date: e.end_date || e.endDate || '',
+    max_volunteers: e.max_volunteers ?? e.maxVolunteers ?? 0,
+    status: e.status || 'draft',
+    check_in_code: e.checkInCode || e.check_in_code || '',
+    checkin_link: e.checkInLink || e.checkin_link || '',
+    created_at: e.createdAt || e.created_at || new Date().toISOString(),
+    coordinator: e.createdBy || null,
+  };
+}
+
 // ---------- CheckIn ----------
 export function adaptCheckin(c: any) {
   if (!c) return null;
@@ -84,6 +104,7 @@ export function adaptCheckin(c: any) {
     id: c._id || c.id,
     volunteer_id: c.volunteer_id || c.volunteerId,
     activity_id: c.activity_id || c.activityId,
+    event_id: c.event_id || c.eventId,
     checkin_time: c.checkin_time || c.checkInTime || '',
     checkout_time: c.checkout_time || c.checkOutTime || null,
     hours_spent: c.hours_spent ?? c.hoursSpent ?? 0,
@@ -91,6 +112,7 @@ export function adaptCheckin(c: any) {
     check_in_code: c.check_in_code || c.checkInCode || '',
     volunteer: c.volunteerId || c.volunteer || null,
     activity: c.activityId || c.activity || null,
+    event: c.eventId || c.event || null,
   };
 }
 
@@ -101,6 +123,7 @@ export function adaptInvitation(i: any) {
     id: i._id || i.id,
     volunteer_id: i.volunteer_id || i.volunteerId,
     activity_id: i.activity_id || i.activityId,
+    event_id: i.event_id || i.eventId,
     status: i.status || 'pending',
     message: i.message || '',
     responded_at: i.responded_at || i.respondedAt || null,
@@ -109,6 +132,9 @@ export function adaptInvitation(i: any) {
     activities:
       i.activities ||
       (i.activityId && typeof i.activityId === 'object' ? adaptActivity(i.activityId) : null),
+    event:
+      i.event ||
+      (i.eventId && typeof i.eventId === 'object' ? adaptEvent(i.eventId) : null),
     volunteer:
       i.volunteer ||
       (i.volunteerId && typeof i.volunteerId === 'object' ? adaptUser(i.volunteerId) : null),

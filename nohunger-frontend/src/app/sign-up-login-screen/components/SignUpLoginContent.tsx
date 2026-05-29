@@ -240,7 +240,7 @@ export default function SignUpLoginContent() {
       if (result?.user) {
         const role =
           (result as any)?.profile?.role || result.user.user_metadata?.role || 'volunteer';
-        toast.success('Welcome back! Redirecting…', { duration: 2000, icon: '👋' });
+        toast.success('👋 Welcome back! You have successfully logged in. Redirecting to your dashboard…', { duration: 2000, icon: '👋' });
         setLoginAttempts(0);
         setLoginLoading(false);
         if (role === 'admin' || role === 'super_admin') {
@@ -315,7 +315,7 @@ export default function SignUpLoginContent() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       setForgotError(message);
-      toast.error('Password reset failed', { description: message });
+      toast.error('Unable to reset your password right now.', { description: message });
       setForgotLoading(false);
     }
   };
@@ -334,7 +334,7 @@ export default function SignUpLoginContent() {
     setForgotError('');
     try {
       await resetPassword(resetPasswordToken, resetPasswordForm.password, resetPasswordForm.confirmPassword);
-      toast.success('Password reset successfully!', {
+      toast.success('🔒 Password reset successful! You can now sign in with your new password.', {
         description: 'Redirecting to sign in...',
         duration: 2000,
       });
@@ -347,7 +347,7 @@ export default function SignUpLoginContent() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       setForgotError(message);
-      toast.error('Password reset failed', { description: message });
+      toast.error('Unable to reset your password right now.', { description: message });
     } finally {
       setResetPasswordLoading(false);
     }
@@ -369,7 +369,7 @@ export default function SignUpLoginContent() {
       });
       setSignupLoading(false);
       setSignupSuccess(true);
-      toast.success('Account created! You can update your profile from the dashboard anytime.', {
+      toast.success('🎉 Account created! Welcome to No Hunger Initiatives. You can update your profile and start volunteering from your dashboard.', {
         duration: 4000,
       });
       setTimeout(() => router.push('/volunteer-dashboard'), 1500);
@@ -378,7 +378,7 @@ export default function SignUpLoginContent() {
       if (isRateLimitError(err)) {
         toast.error(getRateLimitMessage(), { duration: 6000 });
       } else {
-        toast.error(err?.message || 'Registration failed. Please try again.');
+        toast.error(err?.message || 'Unable to create your account. Please try again.');
       }
     }
   };

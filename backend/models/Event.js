@@ -41,6 +41,10 @@ const eventSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    max_volunteers: {
+      type: Number,
+      default: 0,
+    },
     checkInCode: {
       type: String,
       unique: true,

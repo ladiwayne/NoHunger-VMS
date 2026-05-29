@@ -15,12 +15,14 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 
 export default function PublicProfilePage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = params?.id;
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ totalHours: 0, eventsAttended: 0, achievements: 0 });
@@ -111,11 +113,7 @@ export default function PublicProfilePage() {
         .slice(0, 2)
     : 'V';
 
-  const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  };
+  const formatHours = (hours: number) => formatHoursHHMM(hours);
 
   const achievementBadges = [
     { label: 'First Event', icon: '🎉', threshold: 1, unit: 'events', value: stats.eventsAttended },

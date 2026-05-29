@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Clock, CalendarCheck, TrendingUp, Bell, Flame, AlertTriangle } from 'lucide-react';
+import { formatHoursHHMM } from '@/lib/formatHours';
+import { Clock, CalendarCheck, TrendingUp, Bell, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import Icon from '@/components/ui/AppIcon';
 
 const kpiCards = [
   {
@@ -61,82 +61,56 @@ const kpiCards = [
     iconColor: 'text-warning',
     colSpan: 'col-span-1',
     hero: false,
-    alert: true,
-    href: '/volunteer-dashboard',
-  },
-  {
-    id: 'streak',
-    label: 'Active Streak',
-    value: '6',
-    unit: 'weeks',
-    trend: 'Personal best!',
-    trendUp: true,
-    icon: Flame,
-    iconBg: 'bg-green-100',
-    iconColor: 'text-green-600',
-    colSpan: 'col-span-1',
-    hero: false,
-    href: '/volunteer-dashboard',
+    href: '/invitations',
   },
 ];
 
+function formatKpiValue(card: typeof kpiCards[number]) {
+  if (card.id.includes('hours')) {
+    const hours = Number(card.value);
+    return Number.isFinite(hours) ? formatHoursHHMM(hours) : card.value;
+  }
+  return card.value;
+}
+
 export default function DashboardKPIGrid() {
   return (
-    // Mobile-first responsive grid: 1 col on mobile, 2 on tablet, 4 on desktop
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      {kpiCards?.map((card) => {
-        const Icon = card?.icon;
+    <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      {kpiCards.map((card) => {
+        const IconComponent = card.icon;
+
         return (
           <Link
-            key={card?.id}
-            href={card?.href}
-            className={`
-              group relative bg-card border rounded-2xl p-5 shadow-card
-              hover:shadow-card-hover transition-all duration-200
-              ${card?.colSpan}
-              ${card?.alert ? 'border-warning/30 bg-warning/4' : 'border-border'}
-            `}
+            key={card.id}
+            href={card.href}
+            className={`rounded-3xl border border-border/50 bg-card p-5 transition hover:border-primary/70 ${card.colSpan}`}
           >
-            {card?.alert && (
-              <div className="absolute top-3 right-3">
-                <AlertTriangle size={14} className="text-warning" />
-              </div>
-            )}
-            <div className="flex items-start justify-between gap-3">
-              <div
-                className={`w-9 h-9 rounded-xl ${card?.iconBg} flex items-center justify-center flex-shrink-0`}
-              >
-                <Icon size={18} className={card?.iconColor} />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconBg}`}>
+                    <IconComponent className={`${card.iconColor}`} size={22} />
+                  </div>
+                  <span className="text-sm font-semibold text-muted-foreground">{card.label}</span>
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <div className={`flex items-baseline gap-1.5 ${card?.hero ? 'mt-1' : ''}`}>
-                <span
-                  className={`
-                  font-700 font-tabular text-foreground
-                  ${card?.hero ? 'text-4xl' : 'text-3xl'}
-                `}
-                >
-                  {card?.value}
-                </span>
-                <span className="text-[13px] font-500 text-muted-foreground">{card?.unit}</span>
+
+            <div className="mt-6 flex items-end justify-between gap-2">
+              <div>
+                <p className="text-3xl font-semibold text-foreground">{formatKpiValue(card)}</p>
+                <span className="text-sm text-muted-foreground">{card.unit}</span>
               </div>
-              <p className="text-[12.5px] font-600 text-muted-foreground mt-0.5 uppercase tracking-wide">
-                {card?.label}
-              </p>
+              <div className="text-right text-xs uppercase tracking-[0.18em] text-muted-foreground">{card.hero ? 'Overview' : 'Snapshot'}</div>
             </div>
+
             <div
-              className={`
-              mt-3 flex items-center gap-1.5 text-[12px] font-500
-              ${card?.trendWarning ? 'text-warning' : card?.trendUp ? 'text-success' : 'text-muted-foreground'}
-            `}
+              className={`mt-4 flex items-center gap-2 text-xs font-medium ${
+                card.trendWarning ? 'text-warning' : card.trendUp ? 'text-success' : 'text-muted-foreground'
+              }`}
             >
-              {card?.trendWarning ? (
-                <AlertTriangle size={11} />
-              ) : card?.trendUp ? (
-                <TrendingUp size={11} />
-              ) : null}
-              <span>{card?.trend}</span>
+              {card.trendWarning ? <AlertTriangle size={14} /> : card.trendUp ? <TrendingUp size={14} /> : null}
+              <span>{card.trend}</span>
             </div>
           </Link>
         );

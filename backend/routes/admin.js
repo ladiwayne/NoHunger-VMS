@@ -470,4 +470,103 @@ function generateSecurePassword() {
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
+// ─── Admin: Get Accepted Volunteers for Event & Export ─────────────
+const Invitation = require('../models/Invitation');
+const { Parser } = require('json2csv');
+
+// Get accepted volunteers for an event (JSON or CSV)
+router.get('/events/:eventId/accepted-volunteers', requirePermission('manage_volunteers'), async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const invitations = await Invitation.find({ eventId, status: 'accepted' }).populate('volunteerId', 'firstName lastName email');
+    const volunteers = invitations.map(inv => ({
+      id: inv.volunteerId._id,
+      firstName: inv.volunteerId.firstName,
+      lastName: inv.volunteerId.lastName,
+      email: inv.volunteerId.email,
+    }));
+    if (req.query.export === 'csv') {
+      const parser = new Parser({ fields: ['id', 'firstName', 'lastName', 'email'] });
+      const csv = parser.parse(volunteers);
+      res.header('Content-Type', 'text/csv');
+      res.attachment('accepted_volunteers.csv');
+      return res.send(csv);
+    }
+    res.status(200).json(volunteers);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching accepted volunteers', error: error.message });
+  }
+});
+
+// ─── Admin: Check In/Out Volunteers ─────────────
+// CheckIn model already required at top of this file
+// Admin check-in a volunteer for event/activity
+router.post('/admin-checkin', requirePermission('manage_volunteers'), async (req, res) => {
+  try {
+    const { volunteerId, eventId, activityId, checkInTime } = req.body;
+    if (!volunteerId || (!eventId && !activityId)) {
+      return res.status(400).json({ message: 'volunteerId and eventId or activityId required' });
+    }
+    const checkin = new CheckIn({
+      volunteerId,
+      eventId,
+      activityId,
+      checkInTime: checkInTime ? new Date(checkInTime) : new Date(),
+      checkInStatus: 'approved',
+      checkOutStatus: 'pending',
+      approvedBy: req.user.id,
+    });
+    await checkin.save();
+    res.status(201).json({ message: 'Volunteer checked in by admin', checkin });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking in volunteer', error: error.message });
+  }
+});
+
+// Admin check-out a volunteer for event/activity
+router.post('/admin-checkout', requirePermission('manage_volunteers'), async (req, res) => {
+  try {
+    const { checkinId, checkOutTime } = req.body;
+    if (!checkinId) {
+      return res.status(400).json({ message: 'checkinId required' });
+    }
+    const checkin = await CheckIn.findById(checkinId);
+    if (!checkin) {
+      return res.status(404).json({ message: 'Check-in record not found' });
+    }
+    checkin.checkOutTime = checkOutTime ? new Date(checkOutTime) : new Date();
+    checkin.checkOutStatus = 'completed';
+    checkin.approvedBy = req.user.id;
+    await checkin.save();
+    res.status(200).json({ message: 'Volunteer checked out by admin', checkin });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking out volunteer', error: error.message });
+  }
+});
+
+// ─── Utility: Format Hours as MM:HH ─────────────
+function formatHoursMMHH(hours) {
+  const totalMinutes = Math.round(hours * 60);
+  const mm = String(totalMinutes % 60).padStart(2, '0');
+  const hh = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+  return `${mm}:${hh}`;
+}
+
+// Example: Add MM:HH format to volunteer hours endpoint
+const origVolunteerHoursRoute = router.stack.find(r => r.route && r.route.path === '/volunteers/:id/hours');
+if (origVolunteerHoursRoute) {
+  const origHandler = origVolunteerHoursRoute.route.stack[0].handle;
+  origVolunteerHoursRoute.route.stack[0].handle = async function(req, res, next) {
+    try {
+      const result = await origHandler(req, res, next);
+      if (res.headersSent) return result;
+      // If not already sent, add MM:HH format
+      if (res.statusCode === 200 && res.locals && res.locals.data) {
+        res.locals.data.totalHoursMMHH = formatHoursMMHH(res.locals.data.totalHours);
+      }
+      return result;
+    } catch (e) { next(e); }
+  };
+}
+
 module.exports = router;

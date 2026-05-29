@@ -32,6 +32,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your-secure-jwt-secret-key-here}
       - JWT_EXPIRE=7d
       - ALLOWED_ORIGINS=https://your-frontend-domain.com
+      - FRONTEND_URL=https://your-frontend-domain.com
     ports:
       - "5000:5000"
     depends_on:

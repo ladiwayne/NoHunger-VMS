@@ -71,7 +71,7 @@ export default function ManageAdminsPage() {
       setAllAdmins(all);
       setVolunteers(vols.filter((v: any) => v.role === 'volunteer'));
     } catch {
-      toast.error('Failed to load admin data');
+      toast.error('Unable to load admin data. Please refresh the page.');
     } finally {
       setFetching(false);
     }
@@ -87,10 +87,10 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-approve');
     try {
       await approveAdmin(id);
-      toast.success(`${name} has been approved as admin`);
+      toast.success(`✅ ${name} is now an admin and can manage the dashboard.`);
       await loadData();
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to approve admin');
+      toast.error(err?.message || 'Unable to approve this admin request. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -100,10 +100,10 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-reject');
     try {
       await rejectAdmin(id);
-      toast.success(`${name}'s admin request has been rejected`);
+      toast.success(`ℹ️ ${name}'s admin request was declined. They can still volunteer as usual.`);
       await loadData();
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to reject admin');
+      toast.error(err?.message || 'Unable to decline this admin request. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -114,11 +114,11 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-promote');
     try {
       await promoteToAdmin(id);
-      toast.success(`${name} has been promoted to admin`);
+      toast.success(`🎉 ${name} has been promoted to admin and can now manage the site.`);
       await loadData();
       setActiveTab('all');
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to promote volunteer');
+      toast.error(err?.message || 'Unable to promote this volunteer. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -129,10 +129,10 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-revoke');
     try {
       await revokeAdmin(id);
-      toast.success(`Admin access revoked for ${name}`);
+      toast.success(`✅ Admin access revoked for ${name}. They will still remain a volunteer.`);
       await loadData();
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to revoke admin access');
+      toast.error(err?.message || 'Unable to revoke admin access. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -145,12 +145,12 @@ export default function ManageAdminsPage() {
       const result = await resetVolunteerPassword(id);
       if (result?.newPassword) {
         setResetModalData({ name, password: result.newPassword });
-        toast.success(`Password reset for ${name}.`);
+        toast.success(`🔒 Password reset for ${name}. Copy the new password from the modal.`);
       } else {
-        toast.success(`Password reset for ${name}. Please copy the new password from the details modal.`);
+        toast.success(`🔒 Password reset for ${name}. The new password is available in the details modal.`);
       }
     } catch (err: any) {
-      toast.error(err?.message || `Failed to reset password for ${name}`);
+      toast.error(err?.message || `Unable to reset password for ${name}. Please try again.`);
     } finally {
       setResetLoading(null);
     }

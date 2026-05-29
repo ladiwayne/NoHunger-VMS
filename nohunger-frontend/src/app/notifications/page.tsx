@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/notifications';
 import { getMyCheckins } from '@/lib/api/checkins';
 import { getMyInvitations } from '@/lib/api/invitations';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import { Bell, Activity, CheckCircle2, CalendarDays, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import Icon from '@/components/ui/AppIcon';
@@ -57,7 +58,7 @@ export default function NotificationsPage() {
           id: c.id,
           type: 'checkin',
           title: `Check-in: ${c.activity?.title || 'Event'}`,
-          description: `Status: ${c.status.replace('_', ' ')} · ${c.hours_spent ? `${c.hours_spent} hrs` : 'In progress'}`,
+          description: `Status: ${c.status.replace('_', ' ')} · ${c.hours_spent ? formatHoursHHMM(c.hours_spent) : 'In progress'}`,
           date: c.created_at || c.checkin_time,
           icon: CheckCircle2,
           color:
@@ -105,9 +106,9 @@ export default function NotificationsPage() {
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      toast.success('All notifications marked as read.');
+      toast.success('✅ All notifications are now marked as read.');
     } catch (err) {
-      toast.error('Failed to mark as read.');
+      toast.error('Unable to mark notifications as read. Please try again.');
     }
   };
 

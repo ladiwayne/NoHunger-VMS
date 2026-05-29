@@ -4,12 +4,13 @@ const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const Event = require('../models/Event');
 const Invitation = require('../models/Invitation');
+const User = require('../models/User');
 const { generateCheckInCode, generateCheckInLink } = require('../utils/helpers');
 
 // Create event
 router.post('/', adminAuth, async (req, res) => {
   try {
-    const { title, description, eventDate, location, invitedVolunteers } = req.body;
+    const { title, description, eventDate, location, invitedVolunteers, status, max_volunteers } = req.body;
 
     const checkInCode = generateCheckInCode();
     const checkInLink = generateCheckInLink(checkInCode);
@@ -19,6 +20,8 @@ router.post('/', adminAuth, async (req, res) => {
       description,
       eventDate,
       location,
+      status: status || 'draft',
+      max_volunteers: max_volunteers || 0,
       createdBy: req.user.id,
       invitedVolunteers,
       checkInCode,
@@ -62,6 +65,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get event by check-in code
+router.get('/code/:code', async (req, res) => {
+  try {
+    const event = await Event.findOne({ checkInCode: req.params.code.toUpperCase() })
+      .populate('createdBy', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
+      .populate('acceptedVolunteers', 'firstName lastName email');
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found for this code' });
+    }
+
+    res.status(200).json(event);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching event by code', error: error.message });
+  }
+});
+
 // Get event by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -80,28 +101,80 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Update event
+router.put('/:id', adminAuth, async (req, res) => {
+  try {
+    const { title, description, eventDate, location, status, max_volunteers } = req.body;
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    event.title = title ?? event.title;
+    event.description = description ?? event.description;
+    event.eventDate = eventDate ? new Date(eventDate) : event.eventDate;
+    event.location = location ?? event.location;
+    event.status = status ?? event.status;
+    event.max_volunteers = typeof max_volunteers === 'number' ? max_volunteers : event.max_volunteers;
+
+    await event.save();
+
+    const refreshed = await Event.findById(req.params.id)
+      .populate('createdBy', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
+      .populate('acceptedVolunteers', 'firstName lastName email');
+
+    res.status(200).json({ message: 'Event updated successfully', event: refreshed });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Invalid event data', error: error.message });
+    }
+    res.status(500).json({ message: 'Error updating event', error: error.message });
+  }
+});
+
 // Send event invitations
 router.post('/:id/send-invitations', adminAuth, async (req, res) => {
   try {
-    const { volunteerIds } = req.body;
+    const { volunteerIds = [], inviteAll = false } = req.body;
 
     const event = await Event.findById(req.params.id);
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const invitations = volunteerIds.map(volunteerId => ({
+    let targetVolunteerIds = Array.isArray(volunteerIds) ? volunteerIds.filter(Boolean) : [];
+
+    if (inviteAll) {
+      const approvedVolunteers = await User.find({ role: 'volunteer', status: 'approved' }).select('_id');
+      targetVolunteerIds = approvedVolunteers.map((v) => v._id.toString());
+    }
+
+    const existingIds = event.invitedVolunteers.map((id) => id.toString());
+    const uniqueNewIds = Array.from(new Set(targetVolunteerIds)).filter((id) => !existingIds.includes(id));
+
+    if (uniqueNewIds.length === 0) {
+      return res.status(200).json({ message: 'No new volunteers to invite', event });
+    }
+
+    const invitations = uniqueNewIds.map((volunteerId) => ({
       volunteerId,
       eventId: event._id,
     }));
 
     await Invitation.insertMany(invitations);
-    event.invitedVolunteers.push(...volunteerIds);
+    event.invitedVolunteers.push(...uniqueNewIds);
     await event.save();
+
+    const refreshed = await Event.findById(req.params.id)
+      .populate('createdBy', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
+      .populate('acceptedVolunteers', 'firstName lastName email');
 
     res.status(200).json({
       message: 'Invitations sent successfully',
-      event,
+      event: refreshed,
     });
   } catch (error) {
     res.status(500).json({ message: 'Error sending invitations', error: error.message });

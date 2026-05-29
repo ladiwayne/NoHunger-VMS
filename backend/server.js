@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { connectDB, disconnectDB } = require('./config/database');
+const { autoRejectStaleInvitations } = require('./utils/invitationUtils');
 
 // Load environment variables
 dotenv.config();
@@ -15,14 +16,13 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4028,h
   .map((s) => s.trim());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow server-to-server requests (no origin) and listed frontend origins
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: true,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -134,6 +134,17 @@ const startServer = async () => {
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+
+    // Automatically reject invitations that remain pending within 48 hours of an event or activity start.
+    const rejectStaleInvitations = async () => {
+      const rejectedCount = await autoRejectStaleInvitations();
+      if (rejectedCount > 0) {
+        console.log(`[invitation] Automatically rejected ${rejectedCount} stale pending invitation(s)`);
+      }
+    };
+
+    await rejectStaleInvitations();
+    setInterval(rejectStaleInvitations, 60 * 60 * 1000); // Run hourly
 
     const shutdown = async () => {
       server.close(async () => {

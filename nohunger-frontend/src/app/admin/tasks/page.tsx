@@ -97,14 +97,14 @@ export default function AdminTasksPage() {
         return;
       }
       await updateTask(editId, payload);
-      toast.success('Task updated!');
+      toast.success('✅ Task updated successfully. Volunteers will see the latest details now.');
 
       setShowForm(false);
       setForm(defaultForm);
       setEditId(null);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save task.');
+      toast.error(err.message || 'Unable to save this task. Please review the values and try again.');
     } finally {
       setSaving(false);
     }
@@ -128,10 +128,10 @@ export default function AdminTasksPage() {
     if (!confirm('Delete this task?')) return;
     try {
       await deleteTask(id);
-      toast.success('Task deleted.');
+      toast.success('🗑️ Task deleted. The schedule has been updated.');
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete.');
+      toast.error(err.message || 'Unable to delete this task. Please try again later.');
     }
   };
 

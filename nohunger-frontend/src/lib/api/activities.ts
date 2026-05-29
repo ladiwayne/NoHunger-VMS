@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { adaptActivity } from './adapters';
+import { adaptActivity, adaptEvent } from './adapters';
 
 export async function getActivities(
   filters?: { status?: string; category?: string; page?: number; limit?: number }
@@ -29,8 +29,13 @@ export async function getActivityByCode(code: string): Promise<any | null> {
   try {
     const data = await apiFetch<any>(`/activities/code/${code}`);
     return adaptActivity(data);
-  } catch {
-    return null;
+  } catch (activityError) {
+    try {
+      const data = await apiFetch<any>(`/events/code/${code}`);
+      return adaptEvent(data);
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -43,6 +48,7 @@ export async function createActivity(payload: {
   end_date?: string;
   max_volunteers?: number;
   status?: string;
+  invitedVolunteers?: string[];
 }): Promise<any> {
   const data = await apiFetch<any>('/activities', {
     method: 'POST',
@@ -55,6 +61,7 @@ export async function createActivity(payload: {
       endDate: payload.end_date,
       volunteersNeeded: payload.max_volunteers,
       status: payload.status || 'draft',
+      invitedVolunteers: payload.invitedVolunteers || [],
     }),
   });
   return adaptActivity(data.activity || data);
@@ -72,6 +79,7 @@ export async function updateActivity(id: string, payload: any): Promise<any> {
       endDate: payload.end_date,
       volunteersNeeded: payload.max_volunteers,
       status: payload.status,
+      invitedVolunteers: payload.invitedVolunteers || [],
     }),
   });
   return adaptActivity(data.activity || data);
@@ -86,6 +94,9 @@ export async function resetCheckinCode(id: string): Promise<any> {
   return adaptActivity(data.activity || data);
 }
 
-export async function sendInvitesForActivity(activityId: string): Promise<void> {
-  await apiFetch(`/activities/${activityId}/send-invites`, { method: 'POST' });
+export async function sendInvitesForActivity(activityId: string, volunteerIds: string[] = [], inviteAll = false): Promise<void> {
+  await apiFetch(`/activities/${activityId}/send-invites`, {
+    method: 'POST',
+    body: JSON.stringify({ volunteerIds, inviteAll }),
+  });
 }

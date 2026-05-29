@@ -32,6 +32,12 @@ const activitySchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    invitedVolunteers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     volunteersNeeded: {
       type: Number,
       default: 10,

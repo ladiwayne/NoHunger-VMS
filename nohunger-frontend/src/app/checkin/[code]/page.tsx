@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getActivityByCode } from '@/lib/api/activities';
 import { getMyCheckins, checkinWithCode, checkoutFromActivity } from '@/lib/api/checkins';
+import { formatHoursHHMM } from '@/lib/formatHours';
 
 import {
   CheckCircle2,
@@ -19,7 +20,8 @@ import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
 
 export default function CheckinPage() {
-  const { code } = useParams<{ code: string }>();
+  const params = useParams();
+  const code = params?.code;
   const { user, profile, loading: authLoading } = useAuth();
   const [activity, setActivity] = useState<any>(null);
   const [checkinRecord, setCheckinRecord] = useState<any>(null);
@@ -50,6 +52,7 @@ export default function CheckinPage() {
   }, [checkinRecord]);
 
   const fetchActivity = async () => {
+    if (!code) return;
     setPageLoading(true);
     try {
       const act = await getActivityByCode(code);
@@ -57,7 +60,9 @@ export default function CheckinPage() {
 
       if (act && user) {
         const my = await getMyCheckins();
-        const record = my.find((r: any) => r.activity_id === act.id) || null;
+        const record = my.find(
+          (r: any) => r.activity_id === act.id || r.event_id === act.id
+        ) || null;
         setCheckinRecord(record);
       }
     } catch (err) {
@@ -74,9 +79,9 @@ export default function CheckinPage() {
       const data = await checkinWithCode(String(code).toUpperCase(), activity.id);
       setCheckinRecord(data);
 
-      toast.success('Check-in request submitted! Awaiting admin approval.');
+      toast.success('✅ Check-in request submitted! We’ll notify you once an admin approves it.');
     } catch (err: any) {
-      toast.error(err.message || 'Check-in failed.');
+      toast.error(err.message || 'Unable to submit your check-in. Please try again or contact support.');
     } finally {
       setActionLoading(false);
     }
@@ -88,9 +93,9 @@ export default function CheckinPage() {
     try {
       const data = await checkoutFromActivity(checkinRecord.id);
       setCheckinRecord(data);
-      toast.success('Check-out submitted! Awaiting admin approval.');
+      toast.success('⏱️ Check-out submitted! We’ll confirm your hours once an admin approves it.');
     } catch (err: any) {
-      toast.error(err.message || 'Check-out failed.');
+      toast.error(err.message || 'Unable to submit your check-out. Please try again in a moment.');
     } finally {
       setActionLoading(false);
     }
@@ -103,10 +108,15 @@ export default function CheckinPage() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  const formatDateTime = (value: string | null | undefined) => {
+    if (!value) return '—';
+    return new Date(value).toLocaleString('en', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   if (authLoading || pageLoading) {
@@ -146,19 +156,18 @@ export default function CheckinPage() {
           <div>
             <p className="font-display font-700 text-lg text-foreground">NoHunger</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
-              Event Check-in
+              Event / Activity Check-in
             </p>
           </div>
         </div>
 
-        {/* Activity card */}
         <div className="bg-card border border-border rounded-2xl shadow-card p-6 mb-5">
           <h2 className="text-[18px] font-700 text-foreground mb-3">{activity.title}</h2>
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
               <Calendar size={14} />
               <span>
-                {new Date(activity.start_date || activity.startDate).toLocaleDateString('en', {
+                {new Date(activity.eventDate || activity.start_date || activity.startDate).toLocaleDateString('en', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric',
@@ -211,10 +220,18 @@ export default function CheckinPage() {
             <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
               <Clock size={28} className="text-warning" />
             </div>
+            <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 rounded-full bg-warning/10 text-warning text-[12px] font-700 uppercase tracking-wide mx-auto">
+              <span>Pending approval</span>
+            </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-in Pending</h3>
             <p className="text-[13px] text-muted-foreground">
-              Your check-in is in. We&apos;re waiting for the admin team to approve it.
+              Your check-in request has been received. We&apos;re waiting for an admin to approve it.
             </p>
+            {checkinRecord.checkin_time && (
+              <p className="text-[12px] text-muted-foreground mt-3">
+                Requested at {formatDateTime(checkinRecord.checkin_time)}
+              </p>
+            )}
           </div>
         )}
 
@@ -228,7 +245,10 @@ export default function CheckinPage() {
               {formatTimer(timer)}
             </div>
             <p className="text-[12px] text-muted-foreground mb-4">
-              Session timer started · Ready to checkout when done?
+              Session timer started. Tap checkout when you&apos;re finished.
+            </p>
+            <p className="text-[13px] text-muted-foreground mb-4">
+              Checked in at {formatDateTime(checkinRecord.checkin_time)}
             </p>
             <button
               onClick={handleCheckout}
@@ -251,9 +271,17 @@ export default function CheckinPage() {
             <div className="w-16 h-16 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
               <Clock size={28} className="text-warning" />
             </div>
+            <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 rounded-full bg-warning/10 text-warning text-[12px] font-700 uppercase tracking-wide mx-auto">
+              <span>Pending approval</span>
+            </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Check-out Pending</h3>
-            <p className="text-[13px] text-muted-foreground">
-              Your check-out is awaiting admin approval. You logged approximately {formatHours(checkinRecord.hours_spent || 0)} hours.
+            <div className="text-[13px] text-muted-foreground space-y-2 mb-4">
+              <p>Checked in at {formatDateTime(checkinRecord.checkin_time)}</p>
+              <p>Checked out at {formatDateTime(checkinRecord.checkout_time)}</p>
+              <p>Duration logged: {formatHoursHHMM(checkinRecord.hours_spent || 0)}</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              Your hours are awaiting final approval from the admin team.
             </p>
           </div>
         )}
@@ -263,12 +291,16 @@ export default function CheckinPage() {
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <LogOut size={28} className="text-primary" />
             </div>
+            <div className="inline-flex items-center gap-2 mb-3 px-4 py-2 rounded-full bg-success/10 text-success text-[12px] font-700 uppercase tracking-wide mx-auto">
+              <span>Approved</span>
+            </div>
             <h3 className="text-[17px] font-700 text-foreground mb-2">Session Complete!</h3>
-            <p className="text-[13px] text-muted-foreground mb-3">
-              You&apos;re all checked out. Great job today.
-            </p>
+            <div className="text-[13px] text-muted-foreground space-y-2 mb-4">
+              <p>Checked in at {formatDateTime(checkinRecord.checkin_time)}</p>
+              <p>Checked out at {formatDateTime(checkinRecord.checkout_time)}</p>
+            </div>
             <div className="text-3xl font-800 font-tabular text-primary mb-1">
-              {formatHours(checkinRecord.hours_spent || 0)}
+              {formatHoursHHMM(checkinRecord.hours_spent || 0)}
             </div>
             <p className="text-[12px] text-muted-foreground">Hours logged for this event</p>
           </div>

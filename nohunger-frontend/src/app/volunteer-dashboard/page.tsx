@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMyCheckins, checkinWithCode, checkoutFromActivity } from '@/lib/api/checkins';
@@ -91,7 +92,7 @@ export default function VolunteerDashboardPage() {
       const pendingInvs = invitationsList.filter((i) => i.status === 'pending');
 
       setStats({
-        totalHours: Math.round(totalHours * 10) / 10,
+        totalHours: totalHours,
         eventsAttended: completedCheckins.length,
         pendingInvitations: pendingInvs.length,
         activeTasks: 0,
@@ -142,10 +143,10 @@ export default function VolunteerDashboardPage() {
   ) => {
     try {
       await respondToInvitation(invitationId, status);
-      toast.success(status === 'accepted' ? '🎉 Invitation accepted!' : 'Invitation declined.');
+      toast.success(status === 'accepted' ? '🎉 Invitation accepted! You’re all set for this event. Check your dashboard for details.' : 'Invitation declined. You can always join future events!');
       fetchDashboardData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to respond to invitation.');
+      toast.error(err.message || 'Unable to update your RSVP. Please try again.');
     }
   };
 
@@ -157,12 +158,6 @@ export default function VolunteerDashboardPage() {
     }
     setCheckinCodeError('');
     router.push(`/checkin/${code}`);
-  };
-
-  const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   };
 
   const formatTimer = (seconds: number) => {
@@ -253,7 +248,7 @@ export default function VolunteerDashboardPage() {
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-4xl font-700 font-tabular text-foreground">
-                  {formatHours(stats.totalHours)}
+                  {formatHoursHHMM(stats.totalHours)}
                 </span>
               </div>
               <p className="text-[12.5px] font-600 text-muted-foreground mt-0.5 uppercase tracking-wide">

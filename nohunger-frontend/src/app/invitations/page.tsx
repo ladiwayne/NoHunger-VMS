@@ -21,6 +21,8 @@ export default function InvitationsPage() {
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [responding, setResponding] = useState<string | null>(null);
+  const [bulkResponding, setBulkResponding] = useState(false);
+  const [selectedInvitations, setSelectedInvitations] = useState<string[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
 
   useEffect(() => {
@@ -44,17 +46,64 @@ export default function InvitationsPage() {
     try {
       await respondToInvitation(invId, status);
       toast.success(
-        status === 'accepted' ? '🎉 Invitation accepted! See you there.' : 'Invitation declined.'
+        status === 'accepted'
+          ? '🎉 Invitation accepted! You’re all set — check your dashboard for event details.'
+          : 'Invitation declined. You’ll still see future opportunities here.'
       );
       fetchInvitations();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to respond.');
+      toast.error(err.message || 'Unable to update your RSVP. Please try again.');
     } finally {
       setResponding(null);
     }
   };
 
   const filtered = filter === 'all' ? invitations : invitations.filter((i) => i.status === filter);
+  const pendingInvitations = filtered.filter((i) => i.status === 'pending');
+  const selectedPendingInvitations = selectedInvitations.filter((id) => pendingInvitations.some((inv) => inv.id === id));
+  const allPendingSelected = pendingInvitations.length > 0 && selectedPendingInvitations.length === pendingInvitations.length;
+
+  const toggleSelectInvitation = (id: string) => {
+    setSelectedInvitations((prev) =>
+      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllInvitations = () => {
+    if (allPendingSelected) {
+      setSelectedInvitations([]);
+    } else {
+      setSelectedInvitations(pendingInvitations.map((inv) => inv.id));
+    }
+  };
+
+  const handleBulkRespond = async (status: 'accepted' | 'rejected') => {
+    if (!selectedPendingInvitations.length) return;
+    setBulkResponding(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedPendingInvitations.map((id) => respondToInvitation(id, status))
+      );
+      const failures = results.filter((result) => result.status === 'rejected').length;
+      const successCount = selectedPendingInvitations.length - failures;
+      if (successCount > 0) {
+        toast.success(
+          status === 'accepted'
+            ? `🎉 Accepted ${successCount} invitation${successCount > 1 ? 's' : ''}.`
+            : `✅ Rejected ${successCount} invitation${successCount > 1 ? 's' : ''}.`
+        );
+      }
+      if (failures > 0) {
+        toast.error(`Unable to update ${failures} invitation${failures > 1 ? 's' : ''}.`);
+      }
+      setSelectedInvitations([]);
+      fetchInvitations();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to update invitations. Please try again.');
+    } finally {
+      setBulkResponding(false);
+    }
+  };
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -100,6 +149,41 @@ export default function InvitationsPage() {
             </button>
           ))}
         </div>
+
+        {pendingInvitations.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
+            <label className="inline-flex items-center gap-2 text-[13px] font-600 text-foreground">
+              <input
+                type="checkbox"
+                checked={allPendingSelected}
+                onChange={toggleSelectAllInvitations}
+                className="h-4 w-4 rounded border-muted-foreground text-primary"
+              />
+              Select all pending ({pendingInvitations.length})
+            </label>
+            <button
+              onClick={() => handleBulkRespond('accepted')}
+              disabled={!selectedPendingInvitations.length || bulkResponding}
+              className="px-4 py-2 rounded-xl bg-success/10 text-success border border-success/25 text-[13px] font-700 hover:bg-success/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Accept selected ({selectedPendingInvitations.length})
+            </button>
+            <button
+              onClick={() => handleBulkRespond('rejected')}
+              disabled={!selectedPendingInvitations.length || bulkResponding}
+              className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive border border-destructive/25 text-[13px] font-700 hover:bg-destructive/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Decline selected ({selectedPendingInvitations.length})
+            </button>
+            <button
+              onClick={() => setSelectedInvitations([])}
+              disabled={!selectedPendingInvitations.length}
+              className="px-4 py-2 rounded-xl bg-card text-muted-foreground border border-border text-[13px] font-600 hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-4">
@@ -176,8 +260,6 @@ export default function InvitationsPage() {
                         </p>
                       </div>
                     )}
-
-                    {/* Check-in link for accepted invitations */}
                     {inv.status === 'accepted' && inv.activities?.checkin_link && (
                       <div className="mt-3 p-3 bg-primary/8 border border-primary/20 rounded-xl">
                         <p className="text-[12px] font-700 text-primary mb-1">
@@ -195,31 +277,43 @@ export default function InvitationsPage() {
                       </div>
                     )}
                   </div>
-
                   {inv.status === 'pending' && (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleRespond(inv.id, 'accepted')}
-                        disabled={responding === inv.id}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-success/10 text-success border border-success/25 rounded-xl text-[13px] font-700 hover:bg-success/20 transition-colors disabled:opacity-60"
-                      >
-                        {responding === inv.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <CheckCircle2 size={14} />
-                        )}
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleRespond(inv.id, 'rejected')}
-                        disabled={responding === inv.id}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-muted text-muted-foreground border border-border rounded-xl text-[13px] font-700 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-60"
-                      >
-                        <XCircle size={14} /> Decline
-                      </button>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <label className="inline-flex items-center gap-2 text-[13px] font-medium text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={selectedInvitations.includes(inv.id)}
+                          onChange={() => toggleSelectInvitation(inv.id)}
+                          className="h-4 w-4 rounded border-muted-foreground text-primary"
+                        />
+                        Select
+                      </label>
                     </div>
                   )}
                 </div>
+                {inv.status === 'pending' && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleRespond(inv.id, 'accepted')}
+                      disabled={responding === inv.id}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-success/10 text-success border border-success/25 rounded-xl text-[13px] font-700 hover:bg-success/20 transition-colors disabled:opacity-60"
+                    >
+                      {responding === inv.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={14} />
+                      )}
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRespond(inv.id, 'rejected')}
+                      disabled={responding === inv.id}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-muted text-muted-foreground border border-border rounded-xl text-[13px] font-700 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-60"
+                    >
+                      <XCircle size={14} /> Decline
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

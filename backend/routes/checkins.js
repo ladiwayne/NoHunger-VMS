@@ -4,22 +4,99 @@ const auth = require('../middleware/auth');
 const requirePermission = require('../middleware/permission');
 const CheckIn = require('../models/CheckIn');
 const User = require('../models/User');
+const Event = require('../models/Event');
+const Activity = require('../models/Activity');
+const Invitation = require('../models/Invitation');
 const { logAudit } = require('../utils/auditLogger');
+
+const isVolunteerAcceptedForEvent = async (volunteerId, eventId) => {
+  return Boolean(
+    await Invitation.findOne({ volunteerId, eventId, status: 'accepted' })
+  );
+};
+
+const isVolunteerAuthorizedForActivity = async (volunteerId, activity) => {
+  if (activity.volunteersApproved?.some((id) => id.toString() === volunteerId.toString())) {
+    return true;
+  }
+  const acceptedInvitation = await Invitation.findOne({
+    volunteerId,
+    activityId: activity._id,
+    status: 'accepted',
+  });
+  return Boolean(acceptedInvitation);
+};
 
 // Check in volunteer
 router.post('/checkin', auth, async (req, res) => {
   try {
     const { activityId, eventId, checkInCode } = req.body;
 
-    // Validate check-in code
     if (!checkInCode) {
       return res.status(400).json({ message: 'Check-in code is required' });
     }
 
+    const normalizedCode = String(checkInCode).trim().toUpperCase();
+
+    let event = null;
+    let activity = null;
+    let eventCheckin = false;
+    let activityCheckin = false;
+
+    if (eventId) {
+      event = await Event.findById(eventId);
+      if (!event || event.checkInCode?.toUpperCase() !== normalizedCode) {
+        return res.status(400).json({ message: 'Invalid event check-in code' });
+      }
+      eventCheckin = true;
+    }
+
+    if (!event && activityId) {
+      activity = await Activity.findById(activityId);
+      if (!activity || activity.checkInCode?.toUpperCase() !== normalizedCode) {
+        return res.status(400).json({ message: 'Invalid activity check-in code' });
+      }
+      activityCheckin = true;
+    }
+
+    if (!event && !activity) {
+      event = await Event.findOne({ checkInCode: normalizedCode });
+      if (event) {
+        eventCheckin = true;
+      } else {
+        activity = await Activity.findOne({ checkInCode: normalizedCode });
+        if (activity) {
+          activityCheckin = true;
+        }
+      }
+    }
+
+    if (!event && !activity) {
+      return res.status(404).json({ message: 'No event or activity found for this code' });
+    }
+
+    if (eventCheckin) {
+      const accepted = await isVolunteerAcceptedForEvent(req.user.id, event._id);
+      if (!accepted) {
+        return res.status(403).json({
+          message: 'You must accept the event invitation before checking in',
+        });
+      }
+    }
+
+    if (activityCheckin) {
+      const authorized = await isVolunteerAuthorizedForActivity(req.user.id, activity);
+      if (!authorized) {
+        return res.status(403).json({
+          message: 'You are not authorized to check in for this activity',
+        });
+      }
+    }
+
     const checkin = new CheckIn({
       volunteerId: req.user.id,
-      activityId,
-      eventId,
+      activityId: activity?._id,
+      eventId: event?._id,
       checkInTime: new Date(),
     });
 
@@ -43,8 +120,34 @@ router.put('/:id/checkout', auth, async (req, res) => {
     }
 
     checkin.checkOutTime = new Date();
-    checkin.checkOutStatus = 'pending';
 
+    if (checkin.checkInStatus === 'approved') {
+      checkin.checkOutStatus = 'completed';
+      await checkin.save();
+
+      const volunteer = await User.findById(checkin.volunteerId);
+      if (volunteer) {
+        volunteer.totalVolunteeringHours += checkin.hoursSpent;
+        await volunteer.save();
+      }
+
+      await logAudit({
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        action: 'auto_approve_checkout',
+        entityType: 'CheckIn',
+        entityId: checkin._id,
+        targetUserId: checkin.volunteerId,
+        details: { autoApproved: true, hoursAdded: checkin.hoursSpent },
+      });
+
+      return res.status(200).json({
+        message: 'Check-out successful and auto-approved',
+        checkin,
+      });
+    }
+
+    checkin.checkOutStatus = 'pending';
     await checkin.save();
 
     res.status(200).json({
@@ -93,6 +196,13 @@ router.put('/:id/approve-checkout', requirePermission('manage_checkins'), async 
     const checkin = await CheckIn.findById(req.params.id);
     if (!checkin) {
       return res.status(404).json({ message: 'Check-in record not found' });
+    }
+
+    if (checkin.checkOutStatus === 'completed') {
+      return res.status(200).json({
+        message: 'Check-out already approved',
+        checkin,
+      });
     }
 
     checkin.checkOutStatus = 'completed';

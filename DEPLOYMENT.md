@@ -33,6 +33,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/nohunger-vms?ret
 JWT_SECRET=your-secure-jwt-secret-key-here-change-this
 JWT_EXPIRE=7d
 ALLOWED_ORIGINS=https://your-frontend-domain.com
+FRONTEND_URL=https://your-frontend-domain.com
 ```
 
 #### Frontend (.env.local)
@@ -53,6 +54,25 @@ docker-compose logs -f
 curl http://localhost:5000/health
 curl http://localhost:3000
 ```
+
+### 4. Event Link Generation (Important)
+
+When admins create events/activities on the live server, check-in links are automatically generated. These links use the **`FRONTEND_URL`** environment variable to ensure they point to your live domain.
+
+**Event link example:**
+```
+https://your-frontend-domain.com/checkin/ABC12345
+```
+
+**If `FRONTEND_URL` is not set**, links may fall back to:
+- `NEXT_PUBLIC_APP_URL` environment variable
+- Default production URL: `https://volunteer.nohungerfoodbank.org`
+- **Important:** Do NOT leave this unset on your live server, or links may show localhost or wrong domain.
+
+**To update after deployment:**
+1. Modify the `FRONTEND_URL` in your `.env` file or Docker Compose
+2. Restart the backend service: `docker-compose restart backend`
+3. Test by creating a new event and verifying the link uses your correct domain
 
 ## Manual Deployment
 

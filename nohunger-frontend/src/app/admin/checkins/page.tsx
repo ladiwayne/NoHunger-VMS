@@ -5,6 +5,7 @@ import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllCheckins, approveCheckin, rejectCheckin, approveCheckout } from '@/lib/api/checkins';
 import { getActivityByCode } from '@/lib/api/activities';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import { CheckCircle2, XCircle, LogOut, Loader2, Search, QrCode, KeyRound, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,7 @@ export default function AdminCheckinsPage() {
   );
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedCheckins, setSelectedCheckins] = useState<string[]>([]);
   const [activePanel, setActivePanel] = useState<Panel>('requests');
   const [codeInput, setCodeInput] = useState('');
   const [codeActivity, setCodeActivity] = useState<any>(null);
@@ -43,10 +45,36 @@ export default function AdminCheckinsPage() {
     }
   };
 
-  const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  // --- Admin Check-in/Out Controls ---
+  const [adminCheckinData, setAdminCheckinData] = useState({ volunteerId: '', eventId: '', activityId: '', checkInTime: '' });
+  const [adminCheckoutData, setAdminCheckoutData] = useState({ checkinId: '', checkOutTime: '' });
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+  const { adminCheckin, adminCheckout } = require('@/lib/api/checkins');
+
+  const handleAdminCheckin = async () => {
+    setAdminActionLoading(true);
+    try {
+      await adminCheckin(adminCheckinData.volunteerId, adminCheckinData.eventId, adminCheckinData.activityId, adminCheckinData.checkInTime);
+      toast.success('✅ Volunteer successfully checked in! They can now participate in the event/activity.');
+      fetchCheckins();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to perform admin check-in. Please try again.');
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const handleAdminCheckout = async () => {
+    setAdminActionLoading(true);
+    try {
+      await adminCheckout(adminCheckoutData.checkinId, adminCheckoutData.checkOutTime);
+      toast.success('⏰ Volunteer successfully checked out! Their hours have been logged.');
+      fetchCheckins();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to perform admin check-out. Please try again.');
+    } finally {
+      setAdminActionLoading(false);
+    }
   };
 
   const handleApprove = async (
@@ -62,7 +90,7 @@ export default function AdminCheckinsPage() {
       toast.success(`✅ ${volunteerName} approved for "${activityTitle}"`);
       fetchCheckins();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to approve check-in.');
+      toast.error(err.message || 'Unable to approve this check-in. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -80,7 +108,7 @@ export default function AdminCheckinsPage() {
       toast.success(`❌ ${volunteerName}'s check-in for "${activityTitle}" declined.`);
       fetchCheckins();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to reject.');
+      toast.error(err.message || 'Unable to reject this check-in. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -92,10 +120,10 @@ export default function AdminCheckinsPage() {
       const record = checkins.find((c) => c.id === checkinId);
       const hours = record?.hours_spent || 0;
       await approveCheckout(checkinId, hours);
-      toast.success(`🎉 ${volunteerName} logged ${formatHours(hours)} hours`);
+      toast.success(`🎉 ${volunteerName} logged ${formatHoursHHMM(hours)} hours`);
       fetchCheckins();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to checkout.');
+      toast.error(err.message || 'Unable to complete volunteer check-out. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -133,6 +161,75 @@ export default function AdminCheckinsPage() {
     return matchFilter && matchSearch;
   });
 
+  const visibleCheckinIds = filtered.map((c) => c.id);
+  const selectedItems = filtered.filter((c) => selectedCheckins.includes(c.id));
+  const selectedPending = selectedItems.filter((c) => c.status === 'pending');
+  const selectedApproved = selectedItems.filter((c) => c.status === 'approved');
+  const allSelected = visibleCheckinIds.length > 0 && visibleCheckinIds.every((id) => selectedCheckins.includes(id));
+
+  const toggleCheckinSelection = (id: string) => {
+    setSelectedCheckins((prev) =>
+      prev.includes(id) ? prev.filter((checkinId) => checkinId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedCheckins([]);
+    } else {
+      setSelectedCheckins(visibleCheckinIds);
+    }
+  };
+
+  const clearSelection = () => setSelectedCheckins([]);
+
+  const handleBulkApprove = async () => {
+    if (!selectedPending.length) return;
+    setActionLoading('bulk');
+    try {
+      await Promise.all(selectedPending.map((c) => approveCheckin(c.id)));
+      toast.success(`✅ Approved ${selectedPending.length} check-in${selectedPending.length > 1 ? 's' : ''}.`);
+      clearSelection();
+      fetchCheckins();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to approve selected check-ins. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (!selectedPending.length) return;
+    setActionLoading('bulk');
+    try {
+      await Promise.all(selectedPending.map((c) => rejectCheckin(c.id)));
+      toast.success(`❌ Rejected ${selectedPending.length} check-in${selectedPending.length > 1 ? 's' : ''}.`);
+      clearSelection();
+      fetchCheckins();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to reject selected check-ins. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBulkCheckout = async () => {
+    if (!selectedApproved.length) return;
+    setActionLoading('bulk');
+    try {
+      await Promise.all(
+        selectedApproved.map((c) => approveCheckout(c.id, c.hours_spent || 0))
+      );
+      toast.success(`🏁 Checked out ${selectedApproved.length} volunteer${selectedApproved.length > 1 ? 's' : ''}.`);
+      clearSelection();
+      fetchCheckins();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to checkout selected volunteers. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const counts = {
     all: checkins.length,
     pending: checkins.filter((c) => c.status === 'pending').length,
@@ -150,7 +247,7 @@ export default function AdminCheckinsPage() {
       c.status || '',
       c.checkin_time ? new Date(c.checkin_time).toLocaleString() : '',
       c.checkout_time ? new Date(c.checkout_time).toLocaleString() : '',
-      c.hours_spent ?? '',
+      c.hours_spent ? formatHoursHHMM(c.hours_spent) : '',
     ]);
     const csv = [headers, ...rows]
       .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -182,6 +279,23 @@ export default function AdminCheckinsPage() {
   return (
     <AppLayout activePath="/admin/checkins">
       <div className="space-y-6 animate-fade-in">
+        {/* Admin Check-in/Out Controls */}
+        <div className="flex flex-col md:flex-row gap-4 bg-muted/50 p-3 rounded-md border border-muted mb-2">
+          <div>
+            <div className="font-semibold mb-1">Admin Check-in Volunteer</div>
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Volunteer ID" value={adminCheckinData.volunteerId} onChange={e => setAdminCheckinData(d => ({ ...d, volunteerId: e.target.value }))} disabled={adminActionLoading} />
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Event ID (optional)" value={adminCheckinData.eventId} onChange={e => setAdminCheckinData(d => ({ ...d, eventId: e.target.value }))} disabled={adminActionLoading} />
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Activity ID (optional)" value={adminCheckinData.activityId} onChange={e => setAdminCheckinData(d => ({ ...d, activityId: e.target.value }))} disabled={adminActionLoading} />
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Check-in Time (ISO, optional)" value={adminCheckinData.checkInTime} onChange={e => setAdminCheckinData(d => ({ ...d, checkInTime: e.target.value }))} disabled={adminActionLoading} />
+            <button className="btn btn-sm btn-primary mt-1" onClick={handleAdminCheckin} disabled={adminActionLoading || !adminCheckinData.volunteerId}>Check In</button>
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Admin Check-out Volunteer</div>
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Check-in Record ID" value={adminCheckoutData.checkinId} onChange={e => setAdminCheckoutData(d => ({ ...d, checkinId: e.target.value }))} disabled={adminActionLoading} />
+            <input className="input input-sm border px-2 py-1 rounded mb-1" placeholder="Check-out Time (ISO, optional)" value={adminCheckoutData.checkOutTime} onChange={e => setAdminCheckoutData(d => ({ ...d, checkOutTime: e.target.value }))} disabled={adminActionLoading} />
+            <button className="btn btn-sm btn-secondary mt-1" onClick={handleAdminCheckout} disabled={adminActionLoading || !adminCheckoutData.checkinId}>Check Out</button>
+          </div>
+        </div>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-700 text-foreground">Check-in Management</h1>
@@ -356,6 +470,46 @@ export default function AdminCheckinsPage() {
               </div>
             </div>
 
+            {selectedItems.length > 0 && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 mb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">{selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected</p>
+                  <button
+                    onClick={clearSelection}
+                    className="text-[12px] font-600 text-muted-foreground hover:text-foreground"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleBulkApprove}
+                    disabled={!selectedPending.length || actionLoading === 'bulk'}
+                    className="px-3.5 py-2 rounded-xl bg-success/10 text-success border border-success/25 text-[13px] font-700 hover:bg-success/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Approve selected ({selectedPending.length})
+                  </button>
+                  <button
+                    onClick={handleBulkReject}
+                    disabled={!selectedPending.length || actionLoading === 'bulk'}
+                    className="px-3.5 py-2 rounded-xl bg-destructive/10 text-destructive border border-destructive/25 text-[13px] font-700 hover:bg-destructive/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Reject selected ({selectedPending.length})
+                  </button>
+                  <button
+                    onClick={handleBulkCheckout}
+                    disabled={!selectedApproved.length || actionLoading === 'bulk'}
+                    className="px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/25 text-[13px] font-700 hover:bg-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Checkout selected ({selectedApproved.length})
+                  </button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Bulk actions apply to selected check-ins. Pending items can be approved or rejected; approved items can be checked out.
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
@@ -378,6 +532,14 @@ export default function AdminCheckinsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border bg-muted/50">
+                        <th className="px-4 py-3 text-left text-[11px] font-700 text-muted-foreground uppercase tracking-wide">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleSelectAll}
+                            className="h-4 w-4 rounded border-muted-foreground text-primary"
+                          />
+                        </th>
                         {[
                           'Champion',
                           'Event',
@@ -402,6 +564,14 @@ export default function AdminCheckinsPage() {
                           key={c.id}
                           className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
                         >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedCheckins.includes(c.id)}
+                              onChange={() => toggleCheckinSelection(c.id)}
+                              className="h-4 w-4 rounded border-muted-foreground text-primary"
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <p className="text-[13px] font-600 text-foreground">
                               {c.volunteer?.full_name || '—'}
@@ -440,7 +610,7 @@ export default function AdminCheckinsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-[13px] font-700 text-primary font-tabular">
-                              {c.hours_spent ? `${c.hours_spent} hrs` : '—'}
+                              {c.hours_spent ? formatHoursHHMM(c.hours_spent) : '—'}
                             </span>
                           </td>
                           <td className="px-4 py-3">

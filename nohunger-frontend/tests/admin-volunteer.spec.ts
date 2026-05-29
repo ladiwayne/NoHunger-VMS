@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test('Super Admin Dashboard and Core Features', async ({ page, request }) => {
   const superAdminEmail = 'admin@nohungerfoodbank.org';
   const superAdminPassword = 'SAdmin@VMS2026';
+  const volunteerEmail = process.env.VOLUNTEER_EMAIL || 'volunteer@example.com';
+  const volunteerPassword = process.env.VOLUNTEER_PASSWORD || 'Volunteer@VMS2026';
 
   // Login to backend API as Super Admin to verify token generation
   const loginResp = await request.post('http://localhost:5000/api/auth/login', {

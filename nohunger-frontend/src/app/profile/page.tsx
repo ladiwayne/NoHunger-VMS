@@ -274,10 +274,10 @@ export default function ProfilePage() {
       });
       await refreshProfile();
       setSuccessMessage('Profile updated successfully');
-      toast.success('Profile updated successfully');
+      toast.success('✅ Your profile has been updated. Thank you for keeping your information current.');
     } catch (error: any) {
       console.error('Failed to save profile', error);
-      toast.error(error?.message || 'Failed to save profile');
+      toast.error(error?.message || 'Unable to save your profile. Please try again.');
     } finally {
       setSaving(false);
     }

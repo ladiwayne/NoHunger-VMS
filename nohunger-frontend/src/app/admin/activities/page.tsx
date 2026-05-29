@@ -11,6 +11,7 @@ import {
   sendInvitesForActivity,
   resetCheckinCode,
 } from '@/lib/api/activities';
+import { getVolunteers } from '@/lib/api/volunteers';
 import {
   Plus,
   Calendar,
@@ -24,6 +25,7 @@ import {
   Edit2,
   Trash2,
   RefreshCw,
+  Search,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -82,7 +84,13 @@ export default function AdminActivitiesPage() {
   const [sendingInvites, setSendingInvites] = useState<string | null>(null);
   const [resettingCode, setResettingCode] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<ActivityFormErrors>({});
+  const [formVolunteerSearch, setFormVolunteerSearch] = useState('');
+  const [formVolunteerSearchResults, setFormVolunteerSearchResults] = useState<any[]>([]);
+  const [formSelectedVolunteers, setFormSelectedVolunteers] = useState<any[]>([]);
+  const [formLoadingVolunteerSearch, setFormLoadingVolunteerSearch] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchActivities();
@@ -99,6 +107,22 @@ export default function AdminActivitiesPage() {
       setLoading(false);
     }
   };
+
+  const totalActivities = activities.length;
+  const publishedActivities = activities.filter((activity) => activity.status === 'published').length;
+  const ongoingActivities = activities.filter((activity) => activity.status === 'ongoing').length;
+  const draftActivities = activities.filter((activity) => activity.status === 'draft').length;
+
+  const filteredActivities = activities.filter((activity) => {
+    const searchValue = search.toLowerCase();
+    const matchesSearch =
+      activity.title?.toLowerCase().includes(searchValue) ||
+      activity.location?.toLowerCase().includes(searchValue) ||
+      activity.description?.toLowerCase().includes(searchValue);
+    const matchesType = typeFilter === 'all' || activity.activity_type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || activity.status === statusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
 
   const handleSave = async () => {
     const nextErrors: ActivityFormErrors = {};
@@ -143,6 +167,7 @@ export default function AdminActivitiesPage() {
         end_date: endDate.toISOString(),
         max_volunteers: form.max_volunteers ? parseInt(form.max_volunteers) : 0,
         status: form.status,
+        invitedVolunteers: formSelectedVolunteers.map((vol) => vol.id),
       };
 
       if (editId) {
@@ -150,18 +175,50 @@ export default function AdminActivitiesPage() {
         toast.success('Activity updated!');
       } else {
         await createActivity(payload);
-        toast.success('Activity created! Check-in code auto-generated.');
+        toast.success('🎉 Event/activity created! Selected volunteers will receive invitations.');
       }
 
       setShowForm(false);
       setForm(defaultForm);
+      setFormErrors({});
+      setFormVolunteerSearch('');
+      setFormVolunteerSearchResults([]);
+      setFormSelectedVolunteers([]);
       setEditId(null);
       fetchActivities();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save activity.');
+      toast.error(err.message || 'Unable to save activity. Please review and try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const searchVolunteers = async (query: string) => {
+    if (!query.trim()) {
+      setFormVolunteerSearchResults([]);
+      return;
+    }
+
+    setFormVolunteerSearch(query);
+    setFormLoadingVolunteerSearch(true);
+    try {
+      const result = await getVolunteers({ status: 'approved', search: query, limit: 20 });
+      setFormVolunteerSearchResults(result.data || []);
+    } catch (err) {
+      console.log('Volunteer search error:', err);
+    } finally {
+      setFormLoadingVolunteerSearch(false);
+    }
+  };
+
+  const addVolunteerSelection = (volunteer: any) => {
+    setFormSelectedVolunteers((prev) =>
+      Array.from(new Map([...prev, volunteer].map((item) => [item.id, item])).values())
+    );
+  };
+
+  const removeVolunteerSelection = (volunteerId: string) => {
+    setFormSelectedVolunteers((prev) => prev.filter((item) => item.id !== volunteerId));
   };
 
   const handleEdit = (activity: any) => {
@@ -178,6 +235,9 @@ export default function AdminActivitiesPage() {
       status: activity.status || 'draft',
     });
     setFormErrors({});
+    setFormVolunteerSearch('');
+    setFormVolunteerSearchResults([]);
+    setFormSelectedVolunteers(activity.invitedVolunteers || []);
     setEditId(activity.id);
     setShowForm(true);
   };
@@ -186,10 +246,10 @@ export default function AdminActivitiesPage() {
     if (!confirm('Delete this activity? This cannot be undone.')) return;
     try {
       await deleteActivity(id);
-      toast.success('Activity deleted.');
+      toast.success('🗑️ Activity deleted. The schedule has been updated.');
       fetchActivities();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete.');
+      toast.error(err.message || 'Unable to save activity. Please review and try again.');
     }
   };
 
@@ -199,7 +259,7 @@ export default function AdminActivitiesPage() {
       await sendInvitesForActivity(activity.id);
       toast.success('Invitations sent to approved No Hunger Champions!');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send invitations.');
+      toast.error(err.message || 'Unable to send invitations. Please try again.');
     } finally {
       setSendingInvites(null);
     }
@@ -213,7 +273,7 @@ export default function AdminActivitiesPage() {
       setActivities((prev) => prev.map((a) => (a.id === id ? updated : a)));
       toast.success('Check-in code reset successfully!');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to reset check-in code.');
+      toast.error(err.message || 'Unable to reset the check-in code. Please try again.');
     } finally {
       setResettingCode(null);
     }
@@ -238,11 +298,11 @@ export default function AdminActivitiesPage() {
   return (
     <AppLayout activePath="/admin/activities">
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Activities & Events</h1>
+            <h1 className="text-2xl font-700 text-foreground">Activities</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Create and manage No Hunger Initiatives activities for No Hunger Champions
+              Create and manage activities for No Hunger Champions.
             </p>
           </div>
           <button
@@ -309,37 +369,21 @@ export default function AdminActivitiesPage() {
                     <p className="text-[12px] text-destructive mt-1">{formErrors.description}</p>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                      Type
-                    </label>
-                    <select
-                      value={form.activity_type}
-                      onChange={(e) => setForm((p) => ({ ...p, activity_type: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    >
-                      {ACTIVITY_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-600 text-foreground mb-1.5">
-                      Status
-                    </label>
-                    <select
-                      value={form.status}
-                      onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                      <option value="ongoing">Ongoing</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">
+                    Status
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[13px] font-600 text-foreground mb-1.5">
@@ -406,6 +450,66 @@ export default function AdminActivitiesPage() {
                     className="w-full px-3.5 py-2.5 bg-muted border border-border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </div>
+                <div className="grid gap-4">
+                  <label className="block text-[13px] font-600 text-foreground mb-1.5">Invite volunteers</label>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto] items-end">
+                    <input
+                      value={formVolunteerSearch}
+                      onChange={(e) => setFormVolunteerSearch(e.target.value)}
+                      placeholder="Search approved volunteers by name or email…"
+                      className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => searchVolunteers(formVolunteerSearch)}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground font-700 rounded-2xl border border-border hover:bg-secondary/90 transition-all"
+                    >
+                      Search
+                    </button>
+                  </div>
+                  {formLoadingVolunteerSearch ? (
+                    <p className="text-[13px] text-muted-foreground mt-2">Searching volunteers…</p>
+                  ) : formVolunteerSearchResults.length > 0 ? (
+                    <div className="mt-3 grid gap-2">
+                      {formVolunteerSearchResults.map((vol) => (
+                        <button
+                          key={vol.id}
+                          type="button"
+                          onClick={() => addVolunteerSelection(vol)}
+                          className="flex items-center justify-between gap-3 px-4 py-3 bg-card border border-border rounded-2xl text-left text-[13px] text-foreground hover:bg-muted transition-all"
+                        >
+                          <div>
+                            <div className="font-600">{vol.full_name || vol.email}</div>
+                            <div className="text-[12px] text-muted-foreground">{vol.email}</div>
+                          </div>
+                          <span className="text-primary font-700">Add</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    formVolunteerSearch && (
+                      <p className="text-[13px] text-muted-foreground mt-2">No approved volunteers found for that search.</p>
+                    )
+                  )}
+                  {formSelectedVolunteers.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {formSelectedVolunteers.map((vol) => (
+                        <button
+                          key={vol.id}
+                          type="button"
+                          onClick={() => removeVolunteerSelection(vol.id)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/10 text-primary border border-primary/25 text-[12px] font-600"
+                        >
+                          {vol.full_name || vol.email}
+                          <X size={12} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[12px] text-muted-foreground mt-2">
+                    Selected volunteers will receive invitations when the activity is created.
+                  </p>
+                </div>
               </div>
               <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
                 <button
@@ -430,6 +534,49 @@ export default function AdminActivitiesPage() {
             </div>
           </div>
         )}
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[12px] uppercase tracking-[0.24em] text-muted-foreground mb-2">Total activities</p>
+            <p className="text-3xl font-800 text-foreground">{totalActivities}</p>
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[12px] uppercase tracking-[0.24em] text-muted-foreground mb-2">Published</p>
+            <p className="text-3xl font-800 text-foreground">{publishedActivities}</p>
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[12px] uppercase tracking-[0.24em] text-muted-foreground mb-2">Ongoing</p>
+            <p className="text-3xl font-800 text-foreground">{ongoingActivities}</p>
+          </div>
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <p className="text-[12px] uppercase tracking-[0.24em] text-muted-foreground mb-2">Drafts</p>
+            <p className="text-3xl font-800 text-foreground">{draftActivities}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto] items-end">
+          <div className="relative w-full">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search activities by title, location, or description…"
+              className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-2xl text-[14px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-56 px-3.5 py-2.5 bg-card border border-border rounded-2xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+          >
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
 
         {/* Type filter bar */}
         {!loading && activities.length > 0 && (
@@ -470,17 +617,17 @@ export default function AdminActivitiesPage() {
               />
             ))}
           </div>
-        ) : activities.length === 0 ? (
+        ) : filteredActivities.length === 0 ? (
           <div className="text-center py-16 bg-card border border-border rounded-2xl">
             <Calendar size={40} className="text-muted-foreground mx-auto mb-3" />
-            <p className="text-[15px] font-600 text-foreground">No activities yet</p>
+            <p className="text-[15px] font-600 text-foreground">No activities match your filters</p>
             <p className="text-[13px] text-muted-foreground mt-1">
-              Create your first activity for No Hunger Champions
+              Adjust your search or filters, or create a new activity.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {(typeFilter === 'all' ? activities : activities.filter((a) => a.activity_type === typeFilter)).map((act) => (
+            {filteredActivities.map((act) => (
               <div
                 key={act.id}
                 className="bg-card border border-border rounded-2xl shadow-card p-5"

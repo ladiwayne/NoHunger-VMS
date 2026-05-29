@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMyCheckins } from '@/lib/api/checkins';
+import { formatHoursHHMM } from '@/lib/formatHours';
 import { Clock, CalendarCheck, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download } from 'lucide-react';
@@ -35,10 +36,10 @@ export default function HoursTrackingPage() {
         .reduce((s, r) => s + (r.hours_spent || 0), 0);
 
       setStats({
-        total: Math.round(total * 10) / 10,
-        thisMonth: Math.round(thisMonth * 10) / 10,
+        total: total,
+        thisMonth: thisMonth,
         events: records.length,
-        avgPerEvent: records.length > 0 ? Math.round((total / records.length) * 10) / 10 : 0,
+        avgPerEvent: records.length > 0 ? total / records.length : 0,
       });
 
       const months: Record<string, number> = {};
@@ -77,7 +78,7 @@ export default function HoursTrackingPage() {
         s.checkin_time ? new Date(s.checkin_time).toLocaleDateString() : '',
         s.checkin_time ? new Date(s.checkin_time).toLocaleTimeString() : '',
         s.checkout_time ? new Date(s.checkout_time).toLocaleTimeString() : '',
-        s.hours_spent || 0,
+        formatHoursHHMM(s.hours_spent || 0),
       ]),
     ];
     const csv = rows.map((r) => r.join(',')).join('\n');
@@ -168,7 +169,7 @@ export default function HoursTrackingPage() {
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-700 font-tabular text-foreground">
-                      {card.value}
+                      {card.unit === 'hrs' ? formatHoursHHMM(card.value) : card.value}
                     </span>
                     <span className="text-[12px] text-muted-foreground">{card.unit}</span>
                   </div>
@@ -291,7 +292,7 @@ export default function HoursTrackingPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-[13px] font-700 text-primary font-tabular">
-                          {s.hours_spent || 0} hrs
+                          {formatHoursHHMM(s.hours_spent || 0)}
                         </span>
                       </td>
                     </tr>

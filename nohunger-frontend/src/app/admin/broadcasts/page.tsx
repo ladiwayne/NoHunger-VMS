@@ -95,14 +95,14 @@ export default function AdminBroadcastsPage() {
       }
 
       await sendBroadcast(payload);
-      toast.success('Broadcast sent successfully!');
+      toast.success('✅ Broadcast sent! Volunteers will receive your message shortly.');
       setForm({ title: '', message: '', target_type: 'all', target_activity_id: '' });
       setSelectedVolunteerIds([]);
       setVolunteerSearch('');
       setVolunteers([]);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send broadcast.');
+      toast.error(err.message || 'Unable to send broadcast. Please try again later.');
     } finally {
       setSending(false);
     }

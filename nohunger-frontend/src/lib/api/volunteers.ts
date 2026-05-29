@@ -1,3 +1,16 @@
+// Get accepted volunteers for an event (JSON or CSV)
+export async function getAcceptedVolunteersForEvent(eventId: string, opts?: { exportCsv?: boolean }): Promise<any[] | string> {
+  const url = `/admin/events/${eventId}/accepted-volunteers${opts?.exportCsv ? '?export=csv' : ''}`;
+  const res = await apiFetch<any>(url, {
+    method: 'GET',
+    headers: opts?.exportCsv ? { Accept: 'text/csv' } : undefined,
+  });
+  // If CSV, return as blob/text for download
+  if (opts?.exportCsv && typeof res === 'string') {
+    return res;
+  }
+  return Array.isArray(res) ? res : [];
+}
 import { apiFetch } from './client';
 import { adaptUser } from './adapters';
 

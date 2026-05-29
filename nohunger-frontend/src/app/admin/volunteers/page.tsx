@@ -10,6 +10,7 @@ import {
   bulkApproveVolunteers,
   sendMessageToVolunteer,
   sendBulkMessageToVolunteers,
+  getAcceptedVolunteersForEvent,
   PaginationMeta,
 } from '@/lib/api/volunteers';
 import {
@@ -72,7 +73,7 @@ export default function AdminVolunteersPage() {
       setPagination(response.pagination);
     } catch (err) {
       console.error('Volunteers fetch error:', err);
-      toast.error('Failed to load volunteers');
+      toast.error('Unable to load volunteers. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,7 @@ export default function AdminVolunteersPage() {
       if (selectedVol?.id === volunteerId)
         setSelectedVol((p: any) => ({ ...p, volunteer_status: 'approved' }));
     } catch (err: any) {
-      toast.error(err.message || 'Failed to approve.');
+      toast.error(err.message || 'Unable to approve this volunteer. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -116,7 +117,7 @@ export default function AdminVolunteersPage() {
       toast.success(`${volunteerName}'s Champion application was declined.`);
       fetchVolunteers();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to reject.');
+      toast.error(err.message || 'Unable to reject this volunteer. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -135,7 +136,7 @@ export default function AdminVolunteersPage() {
       toast.success(`${pending.length} Nohunger Champions approved!`);
       fetchVolunteers();
     } catch (err: any) {
-      toast.error(err.message || 'Bulk approve failed.');
+      toast.error(err.message || 'Unable to approve volunteers in bulk. Please try again.');
     } finally {
       setBulkApproving(false);
     }
@@ -188,7 +189,7 @@ export default function AdminVolunteersPage() {
       setMessageScope('single');
       setActivePanel('list');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to send message.');
+      toast.error(err.message || 'Unable to send message. Please try again later.');
     } finally {
       setSendingMessage(false);
     }
@@ -294,9 +295,69 @@ export default function AdminVolunteersPage() {
     return map[status] || 'bg-muted text-muted-foreground border-border';
   };
 
+  // --- Admin Export Accepted Volunteers for Event ---
+  const [eventIdForExport, setEventIdForExport] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const handleExportAccepted = async (asCsv = false) => {
+    if (!eventIdForExport) {
+      toast.error('Please enter an Event ID');
+      return;
+    }
+    setExporting(true);
+    try {
+      const result = await getAcceptedVolunteersForEvent(eventIdForExport, { exportCsv: asCsv });
+      if (asCsv) {
+        // Download CSV
+        const csv = typeof result === 'string' ? result : JSON.stringify(result);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `accepted-volunteers-${eventIdForExport}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('CSV exported!');
+      } else {
+        // Show JSON in a new tab
+        const json = JSON.stringify(result, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        toast.success('JSON exported!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to export volunteers. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <AppLayout activePath="/admin/volunteers">
       <div className="space-y-6 animate-fade-in">
+        {/* Export Accepted Volunteers for Event */}
+        <div className="flex items-center gap-2 bg-muted/50 p-3 rounded-md border border-muted mb-2">
+          <span className="font-semibold">Export Accepted Volunteers for Event:</span>
+          <input
+            type="text"
+            className="input input-sm border px-2 py-1 rounded"
+            placeholder="Event ID"
+            value={eventIdForExport}
+            onChange={e => setEventIdForExport(e.target.value)}
+            style={{ minWidth: 120 }}
+            disabled={exporting}
+          />
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => handleExportAccepted(false)}
+            disabled={exporting || !eventIdForExport}
+          >Export JSON</button>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => handleExportAccepted(true)}
+            disabled={exporting || !eventIdForExport}
+          >Export CSV</button>
+        </div>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-700 text-foreground">No Hunger Champions</h1>

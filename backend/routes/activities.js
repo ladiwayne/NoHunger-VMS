@@ -12,8 +12,10 @@ const { logAudit } = require('../utils/auditLogger');
 
 const sanitizeActivity = [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
-  body('description').optional().trim().isLength({ max: 2000 }),
-  body('location').optional().trim().isLength({ max: 300 }),
+  body('description').trim().isLength({ min: 1, max: 2000 }).withMessage('Description is required (max 2000 chars)'),
+  body('location').trim().isLength({ min: 1, max: 300 }).withMessage('Location is required (max 300 chars)'),
+  body('startDate').notEmpty().withMessage('Start date is required').bail().isISO8601().withMessage('Start date must be a valid ISO 8601 date'),
+  body('endDate').notEmpty().withMessage('End date is required').bail().isISO8601().withMessage('End date must be a valid ISO 8601 date'),
   body('category').optional().trim(),
 ];
 
@@ -24,7 +26,7 @@ router.post('/', requirePermission('manage_activities'), sanitizeActivity, async
     return res.status(400).json({ message: errors.array()[0].msg });
   }
   try {
-    const { title, description, category, startDate, endDate, location, volunteersNeeded, requirements, skills } = req.body;
+    const { title, description, category, startDate, endDate, location, volunteersNeeded, requirements, skills, invitedVolunteers } = req.body;
 
     const checkInCode = generateCheckInCode();
     const checkInLink = generateCheckInLink(checkInCode);
@@ -40,11 +42,21 @@ router.post('/', requirePermission('manage_activities'), sanitizeActivity, async
       volunteersNeeded,
       requirements,
       skills,
+      invitedVolunteers,
       checkInCode,
       checkInLink,
     });
 
     await activity.save();
+
+    if (Array.isArray(invitedVolunteers) && invitedVolunteers.length > 0) {
+      const invitations = invitedVolunteers.map((volunteerId) => ({
+        volunteerId,
+        activityId: activity._id,
+      }));
+      await Invitation.insertMany(invitations, { ordered: false });
+    }
+
     await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
@@ -81,6 +93,7 @@ router.get('/', async (req, res) => {
       Activity.countDocuments(query),
       Activity.find(query)
         .populate('coordinatorId', 'firstName lastName email')
+        .populate('invitedVolunteers', 'firstName lastName email')
         .populate('volunteersApplied', 'firstName lastName email')
         .populate('volunteersApproved', 'firstName lastName email')
         .sort({ createdAt: -1 })
@@ -102,6 +115,7 @@ router.get('/:id', async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id)
       .populate('coordinatorId', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
       .populate('volunteersApplied', 'firstName lastName email')
       .populate('volunteersApproved', 'firstName lastName email');
     
@@ -120,6 +134,7 @@ router.get('/code/:code', async (req, res) => {
   try {
     const activity = await Activity.findOne({ checkInCode: req.params.code.toUpperCase() })
       .populate('coordinatorId', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
       .populate('volunteersApplied', 'firstName lastName email')
       .populate('volunteersApproved', 'firstName lastName email');
 
@@ -139,7 +154,7 @@ router.put('/:id', requirePermission('manage_activities'), sanitizeActivity, asy
     return res.status(400).json({ message: errors.array()[0].msg });
   }
   try {
-    const { title, description, category, startDate, endDate, location, volunteersNeeded, requirements, skills, status } = req.body;
+    const { title, description, category, startDate, endDate, location, volunteersNeeded, requirements, skills, status, invitedVolunteers } = req.body;
 
     let activity = await Activity.findById(req.params.id);
     if (!activity) {
@@ -156,6 +171,19 @@ router.put('/:id', requirePermission('manage_activities'), sanitizeActivity, asy
     if (requirements) activity.requirements = requirements;
     if (skills) activity.skills = skills;
     if (status) activity.status = status;
+    if (Array.isArray(invitedVolunteers) && invitedVolunteers.length > 0) {
+      const existingIds = activity.invitedVolunteers.map((id) => id.toString());
+      const uniqueNewIds = invitedVolunteers
+        .filter((id) => id && !existingIds.includes(id.toString()));
+      if (uniqueNewIds.length > 0) {
+        activity.invitedVolunteers.push(...uniqueNewIds);
+        const invitations = uniqueNewIds.map((volunteerId) => ({
+          volunteerId,
+          activityId: activity._id,
+        }));
+        await Invitation.insertMany(invitations, { ordered: false });
+      }
+    }
 
     await activity.save();
     await logAudit({
@@ -249,37 +277,48 @@ router.post('/:id/approve-volunteer', requirePermission('manage_activities'), as
 // Send invitations to approved volunteers for an activity
 router.post('/:id/send-invites', requirePermission('manage_activities'), async (req, res) => {
   try {
+    const { volunteerIds = [], inviteAll = false } = req.body;
     const activity = await Activity.findById(req.params.id);
     if (!activity) {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
-    const approvedVolunteers = await User.find({
-      role: 'volunteer',
-      status: 'approved',
-    }).select('_id');
+    let targetVolunteerIds = Array.isArray(volunteerIds) ? volunteerIds.filter(Boolean) : [];
+    if (inviteAll) {
+      const approvedVolunteers = await User.find({ role: 'volunteer', status: 'approved' }).select('_id');
+      targetVolunteerIds = approvedVolunteers.map((v) => v._id.toString());
+    }
 
-    const invitationRows = approvedVolunteers.map((v) => ({
-      volunteerId: v._id,
+    const existingIds = activity.invitedVolunteers.map((id) => id.toString());
+    const uniqueNewIds = Array.from(new Set(targetVolunteerIds)).filter((id) => !existingIds.includes(id));
+
+    if (uniqueNewIds.length === 0) {
+      return res.status(200).json({ message: 'No new volunteers to invite', activity });
+    }
+
+    const invitationRows = uniqueNewIds.map((volunteerId) => ({
+      volunteerId,
       activityId: activity._id,
       message: `You are invited to ${activity.title}`,
       status: 'pending',
     }));
 
-    const notificationRows = approvedVolunteers.map((v) => ({
-      userId: v._id,
+    const notificationRows = uniqueNewIds.map((volunteerId) => ({
+      userId: volunteerId,
       type: 'invitation',
       title: `New Invitation: ${activity.title}`,
       message: `You have been invited to participate in "${activity.title}". Check your invitations to respond.`,
       read: false,
     }));
 
-    if (invitationRows.length > 0) {
-      await Promise.all([
-        Invitation.insertMany(invitationRows, { ordered: false }),
-        Notification.insertMany(notificationRows, { ordered: false }),
-      ]);
-    }
+    await Promise.all([
+      Invitation.insertMany(invitationRows, { ordered: false }),
+      Notification.insertMany(notificationRows, { ordered: false }),
+    ]);
+
+    activity.invitedVolunteers.push(...uniqueNewIds);
+    await activity.save();
+
     await logAudit({
       actorId: req.user.id,
       actorRole: req.user.role,
@@ -289,7 +328,13 @@ router.post('/:id/send-invites', requirePermission('manage_activities'), async (
       details: { count: invitationRows.length },
     });
 
-    res.status(201).json({ message: 'Invitations sent', count: invitationRows.length });
+    const refreshed = await Activity.findById(req.params.id)
+      .populate('coordinatorId', 'firstName lastName email')
+      .populate('invitedVolunteers', 'firstName lastName email')
+      .populate('volunteersApplied', 'firstName lastName email')
+      .populate('volunteersApproved', 'firstName lastName email');
+
+    res.status(201).json({ message: 'Invitations sent', count: invitationRows.length, activity: refreshed });
   } catch (error) {
     res.status(500).json({ message: 'Error sending invitations', error: error.message });
   }

@@ -5,7 +5,9 @@
  */
 
 export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined'
-  ? `${window.location.origin}/api`
+  ? window.location.hostname === 'localhost' && window.location.port && !window.location.port.includes('5000')
+    ? 'http://localhost:5000/api'
+    : `${window.location.origin}/api`
   : 'http://localhost:5000/api');
 
 // In-memory token — survives the current page session but is cleared on refresh.

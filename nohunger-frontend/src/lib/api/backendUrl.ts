@@ -17,8 +17,8 @@ export function getBackendUrl(request: NextRequest): string {
   const origin = `${proto}://${host}`;
 
   // In local development without an explicit backend URL, default to the backend port.
-  if (host.includes('localhost') && !host.includes('5000')) {
-    return 'http://localhost:5000/api';
+  if (host.includes('localhost') && !host.includes('5001')) {
+    return 'http://localhost:5001/api';
   }
 
   return `${origin}/api`;

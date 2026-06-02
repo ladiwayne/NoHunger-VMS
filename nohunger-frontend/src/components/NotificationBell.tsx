@@ -8,6 +8,7 @@ import {
   markNotificationRead,
   getUnreadCount,
 } from '@/lib/api/notifications';
+import { adaptNotification } from '@/lib/api/adapters';
 import { Bell, X, Loader2 } from 'lucide-react';
 
 export default function NotificationBell() {
@@ -24,6 +25,39 @@ export default function NotificationBell() {
       const interval = setInterval(fetchUnreadCount, 15000);
       return () => clearInterval(interval);
     }
+  }, [user]);
+
+  // Subscribe to server-sent events for near-real-time updates
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/notifications/stream');
+      es.addEventListener('notifications', (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload && typeof payload.unread === 'number') {
+            setUnreadCount(payload.unread);
+          }
+          if (payload && Array.isArray(payload.latest)) {
+            setNotifications((prev) => {
+              // merge latest while avoiding duplicates (by id)
+              const existingIds = new Set(prev.map((p) => p.id));
+              const mapped = payload.latest.map((n: any) => adaptNotification(n));
+              const merged = [...mapped.filter((m: any) => !existingIds.has(m.id)), ...prev];
+              return merged.slice(0, 100);
+            });
+          }
+        } catch (err) {
+          // ignore malformed payloads
+        }
+      });
+    } catch (err) {
+      // EventSource may not be available in some environments
+    }
+    return () => {
+      if (es) es.close();
+    };
   }, [user]);
 
   useEffect(() => {

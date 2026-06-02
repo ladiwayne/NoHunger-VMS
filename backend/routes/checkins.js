@@ -43,9 +43,17 @@ router.post('/checkin', auth, async (req, res) => {
     let eventCheckin = false;
     let activityCheckin = false;
 
+    console.log('[checkin] request', {
+      volunteerId: req.user.id,
+      eventId,
+      activityId,
+      checkInCode: normalizedCode,
+    });
+
     if (eventId) {
       event = await Event.findById(eventId);
       if (!event || event.checkInCode?.toUpperCase() !== normalizedCode) {
+        console.log('[checkin] invalid event code', { eventId, normalizedCode, foundEvent: !!event });
         return res.status(400).json({ message: 'Invalid event check-in code' });
       }
       eventCheckin = true;

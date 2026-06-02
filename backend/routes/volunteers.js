@@ -263,6 +263,21 @@ router.post('/:id/apply-activity', auth, async (req, res) => {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
+    // Check for overlapping activities the volunteer has applied to or been approved for
+    const existingActivities = await Activity.find({
+      $or: [
+        { _id: { $in: volunteer.appliedActivities || [] } },
+        { volunteersApproved: req.params.id },
+      ],
+    });
+
+    const { activitiesOverlap } = require('../utils/overlap');
+    const overlaps = existingActivities.some((a) => activitiesOverlap(a, activity));
+
+    if (overlaps) {
+      return res.status(400).json({ message: 'This activity overlaps with another activity you have applied for or are approved on' });
+    }
+
     if (volunteer.appliedActivities.includes(activityId)) {
       return res.status(400).json({ message: 'Volunteer already applied for this activity' });
     }

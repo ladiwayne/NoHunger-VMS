@@ -13,6 +13,7 @@ interface EventForm {
   description: string;
   location: string;
   eventDate: string;
+  endDate: string;
   status: string;
   maxVolunteers: string;
 }
@@ -22,6 +23,7 @@ const defaultForm: EventForm = {
   description: '',
   location: '',
   eventDate: '',
+  endDate: '',
   status: 'draft',
   maxVolunteers: '0',
 };
@@ -96,6 +98,7 @@ export default function AdminEventsPage() {
     if (!form.description.trim()) nextErrors.description = 'Description is required.';
     if (!form.location.trim()) nextErrors.location = 'Location is required.';
     if (!form.eventDate) nextErrors.eventDate = 'Event date and time are required.';
+    if (!form.endDate) nextErrors.endDate = 'Event end date and time are required.';
 
     if (Object.keys(nextErrors).length > 0) {
       setFormErrors(nextErrors);
@@ -104,9 +107,20 @@ export default function AdminEventsPage() {
     }
 
     const eventDate = new Date(form.eventDate);
+    const endDate = new Date(form.endDate);
     if (Number.isNaN(eventDate.getTime())) {
       setFormErrors({ eventDate: 'Enter a valid date and time.' });
       toast.error('Provide a valid event date and time.');
+      return;
+    }
+    if (Number.isNaN(endDate.getTime())) {
+      setFormErrors({ endDate: 'Enter a valid end date and time.' });
+      toast.error('Provide a valid event end date and time.');
+      return;
+    }
+    if (endDate <= eventDate) {
+      setFormErrors({ endDate: 'End date/time must be after event start date/time.' });
+      toast.error('End date/time must be after event start date/time.');
       return;
     }
 
@@ -120,6 +134,7 @@ export default function AdminEventsPage() {
           description: form.description,
           location: form.location,
           eventDate: eventDate.toISOString(),
+          endDate: endDate.toISOString(),
           status: form.status,
           max_volunteers: maxVolunteers,
         });
@@ -132,6 +147,7 @@ export default function AdminEventsPage() {
           description: form.description,
           location: form.location,
           eventDate: eventDate.toISOString(),
+          endDate: endDate.toISOString(),
           status: form.status,
           invitedVolunteers,
           max_volunteers: maxVolunteers,
@@ -188,6 +204,7 @@ export default function AdminEventsPage() {
       description: event.description || '',
       location: event.location || '',
       eventDate: event.start_date ? event.start_date.slice(0, 16) : '',
+      endDate: event.end_date ? event.end_date.slice(0, 16) : '',
       status: event.status || 'draft',
       maxVolunteers: event.max_volunteers?.toString() || '0',
     });
@@ -393,6 +410,21 @@ export default function AdminEventsPage() {
                       className={`w-full px-3.5 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${formErrors.eventDate ? 'border-destructive' : 'border-border'}`}
                     />
                     {formErrors.eventDate && <p className="text-[12px] text-destructive mt-2">{formErrors.eventDate}</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-600 text-foreground mb-1.5">Event End Date & Time *</label>
+                    <input
+                      type="datetime-local"
+                      value={form.endDate}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, endDate: e.target.value }));
+                        setFormErrors((prev) => ({ ...prev, endDate: undefined }));
+                      }}
+                      className={`w-full px-3.5 py-2.5 bg-muted border rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${formErrors.endDate ? 'border-destructive' : 'border-border'}`}
+                    />
+                    {formErrors.endDate && <p className="text-[12px] text-destructive mt-2">{formErrors.endDate}</p>}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-[240px_minmax(0,1fr)] gap-3">

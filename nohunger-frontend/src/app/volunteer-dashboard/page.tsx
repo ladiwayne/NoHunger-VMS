@@ -174,6 +174,12 @@ export default function VolunteerDashboardPage() {
     return 'Good evening';
   };
 
+  // Badge progress: compute hours until next hours-based badge
+  const hourThresholds = [10, 25, 50, 100];
+  const nextHourThreshold = hourThresholds.find((t) => t > stats.totalHours) || hourThresholds[hourThresholds.length - 1];
+  const hoursToNextBadge = Math.max(0, Math.round((nextHourThreshold - stats.totalHours) * 10) / 10);
+  const hourProgressPercent = Math.min(100, Math.round((stats.totalHours / nextHourThreshold) * 100));
+
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -288,6 +294,24 @@ export default function VolunteerDashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* Hours-until-next-badge widget */}
+        <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <HandHeart size={16} className="text-primary" />
+            <h3 className="text-[15px] font-700 text-foreground">Hours until next badge</h3>
+          </div>
+          <p className="text-[13px] text-muted-foreground mb-3">
+            You need <span className="font-700">{hoursToNextBadge} hrs</span> to reach the next badge ({nextHourThreshold} hrs).
+          </p>
+          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+            <div className="h-3 bg-primary rounded-full" style={{ width: `${hourProgressPercent}%` }} />
+          </div>
+          <div className="flex items-center justify-between text-[12px] text-muted-foreground mt-2">
+            <span>{formatHoursHHMM(stats.totalHours)} logged</span>
+            <span>{hourProgressPercent}%</span>
+          </div>
+        </div>
 
         {/* Check-in Code Entry */}
         <div className="bg-card border border-border rounded-2xl shadow-card p-5">

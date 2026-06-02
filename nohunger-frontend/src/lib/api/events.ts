@@ -29,6 +29,7 @@ export async function createEvent(payload: {
   title: string;
   description: string;
   eventDate: string;
+  endDate: string;
   location: string;
   status?: string;
   invitedVolunteers?: string[];
@@ -40,6 +41,7 @@ export async function createEvent(payload: {
       title: payload.title,
       description: payload.description,
       eventDate: payload.eventDate,
+      endDate: payload.endDate,
       location: payload.location,
       status: payload.status || 'draft',
       invitedVolunteers: payload.invitedVolunteers || [],
@@ -53,6 +55,7 @@ export async function updateEvent(eventId: string, payload: {
   title?: string;
   description?: string;
   eventDate?: string;
+  endDate?: string;
   location?: string;
   status?: string;
   max_volunteers?: number;

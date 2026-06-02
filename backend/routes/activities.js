@@ -84,6 +84,28 @@ router.get('/', async (req, res) => {
     const query = {};
     if (req.query.status) query.status = req.query.status;
     if (req.query.category) query.category = req.query.category;
+    if (req.query.startDate) {
+      const sd = new Date(req.query.startDate);
+      if (!isNaN(sd.getTime())) query.startDate = { ...(query.startDate || {}), $gte: sd };
+    }
+    if (req.query.endDate) {
+      const ed = new Date(req.query.endDate);
+      if (!isNaN(ed.getTime())) query.endDate = { ...(query.endDate || {}), $lte: ed };
+    }
+    if (req.query.location) {
+      query.location = { $regex: req.query.location, $options: 'i' };
+    }
+    if (req.query.search) {
+      const s = req.query.search;
+      query.$or = [
+        { title: { $regex: s, $options: 'i' } },
+        { description: { $regex: s, $options: 'i' } },
+        { location: { $regex: s, $options: 'i' } },
+      ];
+    }
+    if (req.query.skill) {
+      query.skills = { $in: [req.query.skill] };
+    }
 
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));

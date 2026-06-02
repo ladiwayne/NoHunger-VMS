@@ -17,9 +17,13 @@ setInterval(() => {
 
 const cacheMiddleware = (duration = 120000) => {
   return (req, res, next) => {
-    // Invalidate cached GET data on any write operations so the frontend sees fresh state quickly.
+    // Invalidate cached GET data for the same resource path only.
     if (req.method !== 'GET') {
-      cache.clear();
+      for (const key of cache.keys()) {
+        if (key.startsWith(`${req.path}?`) || key === req.path) {
+          cache.delete(key);
+        }
+      }
       return next();
     }
 

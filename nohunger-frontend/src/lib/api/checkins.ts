@@ -38,10 +38,10 @@ export async function getAllCheckins(
   return raw.map(adaptCheckin);
 }
 
-export async function checkinWithCode(code: string, activityId?: string): Promise<any> {
+export async function checkinWithCode(code: string, activityId?: string, eventId?: string): Promise<any> {
   const data = await apiFetch<any>('/checkins/checkin', {
     method: 'POST',
-    body: JSON.stringify({ checkInCode: code, activityId }),
+    body: JSON.stringify({ checkInCode: code, activityId, eventId }),
   });
   return adaptCheckin(data.checkin || data);
 }

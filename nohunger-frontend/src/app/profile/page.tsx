@@ -235,7 +235,11 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!profile?.id) return;
+    const profileId = profile?.id || profile?._id;
+    if (!profileId) {
+      toast.error('Unable to save profile: missing profile ID');
+      return;
+    }
     setSaving(true);
     setSuccessMessage('');
     setErrors({});
@@ -248,7 +252,7 @@ export default function ProfilePage() {
       const [firstName, ...rest] = form.fullName.trim().split(' ');
       const lastName = rest.join(' ');
 
-      await updateVolunteerProfile(profile.id, {
+      await updateVolunteerProfile(profileId, {
         firstName: firstName || '',
         lastName,
         phone: form.phone,
@@ -534,7 +538,7 @@ export default function ProfilePage() {
                     <p className="text-sm text-muted-foreground">Skills, availability, and volunteer preference data.</p>
                   </div>
                   <Link
-                    href={`/profile/${profile.id}`}
+                    href={`/profile/${profile.id || profile._id}`}
                     target="_blank"
                     className="rounded-full border border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition"
                   >

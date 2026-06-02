@@ -120,11 +120,18 @@ export default function Sidebar({
   const router = useRouter();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
   const isSuperAdmin = profile?.role === 'super_admin';
+  const achievementsHref = profile?.id ? `/profile/${profile.id}` : '/profile';
+  const adjustedVolunteerNavGroups = volunteerNavGroups.map((group) => ({
+    ...group,
+    items: group.items.map((item) =>
+      item.label === 'Achievements' ? { ...item, href: achievementsHref } : item
+    ),
+  }));
   const navGroups = isSuperAdmin
     ? [...adminNavGroups, superAdminExtraGroup]
     : isAdmin
-    ? [...adminNavGroups, ...volunteerNavGroups]
-    : volunteerNavGroups;
+    ? [...adminNavGroups, ...adjustedVolunteerNavGroups]
+    : adjustedVolunteerNavGroups;
 
   const isActive = (href: string) => currentPath === href || currentPath.startsWith(href + '/');
 

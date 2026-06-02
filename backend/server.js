@@ -14,15 +14,19 @@ const app = express();
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:4028,http://localhost:3000')
   .split(',')
   .map((s) => s.trim());
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
-app.options('*', cors());
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy does not allow access from this origin'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -145,6 +149,46 @@ const startServer = async () => {
 
     await rejectStaleInvitations();
     setInterval(rejectStaleInvitations, 60 * 60 * 1000); // Run hourly
+
+    // Send reminders for events/activities starting ~24 hours from now
+    const { sendStartReminders } = require('./utils/reminderJob');
+    const { autoCompleteEventCheckouts } = require('./utils/eventEndJob');
+
+    // Run once at startup and then hourly
+    try {
+      const created = await sendStartReminders();
+      if (created > 0) console.log(`[reminder] Created ${created} start reminder(s)`);
+    } catch (err) {
+      console.error('[reminder] Failed to create start reminders:', err?.message || err);
+    }
+    setInterval(async () => {
+      try {
+        const created = await sendStartReminders();
+        if (created > 0) console.log(`[reminder] Created ${created} start reminder(s)`);
+      } catch (err) {
+        console.error('[reminder] Failed to create start reminders:', err?.message || err);
+      }
+    }, 60 * 60 * 1000);
+
+    // Automatically complete check-outs for events that have ended
+    try {
+      const result = await autoCompleteEventCheckouts();
+      if (result.processedCheckins > 0) {
+        console.log(`[event-end] Completed ${result.processedCheckins} active check-in(s) for ${result.processedEvents} ended event(s)`);
+      }
+    } catch (err) {
+      console.error('[event-end] Failed to complete event-end checkouts:', err?.message || err);
+    }
+    setInterval(async () => {
+      try {
+        const result = await autoCompleteEventCheckouts();
+        if (result.processedCheckins > 0) {
+          console.log(`[event-end] Completed ${result.processedCheckins} active check-in(s) for ${result.processedEvents} ended event(s)`);
+        }
+      } catch (err) {
+        console.error('[event-end] Failed to complete event-end checkouts:', err?.message || err);
+      }
+    }, 60 * 60 * 1000);
 
     const shutdown = async () => {
       server.close(async () => {

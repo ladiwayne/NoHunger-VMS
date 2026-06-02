@@ -82,9 +82,16 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
     invalidateCache();
   }
 
-  // Handle empty responses (204 No Content)
+  // Handle empty responses (204 No Content) and malformed JSON safely
   const text = await response.text();
-  const data = text ? JSON.parse(text) : ({} as T);
+  let data: any = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text as unknown as T;
+    }
+  }
 
   // Cache GET requests for 5 minutes
   if (options.method?.toUpperCase() === 'GET' || !options.method) {

@@ -30,6 +30,7 @@ NODE_ENV=development
 - Start app: npm run dev
 
 Frontend runs on port 4028 by default.
+- Ensure `nohunger-frontend/.env.local` contains `NEXT_PUBLIC_API_URL=http://localhost:5000/api` so the frontend points to the local backend.
 
 ## Deployment
 

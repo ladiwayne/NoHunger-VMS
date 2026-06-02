@@ -76,7 +76,12 @@ export default function CheckinPage() {
     if (!user || !activity) return;
     setActionLoading(true);
     try {
-      const data = await checkinWithCode(String(code).toUpperCase(), activity.id);
+      const isEvent = activity.activity_type === 'event';
+      const data = await checkinWithCode(
+        String(code).toUpperCase(),
+        isEvent ? undefined : activity.id,
+        isEvent ? activity.id : undefined
+      );
       setCheckinRecord(data);
 
       toast.success('✅ Check-in request submitted! We’ll notify you once an admin approves it.');

@@ -10,7 +10,19 @@ const { generateCheckInCode, generateCheckInLink } = require('../utils/helpers')
 // Create event
 router.post('/', adminAuth, async (req, res) => {
   try {
-    const { title, description, eventDate, location, invitedVolunteers, status, max_volunteers } = req.body;
+    const { title, description, eventDate, endDate, location, invitedVolunteers, status, max_volunteers } = req.body;
+
+    const start = new Date(eventDate);
+    const end = new Date(endDate);
+    if (!eventDate || Number.isNaN(start.getTime())) {
+      return res.status(400).json({ message: 'A valid event start date/time is required' });
+    }
+    if (!endDate || Number.isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'A valid event end date/time is required' });
+    }
+    if (end <= start) {
+      return res.status(400).json({ message: 'Event end date/time must be after event start date/time' });
+    }
 
     const checkInCode = generateCheckInCode();
     const checkInLink = generateCheckInLink(checkInCode);
@@ -18,7 +30,8 @@ router.post('/', adminAuth, async (req, res) => {
     const event = new Event({
       title,
       description,
-      eventDate,
+      eventDate: start,
+      endDate: end,
       location,
       status: status || 'draft',
       max_volunteers: max_volunteers || 0,
@@ -104,16 +117,32 @@ router.get('/:id', async (req, res) => {
 // Update event
 router.put('/:id', adminAuth, async (req, res) => {
   try {
-    const { title, description, eventDate, location, status, max_volunteers } = req.body;
+    const { title, description, eventDate, endDate, location, status, max_volunteers } = req.body;
     const event = await Event.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    const currentStart = event.eventDate;
+    const currentEnd = event.endDate;
+    const parsedStart = eventDate ? new Date(eventDate) : currentStart;
+    const parsedEnd = endDate ? new Date(endDate) : currentEnd;
+
+    if (eventDate && Number.isNaN(parsedStart.getTime())) {
+      return res.status(400).json({ message: 'Invalid event start date/time' });
+    }
+    if (endDate && Number.isNaN(parsedEnd.getTime())) {
+      return res.status(400).json({ message: 'Invalid event end date/time' });
+    }
+    if (parsedStart && parsedEnd && parsedEnd <= parsedStart) {
+      return res.status(400).json({ message: 'Event end date/time must be after start date/time' });
+    }
+
     event.title = title ?? event.title;
     event.description = description ?? event.description;
-    event.eventDate = eventDate ? new Date(eventDate) : event.eventDate;
+    event.eventDate = parsedStart;
+    event.endDate = parsedEnd;
     event.location = location ?? event.location;
     event.status = status ?? event.status;
     event.max_volunteers = typeof max_volunteers === 'number' ? max_volunteers : event.max_volunteers;

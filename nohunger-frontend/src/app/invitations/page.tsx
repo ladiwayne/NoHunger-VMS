@@ -45,12 +45,19 @@ export default function InvitationsPage() {
     setResponding(invId);
     try {
       await respondToInvitation(invId, status);
+      setInvitations((prev) =>
+        prev.map((inv) =>
+          inv.id === invId
+            ? { ...inv, status: status === 'accepted' ? 'accepted' : 'rejected', responded_at: new Date().toISOString() }
+            : inv
+        )
+      );
       toast.success(
         status === 'accepted'
           ? '🎉 Invitation accepted! You’re all set — check your dashboard for event details.'
           : 'Invitation declined. You’ll still see future opportunities here.'
       );
-      fetchInvitations();
+      await fetchInvitations();
     } catch (err: any) {
       toast.error(err.message || 'Unable to update your RSVP. Please try again.');
     } finally {
@@ -97,7 +104,7 @@ export default function InvitationsPage() {
         toast.error(`Unable to update ${failures} invitation${failures > 1 ? 's' : ''}.`);
       }
       setSelectedInvitations([]);
-      fetchInvitations();
+      await fetchInvitations();
     } catch (err: any) {
       toast.error(err.message || 'Unable to update invitations. Please try again.');
     } finally {

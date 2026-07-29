@@ -221,13 +221,13 @@ export default function VolunteerDashboardPage() {
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-700 text-foreground">Welcome to No Hunger Initiatives Nigeria! 🎉</p>
               <p className="text-[13px] text-muted-foreground mt-1">
-                You&apos;re all set as a No Hunger Champion. Browse available activities and start making an impact in your community.
+                You&apos;re all set as a No Hunger Champion. Browse upcoming events and start making an impact in your community.
               </p>
               <Link
-                href="/activities"
+                href="/events"
                 className="inline-flex items-center gap-1.5 mt-3 text-[13px] font-700 text-primary hover:underline"
               >
-                Browse activities <ArrowRight size={13} />
+                Browse events <ArrowRight size={13} />
               </Link>
             </div>
           </div>
@@ -426,7 +426,7 @@ export default function VolunteerDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[15px] font-700 text-foreground">Upcoming Events</h3>
               <Link
-                href="/activities"
+                href="/events"
                 className="text-[12px] text-primary font-600 hover:underline"
               >
                 View all

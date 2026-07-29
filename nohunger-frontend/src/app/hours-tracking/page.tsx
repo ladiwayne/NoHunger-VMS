@@ -73,21 +73,22 @@ export default function HoursTrackingPage() {
     const rows = [
       ['Event', 'Location', 'Date', 'Check-in', 'Check-out', 'Hours'],
       ...sessions.map((s) => [
-        s.activity?.title || '',
-        s.activity?.location || '',
+        s.event?.title || s.activity?.title || '',
+        s.event?.location || s.activity?.location || '',
         s.checkin_time ? new Date(s.checkin_time).toLocaleDateString() : '',
         s.checkin_time ? new Date(s.checkin_time).toLocaleTimeString() : '',
         s.checkout_time ? new Date(s.checkout_time).toLocaleTimeString() : '',
         formatHoursHHMM(s.hours_spent || 0),
       ]),
     ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nohunger-hours-${profile?.full_name?.replace(' ', '-') || 'volunteer'}.csv`;
+    a.download = `nohunger-hours-${(profile?.full_name || 'volunteer').replace(/\s+/g, '-').toLowerCase()}.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filtered = sessions;

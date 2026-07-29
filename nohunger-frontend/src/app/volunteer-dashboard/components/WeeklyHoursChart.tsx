@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { formatHoursHHMM } from '@/lib/formatHours';
+import { getMyCheckins } from '@/lib/api/checkins';
 import {
   AreaChart,
   Area,
@@ -14,19 +15,11 @@ import {
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-// TODO: Backend — GET /api/volunteers/:id/hours?groupBy=week&limit=8
-const weeklyData = [
-  { week: 'Jan 20', hours: 6.5, events: 2 },
-  { week: 'Jan 27', hours: 4.0, events: 1 },
-  { week: 'Feb 3', hours: 8.0, events: 2 },
-  { week: 'Feb 10', hours: 3.5, events: 1 },
-  { week: 'Feb 17', hours: 10.0, events: 3 },
-  { week: 'Feb 24', hours: 7.5, events: 2 },
-  { week: 'Mar 3', hours: 5.0, events: 2 },
-  { week: 'Mar 10', hours: 12.5, events: 3 },
-];
-
-const avgHours = weeklyData.reduce((s, d) => s + d.hours, 0) / weeklyData.length;
+interface WeeklyPoint {
+  week: string;
+  hours: number;
+  events: number;
+}
 
 interface TooltipPayload {
   value: number;
@@ -60,17 +53,64 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 export default function WeeklyHoursChart() {
+  const [weeklyData, setWeeklyData] = useState<WeeklyPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const checkins = await getMyCheckins();
+        const completed = (checkins || []).filter((item) => item.status === 'checked_out' || item.status === 'approved');
+        const points = Array.from({ length: 8 }, (_, index) => {
+          const now = new Date();
+          const start = new Date(now);
+          start.setDate(now.getDate() - (7 - index) * 7);
+          const end = new Date(start);
+          end.setDate(start.getDate() + 6);
+          const bucket = completed.filter((item) => {
+            const createdAt = item.checkin_time ? new Date(item.checkin_time) : null;
+            return createdAt && createdAt >= start && createdAt <= end;
+          });
+          return {
+            week: start.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+            hours: Number(bucket.reduce((sum, item) => sum + (item.hours_spent || 0), 0).toFixed(1)),
+            events: bucket.length,
+          };
+        });
+        setWeeklyData(points);
+      } catch (error) {
+        console.error('Failed to load weekly hours chart', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const avgHours = useMemo(() => {
+    if (!weeklyData.length) return 0;
+    return weeklyData.reduce((sum, point) => sum + point.hours, 0) / weeklyData.length;
+  }, [weeklyData]);
+
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card border border-border rounded-2xl shadow-card p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-[16px] font-700 text-foreground">Weekly Volunteer Hours</h3>
-          <p className="text-[12.5px] text-muted-foreground mt-0.5">Last 8 weeks · Lagos State</p>
+          <p className="text-[12.5px] text-muted-foreground mt-0.5">Last 8 weeks · based on your logged sessions</p>
         </div>
         <div className="flex items-center gap-1.5 text-[12px] text-success font-600 bg-success/8 px-2.5 py-1.5 rounded-lg">
           <TrendingUp size={13} />
-          +67% vs prev. month
+          {avgHours > 0 ? '+recent activity' : 'No data yet'}
         </div>
       </div>
 

@@ -1,26 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatHoursHHMM } from '@/lib/formatHours';
 import { MapPin, Clock, CheckCircle2, LogIn, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useAuth } from '@/contexts/AuthContext';
+import { checkinWithCode, checkoutFromActivity, getMyCheckins } from '@/lib/api/checkins';
+import { getEvents } from '@/lib/api/events';
 
 type CheckInState = 'not-started' | 'checked-in' | 'checked-out';
-
-const ACTIVE_EVENT = {
-  id: 'evt-001',
-  name: 'Mushin Community Food Drive',
-  location: 'Mushin Community Centre, Lagos',
-  date: 'Today, March 17, 2026',
-  startTime: '08:00 AM',
-  endTime: '01:00 PM',
-  coordinator: 'Esi Boateng',
-  volunteersCheckedIn: 14,
-  totalSlots: 20,
-  role: 'Food Packing',
-  checkInOpenAt: '07:30 AM',
-};
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -31,6 +20,9 @@ function formatElapsed(seconds: number): string {
 }
 
 export default function ActiveCheckInWidget() {
+  const { user } = useAuth();
+  const [eventDetails, setEventDetails] = useState<any>(null);
+  const [checkinRecord, setCheckinRecord] = useState<any>(null);
   const [checkInState, setCheckInState] = useState<CheckInState>('not-started');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
@@ -47,36 +39,96 @@ export default function ActiveCheckInWidget() {
     return () => clearInterval(interval);
   }, [checkInState]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const loadData = async () => {
+      try {
+        const [events, myCheckins] = await Promise.all([getEvents(), getMyCheckins()]);
+        const nextEvent = (events || []).find((event: any) => ['published', 'ongoing'].includes(event.status)) || (events || [])[0] || null;
+        setEventDetails(nextEvent);
+
+        const activeRecord = (myCheckins || []).find((record: any) => record.status === 'approved' && !record.checkout_time) || null;
+        if (activeRecord) {
+          setCheckinRecord(activeRecord);
+          setCheckInState('checked-in');
+          setCheckInTime(activeRecord.checkin_time || null);
+          return;
+        }
+
+        const completedRecord = (myCheckins || []).find((record: any) => record.status === 'checked_out' || (record.checkout_time && record.status === 'approved')) || null;
+        if (completedRecord) {
+          setCheckinRecord(completedRecord);
+          setCheckInState('checked-out');
+          setCheckInTime(completedRecord.checkin_time || null);
+          setCheckOutTime(completedRecord.checkout_time || null);
+        }
+      } catch (error) {
+        console.error('Failed to load active event widget', error);
+      }
+    };
+
+    loadData();
+  }, [user]);
+
   const handleCheckIn = async () => {
+    if (!eventDetails?.check_in_code) {
+      toast.error('No check-in code is available for the current event yet.');
+      return;
+    }
+
     setLoading(true);
-    // TODO: Backend — POST /api/checkins with { eventId, volunteerId, timestamp }
-    await new Promise((r) => setTimeout(r, 1200));
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setCheckInTime(timeStr);
-    setCheckInState('checked-in');
-    setLoading(false);
-    toast.success(`✅ Checked in to ${ACTIVE_EVENT.name} at ${timeStr}. Enjoy your session!`, {
-      description: 'Your attendance has been recorded successfully.',
-      duration: 4000,
-    });
+    try {
+      const data = await checkinWithCode(String(eventDetails.check_in_code));
+      setCheckinRecord(data);
+      setCheckInState('checked-in');
+      setCheckInTime(data.checkin_time || null);
+      setCheckOutTime(null);
+      setElapsedSeconds(0);
+      toast.success(`✅ Checked in to ${eventDetails.title}.`, {
+        description: 'Your attendance has been received and is pending admin approval.',
+        duration: 4000,
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Unable to check in right now.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCheckOut = async () => {
+    if (!checkinRecord?.id) return;
+
     setLoading(true);
-    // TODO: Backend — PATCH /api/checkins/:id with { checkOutTime, duration }
-    await new Promise((r) => setTimeout(r, 1000));
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setCheckOutTime(timeStr);
-    setCheckInState('checked-out');
-    setLoading(false);
-    const hours = elapsedSeconds / 3600;
-    toast.success(`✅ Checked out at ${timeStr}. ${formatHoursHHMM(hours)} logged.`, {
-      description: 'Your volunteer hours have been recorded successfully.',
-      duration: 5000,
-    });
+    try {
+      const data = await checkoutFromActivity(checkinRecord.id);
+      setCheckinRecord(data);
+      setCheckOutTime(data.checkout_time || null);
+      setCheckInState('checked-out');
+      toast.success(`✅ Checked out. ${formatHoursHHMM(data.hours_spent || 0)} logged.`, {
+        description: 'Your volunteer hours are now waiting for final approval.',
+        duration: 5000,
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Unable to check out right now.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const eventTitle = eventDetails?.title || 'Community event';
+  const eventLocation = eventDetails?.location || 'Location to be confirmed';
+  const eventTime = eventDetails?.start_date
+    ? new Date(eventDetails.start_date).toLocaleString('en', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : 'To be confirmed';
+  const coordinator = eventDetails?.coordinator?.full_name || eventDetails?.coordinator?.firstName || 'No Hunger team';
+  const totalSlots = eventDetails?.max_volunteers || 20;
 
   return (
     <div
@@ -85,7 +137,6 @@ export default function ActiveCheckInWidget() {
       ${checkInState === 'checked-in' ? 'border-success/30' : 'border-border'}
     `}
     >
-      {/* Header bar */}
       <div
         className={`
         px-5 py-3 flex items-center justify-between
@@ -116,50 +167,42 @@ export default function ActiveCheckInWidget() {
       <div className="p-5">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-[17px] font-700 text-foreground">{ACTIVE_EVENT.name}</h3>
+            <h3 className="text-[17px] font-700 text-foreground">{eventTitle}</h3>
             <div className="flex items-center gap-1.5 mt-1">
               <MapPin size={13} className="text-muted-foreground" />
-              <span className="text-[13px] text-muted-foreground">{ACTIVE_EVENT.location}</span>
+              <span className="text-[13px] text-muted-foreground">{eventLocation}</span>
             </div>
           </div>
           <div className="text-right flex-shrink-0">
             <p className="text-[12px] font-600 text-muted-foreground uppercase tracking-wide">
               Your Role
             </p>
-            <p className="text-[13px] font-700 text-primary mt-0.5">{ACTIVE_EVENT.role}</p>
+            <p className="text-[13px] font-700 text-primary mt-0.5">Volunteer</p>
           </div>
         </div>
 
-        {/* Event details row */}
         <div className="grid grid-cols-3 gap-3 mb-5">
           <div className="bg-muted rounded-xl p-3">
             <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
               Time
             </p>
-            <p className="text-[13px] font-700 text-foreground">{ACTIVE_EVENT.startTime}</p>
-            <p className="text-[11px] text-muted-foreground">– {ACTIVE_EVENT.endTime}</p>
+            <p className="text-[13px] font-700 text-foreground">{eventTime}</p>
           </div>
           <div className="bg-muted rounded-xl p-3">
             <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
-              Volunteers
+              Capacity
             </p>
-            <p className="text-[13px] font-700 text-foreground font-tabular">
-              {ACTIVE_EVENT.volunteersCheckedIn}/{ACTIVE_EVENT.totalSlots}
-            </p>
-            <p className="text-[11px] text-muted-foreground">checked in</p>
+            <p className="text-[13px] font-700 text-foreground font-tabular">{totalSlots}</p>
+            <p className="text-[11px] text-muted-foreground">slots</p>
           </div>
           <div className="bg-muted rounded-xl p-3">
             <p className="text-[10.5px] font-600 uppercase tracking-wide text-muted-foreground mb-0.5">
               Coordinator
             </p>
-            <p className="text-[13px] font-700 text-foreground truncate">
-              {ACTIVE_EVENT.coordinator}
-            </p>
-            <p className="text-[11px] text-muted-foreground">Lead</p>
+            <p className="text-[13px] font-700 text-foreground truncate">{coordinator}</p>
           </div>
         </div>
 
-        {/* Timer (when checked in) */}
         {checkInState === 'checked-in' && (
           <div className="bg-success/8 border border-success/20 rounded-xl p-4 mb-4 flex items-center justify-between">
             <div>
@@ -172,12 +215,11 @@ export default function ActiveCheckInWidget() {
             </div>
             <div className="text-right">
               <p className="text-[11px] text-muted-foreground">Checked in at</p>
-              <p className="text-[14px] font-700 text-foreground">{checkInTime}</p>
+              <p className="text-[14px] font-700 text-foreground">{checkInTime ? new Date(checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</p>
             </div>
           </div>
         )}
 
-        {/* Checked out summary */}
         {checkInState === 'checked-out' && (
           <div className="bg-muted border border-border rounded-xl p-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -185,48 +227,38 @@ export default function ActiveCheckInWidget() {
               <div>
                 <p className="text-[13px] font-700 text-foreground">Session complete</p>
                 <p className="text-[12px] text-muted-foreground">
-                  {checkInTime} – {checkOutTime}
+                  {checkInTime ? new Date(checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'} – {checkOutTime ? new Date(checkOutTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}
                 </p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Logged</p>
               <p className="text-[18px] font-800 text-success font-tabular">
-                {(elapsedSeconds / 3600).toFixed(2)} hrs
+                {formatHoursHHMM(checkinRecord?.hours_spent || 0)}
               </p>
             </div>
           </div>
         )}
 
-        {/* Check-in window notice */}
         {checkInState === 'not-started' && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/6 border border-primary/15 mb-4">
             <AlertCircle size={14} className="text-primary flex-shrink-0" />
             <p className="text-[12.5px] text-primary font-500">
-              Check-in window opens at {ACTIVE_EVENT.checkInOpenAt}. You can check in now.
+              Your next event is ready for check-in.
             </p>
           </div>
         )}
 
-        {/* Action button */}
         {checkInState === 'not-started' && (
           <button
             onClick={handleCheckIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-              bg-primary text-white font-700 text-[14px]
-              hover:bg-primary-dark active:scale-[0.99]
-              disabled:opacity-60 disabled:cursor-not-allowed
-              transition-all duration-150 shadow-sm"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-700 text-[14px] hover:bg-primary-dark active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-150 shadow-sm"
           >
             {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" /> Checking in…
-              </>
+              <><Loader2 size={16} className="animate-spin" /> Checking in…</>
             ) : (
-              <>
-                <LogIn size={16} /> Check In to Event
-              </>
+              <><LogIn size={16} /> Check In to Event</>
             )}
           </button>
         )}
@@ -235,20 +267,12 @@ export default function ActiveCheckInWidget() {
           <button
             onClick={handleCheckOut}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-              bg-success text-white font-700 text-[14px]
-              hover:bg-green-700 active:scale-[0.99]
-              disabled:opacity-60 disabled:cursor-not-allowed
-              transition-all duration-150 shadow-sm"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-success text-white font-700 text-[14px] hover:bg-green-700 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-150 shadow-sm"
           >
             {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" /> Checking out…
-              </>
+              <><Loader2 size={16} className="animate-spin" /> Checking out…</>
             ) : (
-              <>
-                <LogOut size={16} /> Check Out of Event
-              </>
+              <><LogOut size={16} /> Check Out of Event</>
             )}
           </button>
         )}
@@ -260,12 +284,11 @@ export default function ActiveCheckInWidget() {
           </div>
         )}
 
-        {/* Check-in timer note */}
         {checkInState === 'not-started' && (
           <div className="flex items-center gap-1.5 mt-3 justify-center">
             <Clock size={12} className="text-muted-foreground" />
             <p className="text-[11.5px] text-muted-foreground">
-              Check-in closes at {ACTIVE_EVENT.endTime}
+              Check-in is available once the event begins.
             </p>
           </div>
         )}

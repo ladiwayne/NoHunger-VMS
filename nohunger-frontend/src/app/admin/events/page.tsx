@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getEvents, createEvent, updateEvent, sendInvitesForEvent } from '@/lib/api/events';
+import { getEvents, createEvent, updateEvent, sendInvitesForEvent, deleteEvent } from '@/lib/api/events';
 import { getVolunteers } from '@/lib/api/volunteers';
 import { Calendar, MapPin, Users, Send, Loader2, X, Copy, CheckCircle2, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -195,6 +195,17 @@ export default function AdminEventsPage() {
   const copyLink = (link: string) => {
     navigator.clipboard.writeText(link);
     toast.success('Check-in link copied!');
+  };
+
+  const handleDelete = async (eventId: string) => {
+    if (!confirm('Delete this event? Volunteer records will remain intact, but the event and its invitations will be removed.')) return;
+    try {
+      await deleteEvent(eventId);
+      toast.success('🗑️ Event deleted successfully.');
+      fetchEvents();
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to delete event. Please try again.');
+    }
   };
 
   const handleEdit = (event: any) => {
@@ -586,6 +597,14 @@ export default function AdminEventsPage() {
                     >
                       Edit
                     </button>
+                    {profile?.role === 'super_admin' && (
+                      <button
+                        onClick={() => handleDelete(event.id)}
+                        className="px-3 py-2 rounded-2xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all text-[13px] font-600"
+                      >
+                        Delete
+                      </button>
+                    )}
                     {event.check_in_code && (
                       <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-primary/8 text-primary text-[13px] font-600">
                         <span>Code:</span>

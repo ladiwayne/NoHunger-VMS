@@ -20,7 +20,6 @@ import {
   Users,
   Megaphone,
   CheckSquare,
-  Activity,
   ShieldCheck,
   Award,
   UserCog,
@@ -45,10 +44,9 @@ const volunteerNavGroups = [
     ],
   },
   {
-    label: 'Activities',
+    label: 'Events',
     items: [
       { label: 'Browse Events', icon: CalendarDays, href: '/events', badge: null },
-      { label: 'Browse Activities', icon: Activity, href: '/activities', badge: null },
       {
         label: 'My Invitations',
         icon: Bell,
@@ -81,7 +79,6 @@ const adminNavGroups = [
     label: 'Management',
     items: [
       { label: 'Events', icon: CalendarDays, href: '/admin/events', badge: null },
-      { label: 'Activities', icon: Activity, href: '/admin/activities', badge: null },
       { label: 'No Hunger Champions', icon: Users, href: '/admin/volunteers', badge: null },
       {
         label: 'Check-in Requests',

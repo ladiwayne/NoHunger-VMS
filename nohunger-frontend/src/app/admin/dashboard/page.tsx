@@ -18,57 +18,11 @@ import {
   CheckSquare,
   Loader2,
   UserCheck,
-  Activity,
-  MessageSquare,
   CheckCircle2,
-  TrendingUp,
-  MapPin,
-  BarChart2,
-  Award,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from 'recharts';
 import Link from 'next/link';
-
-const NIGERIA_REGIONS = [
-  'Lagos State',
-  'Abuja (FCT)',
-  'Kano State',
-  'Rivers State',
-  'Oyo State',
-  'Kaduna State',
-  'Enugu State',
-  'Delta State',
-  'Anambra State',
-  'Ogun State',
-  'Imo State',
-  'Plateau State',
-];
-
-const PIE_COLORS = [
-  'hsl(142,72%,29%)',
-  'hsl(142,60%,45%)',
-  'hsl(142,50%,60%)',
-  'hsl(142,40%,72%)',
-  'hsl(142,30%,82%)',
-  '#e8621a',
-  '#d97706',
-  '#7c3aed',
-];
 
 type DateRange = '30d' | '90d' | '6m' | '1y';
 
@@ -86,11 +40,7 @@ export default function AdminDashboardPage() {
     totalCheckins: 0,
   });
   const [topVolunteers, setTopVolunteers] = useState<any[]>([]);
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [monthlyHours, setMonthlyHours] = useState<any[]>([]);
-  const [volunteerGrowth, setVolunteerGrowth] = useState<any[]>([]);
-  const [regionData, setRegionData] = useState<any[]>([]);
-  const [activityStatusData, setActivityStatusData] = useState<any[]>([]);
+  const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>('6m');
 
@@ -143,86 +93,7 @@ export default function AdminDashboardPage() {
         totalHours: Math.round((statsData.totalHours || totalHours) * 10) / 10,
       });
       setTopVolunteers(topVols || []);
-      setRecentActivities((activities || []).slice(0, 5));
-
-      // Monthly hours chart
-      const months: Record<string, number> = {};
-      for (let i = monthsBack - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months[
-          d.toLocaleDateString('en', {
-            month: 'short',
-            year: monthsBack > 6 ? '2-digit' : undefined,
-          })
-        ] = 0;
-      }
-      dateFiltered.forEach((c) => {
-        if (c.checkin_time) {
-          const key = new Date(c.checkin_time).toLocaleDateString('en', {
-            month: 'short',
-            year: monthsBack > 6 ? '2-digit' : undefined,
-          });
-          if (key in months) months[key] += c.hours_spent || 0;
-        }
-      });
-      setMonthlyHours(
-        Object.entries(months).map(([month, hours]) => ({
-          month,
-          hours: Math.round(hours * 10) / 10,
-        }))
-      );
-
-      // Volunteer growth (cumulative)
-      const growthMonths: Record<string, number> = {};
-      for (let i = monthsBack - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        growthMonths[d.toLocaleDateString('en', { month: 'short' })] = 0;
-      }
-      volunteers?.forEach((v) => {
-        if (v.created_at) {
-          const key = new Date(v.created_at).toLocaleDateString('en', { month: 'short' });
-          if (key in growthMonths) growthMonths[key] += 1;
-        }
-      });
-      let cumulative = 0;
-      setVolunteerGrowth(
-        Object.entries(growthMonths).map(([month, count]) => {
-          cumulative += count;
-          return { month, new: count, total: cumulative };
-        })
-      );
-
-      // Regional breakdown
-      const regionCounts: Record<string, number> = {};
-      volunteers?.forEach((v) => {
-        const r = v.region || 'Unknown';
-        regionCounts[r] = (regionCounts[r] || 0) + 1;
-      });
-      setRegionData(
-        Object.entries(regionCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([name, value]) => ({ name: name.replace(' Region', ''), value }))
-      );
-
-      // Activity status breakdown
-      const statusCounts: Record<string, number> = {
-        published: 0,
-        ongoing: 0,
-        completed: 0,
-        draft: 0,
-        cancelled: 0,
-      };
-      activities?.forEach((a) => {
-        if (a.status in statusCounts) statusCounts[a.status] += 1;
-      });
-      setActivityStatusData(
-        Object.entries(statusCounts)
-          .filter(([, v]) => v > 0)
-          .map(([name, value]) => ({ name, value }))
-      );
+      setRecentEvents((activities || []).slice(0, 5));
     } catch (err) {
       console.log('Admin dashboard error:', err);
     } finally {
@@ -269,13 +140,13 @@ export default function AdminDashboardPage() {
       alert: stats.pendingApprovals > 0,
     },
     {
-      label: 'Total Activities',
+      label: 'Events',
       value: stats.totalActivities,
       sub: `${completionRate}% completed`,
       icon: CalendarDays,
       color: 'text-[hsl(142,72%,22%)]',
       bg: 'bg-[hsl(142,72%,92%)]',
-      href: '/admin/activities',
+      href: '/admin/events',
       alert: false,
     },
     {
@@ -301,7 +172,7 @@ export default function AdminDashboardPage() {
     {
       label: 'Completed Events',
       value: stats.completedActivities,
-      sub: 'activities done',
+      sub: 'events completed',
       icon: CheckCircle2,
       color: 'text-[hsl(142,72%,22%)]',
       bg: 'bg-[hsl(142,72%,92%)]',
@@ -334,7 +205,7 @@ export default function AdminDashboardPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Admin Analytics Dashboard</h1>
+            <h1 className="text-2xl font-700 text-foreground">Admin Summary Dashboard</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
               {new Date().toLocaleDateString('en', {
                 weekday: 'long',
@@ -450,7 +321,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <p className="text-[12px] text-muted-foreground mb-4">
-              Total hours logged across all activities
+              Total hours logged across all events
             </p>
             <ResponsiveContainer width="100%" height={190}>
               <BarChart data={monthlyHours} barSize={20}>
@@ -681,17 +552,17 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentActivities.length === 0 ? (
+                {recentEvents.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
                       className="px-4 py-8 text-center text-[13px] text-muted-foreground"
                     >
-                      No activities yet
+                      No events yet
                     </td>
                   </tr>
                 ) : (
-                  recentActivities.map((act) => (
+                  recentEvents.map((act) => (
                     <tr
                       key={act.id}
                       className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"

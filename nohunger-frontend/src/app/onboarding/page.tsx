@@ -446,7 +446,7 @@ export default function OnboardingPage() {
                   {
                     icon: Shield,
                     title: 'Start as a No Hunger Champion',
-                    desc: 'Get matched and join upcoming activities immediately',
+                    desc: 'Get matched and join upcoming events immediately',
                   },
                 ].map((item) => {
                   const ItemIcon = item.icon;
@@ -485,7 +485,7 @@ export default function OnboardingPage() {
                   Complete your profile
                 </h2>
                 <p className="text-muted-foreground text-[14px]">
-                  Help us know you better so we can connect you with the right activities.
+                  Help us know you better so we can connect you with the right events.
                 </p>
               </div>
 
@@ -1185,7 +1185,7 @@ export default function OnboardingPage() {
                     color: 'text-rose-600',
                     bg: 'bg-rose-50',
                     title: 'Start Your Champion Journey',
-                    desc: 'Access activities and events across Nigeria',
+                    desc: 'Access volunteer events across Nigeria',
                   },
                 ].map((item) => {
                   const ItemIcon = item.icon;

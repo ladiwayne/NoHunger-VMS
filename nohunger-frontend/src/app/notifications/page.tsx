@@ -8,20 +8,15 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '@/lib/api/notifications';
-import { getMyCheckins } from '@/lib/api/checkins';
-import { getMyInvitations } from '@/lib/api/invitations';
-import { formatHoursHHMM } from '@/lib/formatHours';
-import { Bell, Activity, CheckCircle2, CalendarDays, Search, Filter } from 'lucide-react';
+import { Bell, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import Icon from '@/components/ui/AppIcon';
 
-type Panel = 'notifications' | 'activity-feed';
+type Panel = 'notifications';
 
 export default function NotificationsPage() {
   const { user } = useAuth();
   const [activePanel, setActivePanel] = useState<Panel>('notifications');
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [activityFeed, setActivityFeed] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -41,66 +36,12 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      fetchActivityFeed();
       const interval = setInterval(() => {
         fetchNotifications(true);
       }, 30000);
       return () => clearInterval(interval);
     }
   }, [user]);
-
-  const fetchActivityFeed = async () => {
-    try {
-      const [checkins, invitations] = await Promise.all([getMyCheckins(), getMyInvitations()]);
-
-      const feed: any[] = [
-        ...(checkins || []).map((c) => ({
-          id: c.id,
-          type: 'checkin',
-          title: `Check-in: ${c.activity?.title || 'Event'}`,
-          description: `Status: ${c.status.replace('_', ' ')} · ${c.hours_spent ? formatHoursHHMM(c.hours_spent) : 'In progress'}`,
-          date: c.created_at || c.checkin_time,
-          icon: CheckCircle2,
-          color:
-            c.status === 'checked_out'
-              ? 'text-success'
-              : c.status === 'approved'
-                ? 'text-primary'
-                : 'text-warning',
-          bg:
-            c.status === 'checked_out'
-              ? 'bg-success/10'
-              : c.status === 'approved'
-                ? 'bg-primary/10'
-                : 'bg-warning/10',
-        })),
-        ...(invitations || []).map((inv) => ({
-          id: inv.id,
-          type: 'invitation',
-          title: `Invitation: ${inv.activities?.title || 'Event'}`,
-          description: `Status: ${inv.status} · ${inv.activities?.start_date ? new Date(inv.activities.start_date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : ''}`,
-          date: inv.created_at,
-          icon: CalendarDays,
-          color:
-            inv.status === 'accepted'
-              ? 'text-success'
-              : inv.status === 'rejected'
-                ? 'text-destructive'
-                : 'text-warning',
-          bg:
-            inv.status === 'accepted'
-              ? 'bg-success/10'
-              : inv.status === 'rejected'
-                ? 'bg-destructive/10'
-                : 'bg-warning/10',
-        })),
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      setActivityFeed(feed);
-    } catch (err) {
-      console.log('Activity feed error:', err);
-    }
-  };
 
   const markAllRead = async () => {
     try {
@@ -120,27 +61,12 @@ export default function NotificationsPage() {
   const typeIcon = (type: string) => {
     const icons: Record<string, string> = {
       invitation: '📩',
-      checkin_approved: '✅',
-      checkin_rejected: '❌',
-      broadcast: '📢',
-      task_assigned: '📋',
       event_reminder: '📅',
-      application_approved: '🎉',
-      application_rejected: '❌',
-      checkout_done: '🏁',
     };
     return icons[type] || '🔔';
   };
 
-  const notifTypes = [
-    'all',
-    'invitation',
-    'checkin_approved',
-    'checkin_rejected',
-    'broadcast',
-    'application_approved',
-    'application_rejected',
-  ];
+  const notifTypes = ['all', 'invitation', 'event_reminder'];
 
   const filteredNotifs = notifications.filter((n) => {
     const matchType = typeFilter === 'all' || n.notification_type === typeFilter;
@@ -159,7 +85,6 @@ export default function NotificationsPage() {
       label: `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}`,
       icon: Bell,
     },
-    { id: 'activity-feed', label: 'Activity Feed', icon: Activity },
   ];
 
   return (
@@ -167,9 +92,9 @@ export default function NotificationsPage() {
       <div className="space-y-6 animate-fade-in max-w-3xl">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-700 text-foreground">Notifications & Activity</h1>
+            <h1 className="text-2xl font-700 text-foreground">Notifications & Events</h1>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              Stay in the loop on your No Hunger Champion activity
+              Stay in the loop on your No Hunger Champion events and invitations
             </p>
           </div>
           {unreadCount > 0 && (
@@ -202,6 +127,9 @@ export default function NotificationsPage() {
         {/* Notifications Panel */}
         {activePanel === 'notifications' && (
           <div className="space-y-4">
+            <p className="text-[13px] text-muted-foreground">
+              You will only see invitation updates and event reminders here.
+            </p>
             {/* Filters */}
             <div className="flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px] max-w-xs">
@@ -287,66 +215,7 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {/* Activity Feed Panel */}
-        {activePanel === 'activity-feed' && (
-          <div className="space-y-4">
-            {activityFeed.length === 0 ? (
-              <div className="text-center py-16 bg-card border border-border rounded-2xl">
-                <Activity size={40} className="text-muted-foreground mx-auto mb-3" />
-                <p className="text-[15px] font-600 text-foreground">No activity yet</p>
-                <p className="text-[13px] text-muted-foreground mt-1">
-                  Your No Hunger Champion activity will show up here
-                </p>
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-2xl shadow-card overflow-hidden">
-                <div className="p-5 border-b border-border">
-                  <h3 className="text-[15px] font-700 text-foreground">Your Activity Timeline</h3>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">
-                    {activityFeed.length} events in your history
-                  </p>
-                </div>
-                <div className="divide-y divide-border">
-                  {activityFeed.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex items-start gap-4 px-5 py-4 hover:bg-muted/30 transition-colors"
-                      >
-                        <div
-                          className={`w-9 h-9 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}
-                        >
-                          <Icon size={16} className={item.color} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13.5px] font-600 text-foreground">{item.title}</p>
-                          <p className="text-[12px] text-muted-foreground mt-0.5 capitalize">
-                            {item.description}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {new Date(item.date).toLocaleDateString('en', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-[10px] font-700 px-2 py-0.5 rounded-full capitalize ${item.type === 'checkin' ? 'bg-primary/8 text-primary' : 'bg-warning/10 text-warning'}`}
-                        >
-                          {item.type}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+
       </div>
     </AppLayout>
   );

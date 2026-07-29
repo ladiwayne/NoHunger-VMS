@@ -4,11 +4,18 @@
  * Session persistence is handled by the httpOnly cookie set by Next.js API routes.
  */
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined'
-  ? window.location.hostname === 'localhost' && window.location.port && !window.location.port.includes('5000')
-    ? 'http://localhost:5000/api'
-    : `${window.location.origin}/api`
-  : 'http://localhost:5000/api');
+const resolveDefaultBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+      return 'http://127.0.0.1:5002/api';
+    }
+    return `${window.location.protocol}//${host}/api`;
+  }
+  return 'http://127.0.0.1:5002/api';
+};
+
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || resolveDefaultBaseUrl();
 
 // In-memory token — survives the current page session but is cleared on refresh.
 // Restored from the httpOnly cookie via /api/auth/me on each page load.
@@ -43,6 +50,31 @@ export function invalidateCache(path?: string): void {
   _responseCache.delete(`${BASE_URL}${path}`);
 }
 
+async function parseApiResponse<T>(response: Response, cacheKey: string, method?: string): Promise<T> {
+  const text = await response.text();
+  let data: any = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text as unknown as T;
+    }
+  }
+
+  if (method && method.toUpperCase() !== 'GET') {
+    invalidateCache();
+  }
+
+  if (!method || method.toUpperCase() === 'GET') {
+    _responseCache.set(cacheKey, {
+      data,
+      expiry: Date.now() + 5 * 60 * 1000,
+    });
+  }
+
+  return data as T;
+}
+
 export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -54,7 +86,6 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
   const fullUrl = `${BASE_URL}${path}`;
   const cacheKey = fullUrl;
 
-  // Check cache for GET requests
   if (options.method?.toUpperCase() === 'GET' || !options.method) {
     const cached = _responseCache.get(cacheKey);
     if (cached && cached.expiry > Date.now()) {
@@ -62,44 +93,35 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
     }
   }
 
-  const response = await fetch(fullUrl, { ...options, headers });
+  const controller = new AbortController();
+  const timeoutId = (typeof window !== 'undefined' ? window.setTimeout : setTimeout)(() => controller.abort(), 15000);
 
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== 'undefined') {
-      window.location.replace('/sign-up-login-screen?session_expired=1');
+  try {
+    const response = await fetch(fullUrl, { ...options, headers, credentials: 'include', signal: controller.signal });
+
+    if (response.status === 401) {
+      clearToken();
+      if (typeof window !== 'undefined') {
+        window.location.replace('/sign-up-login-screen?session_expired=1');
+      }
+      throw new Error('Unauthorized');
     }
-    throw new Error('Unauthorized');
-  }
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
-    throw new Error(err.message || `HTTP ${response.status}`);
-  }
-
-  // Invalidate cached GET responses after any write operation.
-  if (options.method && options.method.toUpperCase() !== 'GET') {
-    invalidateCache();
-  }
-
-  // Handle empty responses (204 No Content) and malformed JSON safely
-  const text = await response.text();
-  let data: any = {};
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text as unknown as T;
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+      throw new Error(err.message || `HTTP ${response.status}`);
     }
-  }
 
-  // Cache GET requests for 5 minutes
-  if (options.method?.toUpperCase() === 'GET' || !options.method) {
-    _responseCache.set(cacheKey, {
-      data,
-      expiry: Date.now() + 5 * 60 * 1000,
-    });
+    return await parseApiResponse<T>(response, cacheKey, options.method);
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('The server is taking too long to respond. Please try again shortly.');
+    }
+    if (error instanceof TypeError) {
+      throw new Error('Unable to reach the server. Please make sure the backend is running and refresh the page.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }

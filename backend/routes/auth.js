@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 // Rate limiter: max 20 login attempts per 15 minutes per IP (failed attempts only)
 const loginLimiter = rateLimit({
@@ -326,20 +327,29 @@ router.post(
       // Build reset link
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:4028'}/reset-password?token=${resetToken}`;
 
-      // TODO: In production, send email with reset link
-      // For now, log it and return to user (in dev/staging)
+      const emailResult = await sendPasswordResetEmail({
+        to: user.email,
+        resetLink,
+        firstName: user.firstName || 'there',
+      });
+
       if (process.env.NODE_ENV !== 'production') {
         console.log(`\n📧 PASSWORD RESET LINK (Development Only):\n${resetLink}\n`);
       }
 
-      // Return success (don't expose token in production)
+      if (process.env.NODE_ENV === 'production' && !emailResult.sent) {
+        return res.status(200).json({
+          message: 'If that email address is in our system, you will receive a password reset link.',
+          debug: emailResult.reason,
+        });
+      }
+
       if (process.env.NODE_ENV === 'production') {
         return res.status(200).json({
           message: 'If that email address is in our system, you will receive a password reset link.',
         });
       }
 
-      // In development, return the token for testing
       return res.status(200).json({
         message: 'Password reset link generated',
         resetToken,

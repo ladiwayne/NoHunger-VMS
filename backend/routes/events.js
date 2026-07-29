@@ -4,8 +4,11 @@ const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const Event = require('../models/Event');
 const Invitation = require('../models/Invitation');
+const Notification = require('../models/Notification');
 const User = require('../models/User');
+const superAdminAuth = require('../middleware/superAdminAuth');
 const { generateCheckInCode, generateCheckInLink } = require('../utils/helpers');
+const { insertInvitationRows } = require('../utils/invitationUtils');
 
 // Create event
 router.post('/', adminAuth, async (req, res) => {
@@ -43,13 +46,13 @@ router.post('/', adminAuth, async (req, res) => {
 
     await event.save();
 
-    // Create invitations
-    if (invitedVolunteers && invitedVolunteers.length > 0) {
-      const invitations = invitedVolunteers.map(volunteerId => ({
-        volunteerId,
+    if (Array.isArray(invitedVolunteers) && invitedVolunteers.length > 0) {
+      await insertInvitationRows({
+        volunteerIds: invitedVolunteers,
         eventId: event._id,
-      }));
-      await Invitation.insertMany(invitations);
+        title: event.title,
+        message: `You are invited to ${event.title}`,
+      });
     }
 
     res.status(201).json({
@@ -187,12 +190,12 @@ router.post('/:id/send-invitations', adminAuth, async (req, res) => {
       return res.status(200).json({ message: 'No new volunteers to invite', event });
     }
 
-    const invitations = uniqueNewIds.map((volunteerId) => ({
-      volunteerId,
+    await insertInvitationRows({
+      volunteerIds: uniqueNewIds,
       eventId: event._id,
-    }));
-
-    await Invitation.insertMany(invitations);
+      title: event.title,
+      message: `You are invited to ${event.title}`,
+    });
     event.invitedVolunteers.push(...uniqueNewIds);
     await event.save();
 
@@ -207,6 +210,26 @@ router.post('/:id/send-invitations', adminAuth, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error sending invitations', error: error.message });
+  }
+});
+
+// Delete event (super admin only)
+router.delete('/:id', superAdminAuth, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    await Promise.all([
+      Invitation.deleteMany({ eventId: event._id }),
+      Notification.deleteMany({ relatedId: event._id }),
+      Event.findByIdAndDelete(event._id),
+    ]);
+
+    res.status(200).json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting event', error: error.message });
   }
 });
 

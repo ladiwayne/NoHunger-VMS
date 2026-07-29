@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bell, MapPin, Clock, Check, X, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { getMyInvitations, respondToInvitation } from '@/lib/api/invitations';
 
 interface Invitation {
   id: string;
@@ -17,65 +18,58 @@ interface Invitation {
   status: 'pending' | 'accepted' | 'declined';
 }
 
-// TODO: Backend — GET /api/volunteers/:id/invitations?status=pending
-const initialInvitations: Invitation[] = [
-  {
-    id: 'inv-001',
-    eventName: 'Port Harcourt Relief Drive',
-    date: 'Sat, Mar 21',
-    time: '06:30 AM',
-    location: 'Diobu Community Hall',
-    role: 'Distribution',
-    expiresIn: '2 days',
-    urgent: true,
-    status: 'pending',
-  },
-  {
-    id: 'inv-002',
-    eventName: 'Abuja Central Soup Kitchen',
-    date: 'Wed, Apr 2',
-    time: '10:00 AM',
-    location: 'Garki Market, Abuja',
-    role: 'Cooking',
-    expiresIn: null,
-    urgent: false,
-    status: 'pending',
-  },
-  {
-    id: 'inv-003',
-    eventName: 'Spintex Road Food Pack',
-    date: 'Sat, Apr 12',
-    time: '08:00 AM',
-    location: 'Spintex Community Hall',
-    role: 'Food Packing',
-    expiresIn: null,
-    urgent: false,
-    status: 'pending',
-  },
-];
-
 export default function InvitationsPanel() {
-  const [invitations, setInvitations] = useState<Invitation[]>(initialInvitations);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadInvitations = async () => {
+      try {
+        const data = await getMyInvitations();
+        const mapped = (data || []).map((item: any) => ({
+          id: item.id,
+          eventName: item.event?.title || item.activities?.title || 'Volunteer opportunity',
+          date: item.event?.start_date || item.activities?.start_date
+            ? new Date(item.event?.start_date || item.activities?.start_date).toLocaleDateString('en', { month: 'short', day: 'numeric' })
+            : 'To be confirmed',
+          time: item.event?.start_date || item.activities?.start_date
+            ? new Date(item.event?.start_date || item.activities?.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            : 'To be confirmed',
+          location: item.event?.location || item.activities?.location || 'Venue to be confirmed',
+          role: item.event ? 'Event' : 'Activity',
+          expiresIn: null,
+          urgent: false,
+          status: item.status === 'accepted' ? 'accepted' : item.status === 'rejected' ? 'declined' : 'pending',
+        }));
+        setInvitations(mapped);
+      } catch (error) {
+        console.error('Failed to load invitations', error);
+      }
+    };
+
+    loadInvitations();
+  }, []);
 
   const handleRespond = async (id: string, response: 'accepted' | 'declined') => {
     setLoadingId(id);
-    // TODO: Backend — PATCH /api/invitations/:id with { response }
-    await new Promise((r) => setTimeout(r, 900));
-
-    setInvitations((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, status: response } : inv))
-    );
-    setLoadingId(null);
-
-    const inv = invitations.find((i) => i.id === id);
-    if (response === 'accepted') {
-      toast.success(`You&apos;re signed up for ${inv?.eventName}!`, {
-        description: 'Added to your upcoming events. We&apos;ll send a reminder 24 hrs before.',
-        duration: 4000,
-      });
-    } else {
-      toast.info(`Declined ${inv?.eventName}`, { duration: 3000 });
+    try {
+      await respondToInvitation(id, response === 'accepted' ? 'accepted' : 'rejected');
+      setInvitations((prev) =>
+        prev.map((inv) => (inv.id === id ? { ...inv, status: response } : inv))
+      );
+      const inv = invitations.find((i) => i.id === id);
+      if (response === 'accepted') {
+        toast.success(`You're signed up for ${inv?.eventName}!`, {
+          description: 'Added to your upcoming events.',
+          duration: 4000,
+        });
+      } else {
+        toast.info(`Declined ${inv?.eventName}`, { duration: 3000 });
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Unable to update this invitation.');
+    } finally {
+      setLoadingId(null);
     }
   };
 

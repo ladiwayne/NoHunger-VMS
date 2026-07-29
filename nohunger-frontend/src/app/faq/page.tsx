@@ -7,7 +7,7 @@ const faqs = [
   {
     question: 'What is the Volunteer Dashboard for?',
     answer:
-      'Your dashboard is the home page for volunteers. It highlights your total hours, events attended, pending invitations, and active check-in sessions, plus upcoming activities and weekly progress.',
+      'Your dashboard is the home page for volunteers. It highlights your total hours, events attended, pending invitations, and active check-in sessions, plus upcoming events and weekly progress.',
   },
   {
     question: 'How do I respond to a volunteer invitation?',
@@ -15,7 +15,7 @@ const faqs = [
       'Pending invitations appear on the dashboard. Use the accept or reject buttons to respond, and the dashboard updates automatically.',
   },
   {
-    question: 'How do I check in for an activity?',
+    question: 'How do I check in for an event?',
     answer:
       'Enter the check-in code from the event organizer on the dashboard and follow the check-in flow. The app also tracks your active session timer once you are checked in.',
   },
@@ -32,7 +32,7 @@ const faqs = [
   {
     question: 'How are my volunteer hours calculated?',
     answer:
-      'Hours are based on completed check-ins. Once you check out from an activity, your service time is logged and added to your total hours on the dashboard.',
+      'Hours are based on completed check-ins. Once you check out from an event, your service time is logged and added to your total hours on the dashboard.',
   },
   {
     question: 'Why is my account status still pending?',
@@ -75,7 +75,7 @@ export default function FAQPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">Need more help?</p>
               <h2 className="mt-2 text-2xl font-700 text-foreground">Contact our support team</h2>
               <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-                If you still have questions, we&apos;re here to help. Reach out to support for help with onboarding, activity invitations, or volunteer profiles.
+                If you still have questions, we&apos;re here to help. Reach out to support for help with onboarding, event invitations, or volunteer profiles.
               </p>
             </div>
             <Link

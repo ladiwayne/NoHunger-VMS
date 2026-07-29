@@ -9,6 +9,7 @@ const Invitation = require('../models/Invitation');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { logAudit } = require('../utils/auditLogger');
+const { insertInvitationRows } = require('../utils/invitationUtils');
 
 const sanitizeActivity = [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title is required (max 200 chars)'),
@@ -50,11 +51,12 @@ router.post('/', requirePermission('manage_activities'), sanitizeActivity, async
     await activity.save();
 
     if (Array.isArray(invitedVolunteers) && invitedVolunteers.length > 0) {
-      const invitations = invitedVolunteers.map((volunteerId) => ({
-        volunteerId,
+      await insertInvitationRows({
+        volunteerIds: invitedVolunteers,
         activityId: activity._id,
-      }));
-      await Invitation.insertMany(invitations, { ordered: false });
+        title: activity.title,
+        message: `You are invited to ${activity.title}`,
+      });
     }
 
     await logAudit({
@@ -199,11 +201,12 @@ router.put('/:id', requirePermission('manage_activities'), sanitizeActivity, asy
         .filter((id) => id && !existingIds.includes(id.toString()));
       if (uniqueNewIds.length > 0) {
         activity.invitedVolunteers.push(...uniqueNewIds);
-        const invitations = uniqueNewIds.map((volunteerId) => ({
-          volunteerId,
+        await insertInvitationRows({
+          volunteerIds: uniqueNewIds,
           activityId: activity._id,
-        }));
-        await Invitation.insertMany(invitations, { ordered: false });
+          title: activity.title,
+          message: `You are invited to ${activity.title}`,
+        });
       }
     }
 
@@ -318,25 +321,16 @@ router.post('/:id/send-invites', requirePermission('manage_activities'), async (
       return res.status(200).json({ message: 'No new volunteers to invite', activity });
     }
 
-    const invitationRows = uniqueNewIds.map((volunteerId) => ({
-      volunteerId,
+    const { invitations, notifications } = await insertInvitationRows({
+      volunteerIds: uniqueNewIds,
       activityId: activity._id,
+      title: activity.title,
       message: `You are invited to ${activity.title}`,
-      status: 'pending',
-    }));
+    });
 
-    const notificationRows = uniqueNewIds.map((volunteerId) => ({
-      userId: volunteerId,
-      type: 'invitation',
-      title: `New Invitation: ${activity.title}`,
-      message: `You have been invited to participate in "${activity.title}". Check your invitations to respond.`,
-      read: false,
-    }));
-
-    await Promise.all([
-      Invitation.insertMany(invitationRows, { ordered: false }),
-      Notification.insertMany(notificationRows, { ordered: false }),
-    ]);
+    if (invitations.length === 0 && notifications.length === 0) {
+      return res.status(200).json({ message: 'No invitations created', activity });
+    }
 
     activity.invitedVolunteers.push(...uniqueNewIds);
     await activity.save();
@@ -347,7 +341,7 @@ router.post('/:id/send-invites', requirePermission('manage_activities'), async (
       action: 'send_activity_invites',
       entityType: 'Activity',
       entityId: activity._id,
-      details: { count: invitationRows.length },
+      details: { count: invitations.length },
     });
 
     const refreshed = await Activity.findById(req.params.id)
@@ -356,7 +350,7 @@ router.post('/:id/send-invites', requirePermission('manage_activities'), async (
       .populate('volunteersApplied', 'firstName lastName email')
       .populate('volunteersApproved', 'firstName lastName email');
 
-    res.status(201).json({ message: 'Invitations sent', count: invitationRows.length, activity: refreshed });
+    res.status(201).json({ message: 'Invitations sent', count: invitations.length, activity: refreshed });
   } catch (error) {
     res.status(500).json({ message: 'Error sending invitations', error: error.message });
   }

@@ -78,3 +78,7 @@ export async function sendInvitesForEvent(
   });
   return adaptEvent(data.event || data);
 }
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
+}

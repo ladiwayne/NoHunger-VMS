@@ -95,7 +95,10 @@ const chipClass =
 export default function ProfilePage() {
   const { profile, loading, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
+  const [lastSavedAt, setLastSavedAt] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [customSkill, setCustomSkill] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
@@ -154,6 +157,10 @@ export default function ProfilePage() {
     });
     setSelectedSkills(profile.skills || []);
     setSelectedAvailability(profile.availability || []);
+    setHasUnsavedChanges(false);
+    setSaveStatus('idle');
+    setSaveMessage('');
+    setLastSavedAt('');
   }, [profile]);
 
   const regionOptions = useMemo(() => COUNTRY_STATE_MAP[form.country] || [], [form.country]);
@@ -181,6 +188,14 @@ export default function ProfilePage() {
 
   const setField = (key: keyof typeof form, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+    setHasUnsavedChanges(true);
+    if (saveStatus === 'saved') {
+      setSaveStatus('idle');
+      setSaveMessage('');
+    }
+    if (errors[key]) {
+      setErrors((current) => ({ ...current, [key]: '' }));
+    }
   };
 
   const toggleSkill = (skill: string) => {
@@ -237,15 +252,20 @@ export default function ProfilePage() {
   const handleSave = async () => {
     const profileId = profile?.id || profile?._id;
     if (!profileId) {
+      setSaveStatus('error');
+      setSaveMessage('Unable to save profile: missing profile ID');
       toast.error('Unable to save profile: missing profile ID');
       return;
     }
     setSaving(true);
-    setSuccessMessage('');
+    setSaveStatus('saving');
+    setSaveMessage('Saving your profile changes…');
     setErrors({});
     const ok = validateForm();
     if (!ok) {
       setSaving(false);
+      setSaveStatus('error');
+      setSaveMessage('Please complete the required fields before saving.');
       return;
     }
     try {
@@ -277,10 +297,15 @@ export default function ProfilePage() {
         onboardingCompleted: isComplete,
       });
       await refreshProfile();
-      setSuccessMessage('Profile updated successfully');
+      setHasUnsavedChanges(false);
+      setSaveStatus('saved');
+      setLastSavedAt(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+      setSaveMessage(`Saved at ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`);
       toast.success('✅ Your profile has been updated. Thank you for keeping your information current.');
     } catch (error: any) {
       console.error('Failed to save profile', error);
+      setSaveStatus('error');
+      setSaveMessage(error?.message || 'Unable to save your profile. Please try again.');
       toast.error(error?.message || 'Unable to save your profile. Please try again.');
     } finally {
       setSaving(false);
@@ -314,8 +339,13 @@ export default function ProfilePage() {
   return (
     <AppLayout>
       <div className="space-y-6 p-6">
-        {successMessage && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{successMessage}</div>
+        {saveMessage && (
+          <div className={`rounded-2xl border px-4 py-3 text-sm shadow-sm ${saveStatus === 'error' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+            <div className="flex items-center justify-between gap-3">
+              <span>{saveMessage}</span>
+              {saveStatus === 'saved' && lastSavedAt && <span className="text-xs font-medium">Saved {lastSavedAt}</span>}
+            </div>
+          </div>
         )}
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
@@ -720,16 +750,26 @@ export default function ProfilePage() {
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {saving ? 'Saving…' : 'Save Profile'}
-                </button>
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-sm sticky bottom-4">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/60 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {saving ? 'Saving changes…' : hasUnsavedChanges ? 'Unsaved changes' : saveStatus === 'saved' ? 'All changes saved' : 'Ready to save'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {saving ? 'Please wait while your profile updates.' : hasUnsavedChanges ? 'Required fields stay highlighted until you save.' : saveStatus === 'saved' ? 'Your latest profile changes are up to date.' : 'Keep your volunteer details current and complete.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    {saving ? 'Saving…' : 'Save Profile'}
+                  </button>
+                </div>
               </section>
             </aside>
           </div>

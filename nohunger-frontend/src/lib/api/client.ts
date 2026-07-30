@@ -4,6 +4,20 @@
  * Session persistence is handled by the httpOnly cookie set by Next.js API routes.
  */
 
+const stripTrailingSlash = (url: string) => url.replace(/\/+$/|\/+?(?=\?|#|$)/, '');
+
+const normalizeApiBaseUrl = (url: string): string => {
+  const trimmed = stripTrailingSlash(url.trim());
+  const absolute = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const parsed = new URL(absolute);
+  if (!parsed.pathname || parsed.pathname === '/') {
+    parsed.pathname = '/api';
+  } else if (!parsed.pathname.endsWith('/api')) {
+    parsed.pathname = `${stripTrailingSlash(parsed.pathname)}/api`;
+  }
+  return stripTrailingSlash(parsed.toString());
+};
+
 const resolveDefaultBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
@@ -15,7 +29,9 @@ const resolveDefaultBaseUrl = (): string => {
   return 'http://127.0.0.1:5002/api';
 };
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || resolveDefaultBaseUrl();
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+  ? normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL)
+  : resolveDefaultBaseUrl();
 
 // In-memory token — survives the current page session but is cleared on refresh.
 // Restored from the httpOnly cookie via /api/auth/me on each page load.

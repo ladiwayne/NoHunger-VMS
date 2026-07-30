@@ -4,10 +4,14 @@ const stripTrailingSlash = (url: string) => url.replace(/\/+$|\/+(?=\?|#|$)/, ''
 
 const normalizeBackendUrl = (url: string): string => {
   const trimmed = stripTrailingSlash(url.trim());
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
+  const absolute = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const parsed = new URL(absolute);
+  if (!parsed.pathname || parsed.pathname === '/') {
+    parsed.pathname = '/api';
+  } else if (!parsed.pathname.endsWith('/api')) {
+    parsed.pathname = `${stripTrailingSlash(parsed.pathname)}/api`;
   }
-  return `https://${trimmed}`;
+  return stripTrailingSlash(parsed.toString());
 };
 
 export function getBackendUrl(request: NextRequest): string {

@@ -10,10 +10,15 @@ export async function GET(request: NextRequest) {
     }
 
     const BACKEND_URL = getBackendUrl(request);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const backendRes = await fetch(`${BACKEND_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!backendRes.ok) {
       // Cookie is expired or invalid — clear it
@@ -26,6 +31,13 @@ export async function GET(request: NextRequest) {
     // Return the token so the client can restore it in memory
     return NextResponse.json({ user, token });
   } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      return NextResponse.json(
+        { message: 'Backend auth service timed out. Check BACKEND_URL / NEXT_PUBLIC_API_URL and backend deployment health.' },
+        { status: 504 }
+      );
+    }
+
     return NextResponse.json(
       { message: err.message || 'Internal server error' },
       { status: 500 }

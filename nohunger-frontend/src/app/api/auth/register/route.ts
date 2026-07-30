@@ -14,12 +14,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const BACKEND_URL = getBackendUrl(request);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const backendRes = await fetch(`${BACKEND_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     const data = await backendRes.json().catch(() => ({ message: 'Failed to parse backend response' }));
 
@@ -40,6 +45,13 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      return NextResponse.json(
+        { message: 'Backend auth service timed out. Check BACKEND_URL / NEXT_PUBLIC_API_URL and backend deployment health.' },
+        { status: 504 }
+      );
+    }
+
     console.error('[Register] Server error:', err.message);
     return NextResponse.json(
       { message: err.message || 'Internal server error' },

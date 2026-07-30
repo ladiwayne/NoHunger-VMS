@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm --prefix nohunger-frontend run build",
-  "installCommand": "npm --prefix nohunger-frontend install --include=dev"
+  "buildCommand": "if [ -f nohunger-frontend/package.json ]; then npm --prefix nohunger-frontend run build; else npm run build; fi",
+  "installCommand": "if [ -f nohunger-frontend/package.json ]; then npm --prefix nohunger-frontend install --include=dev; else npm install --include=dev; fi"
 }

@@ -4,7 +4,7 @@
  * Session persistence is handled by the httpOnly cookie set by Next.js API routes.
  */
 
-const stripTrailingSlash = (url: string) => url.replace(/\/+$/|\/+?(?=\?|#|$)/, '');
+const stripTrailingSlash = (url: string) => url.replace(/\/+$|\/+(?=\?|#|$)/, '');
 
 const normalizeApiBaseUrl = (url: string): string => {
   const trimmed = stripTrailingSlash(url.trim());

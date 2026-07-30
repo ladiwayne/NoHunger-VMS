@@ -2,10 +2,18 @@ import { NextRequest } from 'next/server';
 
 const stripTrailingSlash = (url: string) => url.replace(/\/+$|\/+(?=\?|#|$)/, '');
 
+const normalizeBackendUrl = (url: string): string => {
+  const trimmed = stripTrailingSlash(url.trim());
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 export function getBackendUrl(request: NextRequest): string {
   const explicitUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL;
   if (explicitUrl) {
-    return stripTrailingSlash(explicitUrl);
+    return normalizeBackendUrl(explicitUrl);
   }
 
   const rawProto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol || 'http';

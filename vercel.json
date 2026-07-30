@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd nohunger-frontend && npm run build",
-  "installCommand": "cd nohunger-frontend && npm install --include=dev"
+  "buildCommand": "npm --prefix nohunger-frontend run build",
+  "installCommand": "npm --prefix nohunger-frontend install --include=dev"
 }

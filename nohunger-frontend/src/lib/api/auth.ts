@@ -20,11 +20,17 @@ async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T>
   const suppressAuthMeErrors = path === '/api/auth/me';
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     const response = await fetch(path, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...((options.headers as Record<string, string>) || {}) },
       credentials: 'include',
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
+
     const data = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
     if (!response.ok) {
       if (!(response.status === 401 && suppressAuthMeErrors)) {
@@ -34,6 +40,9 @@ async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T>
     }
     return data;
   } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Authentication service timed out. Please retry in a few seconds.');
+    }
     if (!(suppressAuthMeErrors && error?.message === 'Not authenticated')) {
       console.error(`[authFetch] Request failed for ${path}:`, error.message);
     }

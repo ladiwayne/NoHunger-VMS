@@ -30,7 +30,7 @@ NODE_ENV=development
 - Start app: npm run dev
 
 Frontend runs on port 4028 by default.
-- Ensure `nohunger-frontend/.env.local` contains `NEXT_PUBLIC_API_URL=http://localhost:5000/api` so the frontend points to the local backend.
+- Ensure `nohunger-frontend/.env.local` contains `NEXT_PUBLIC_API_URL=http://localhost:5002/api` (or your chosen backend port) so the frontend points to the local backend.
 
 ## Deployment
 
@@ -51,6 +51,21 @@ Then verify:
 curl http://localhost:5000/health
 curl http://localhost:3000
 ```
+
+### Post-Deploy Smoke Check
+
+After deploying backend and frontend, run:
+
+```bash
+FRONTEND_URL=https://your-frontend-domain.com BACKEND_URL=https://your-backend-domain.com/api node scripts/smoke_deploy_check.js
+```
+
+Expected result:
+
+- Backend `/health` returns `200`
+- Backend `/api/health` returns `200`
+- Frontend `/sign-up-login-screen` returns `200`
+- Frontend `/api/auth/me` returns `200` or `401`
 
 ## Core Features
 

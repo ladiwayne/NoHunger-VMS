@@ -21,7 +21,27 @@ import {
   CheckCircle2,
   RefreshCw,
   MessageSquare,
+  BarChart2,
+  TrendingUp,
+  MapPin,
+  Activity,
+  Award,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import Link from 'next/link';
 
 type DateRange = '30d' | '90d' | '6m' | '1y';

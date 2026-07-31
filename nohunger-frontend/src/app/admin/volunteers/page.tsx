@@ -103,7 +103,8 @@ export default function AdminVolunteersPage() {
     setActionLoading(volunteerId);
     try {
       await approveVolunteer(volunteerId);
-      toast.success(`${volunteerName} is now a Nohunger Champion!`);
+      const displayName = volunteerName || volunteers.find((v) => v.id === volunteerId)?.full_name || 'This volunteer';
+      toast.success(`${displayName} is now a Nohunger Champion!`);
       fetchVolunteers();
       if (selectedVol?.id === volunteerId)
         setSelectedVol((p: any) => ({ ...p, volunteer_status: 'approved' }));
@@ -118,7 +119,8 @@ export default function AdminVolunteersPage() {
     setActionLoading(volunteerId);
     try {
       await rejectVolunteer(volunteerId);
-      toast.success(`${volunteerName}'s Champion application was declined.`);
+      const displayName = volunteerName || volunteers.find((v) => v.id === volunteerId)?.full_name || 'This volunteer';
+      toast.success(`${displayName}'s Champion application was declined.`);
       fetchVolunteers();
     } catch (err: any) {
       toast.error(err.message || 'Unable to reject this volunteer. Please try again.');
@@ -183,7 +185,8 @@ export default function AdminVolunteersPage() {
     try {
       if (messageScope === 'single' && messageTarget) {
         await sendMessageToVolunteer(messageTarget.id, messageText.trim());
-        toast.success(`Message sent to ${messageTarget.full_name}!`);
+        const displayName = messageTarget.full_name || messageTarget.email || 'selected Champion';
+        toast.success(`Message sent to ${displayName}!`);
       } else {
         await sendBulkMessageToVolunteers(recipientIds, messageText.trim());
         toast.success(`Bulk message sent to ${recipientIds.length} Champions.`);

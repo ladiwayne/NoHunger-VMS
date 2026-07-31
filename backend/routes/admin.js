@@ -534,10 +534,32 @@ router.post('/admin-checkout', requirePermission('manage_volunteers'), async (re
     if (!checkin) {
       return res.status(404).json({ message: 'Check-in record not found' });
     }
+    const alreadyCompleted = checkin.checkOutStatus === 'completed';
+    const previousHours = checkin.hoursSpent || 0;
     checkin.checkOutTime = checkOutTime ? new Date(checkOutTime) : new Date();
     checkin.checkOutStatus = 'completed';
     checkin.approvedBy = req.user.id;
     await checkin.save();
+
+    const hoursDelta = alreadyCompleted
+      ? Math.max(0, (checkin.hoursSpent || 0) - previousHours)
+      : (checkin.hoursSpent || 0);
+
+    const volunteer = await User.findById(checkin.volunteerId);
+    if (volunteer && hoursDelta > 0) {
+      volunteer.totalVolunteeringHours += hoursDelta;
+      await volunteer.save();
+    }
+
+    await logAudit({
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      action: 'admin_checkout',
+      entityType: 'CheckIn',
+      entityId: checkin._id,
+      targetUserId: checkin.volunteerId,
+      details: { hoursAdded: hoursDelta, alreadyCompleted },
+    });
     res.status(200).json({ message: 'Volunteer checked out by admin', checkin });
   } catch (error) {
     res.status(500).json({ message: 'Error checking out volunteer', error: error.message });

@@ -206,22 +206,25 @@ router.put('/:id/approve-checkout', requirePermission('manage_checkins'), async 
       return res.status(404).json({ message: 'Check-in record not found' });
     }
 
-    if (checkin.checkOutStatus === 'completed') {
-      return res.status(200).json({
-        message: 'Check-out already approved',
-        checkin,
-      });
-    }
+    const previouslyCompleted = checkin.checkOutStatus === 'completed';
+    const previousHours = checkin.hoursSpent || 0;
 
+    if (!checkin.checkOutTime) {
+      checkin.checkOutTime = new Date();
+    }
     checkin.checkOutStatus = 'completed';
     checkin.approvedBy = req.user.id;
 
     await checkin.save();
 
-    // Update volunteer's total hours
+    // Update volunteer's total hours with the delta to avoid double-counting.
+    const hoursDelta = previouslyCompleted
+      ? Math.max(0, (checkin.hoursSpent || 0) - previousHours)
+      : (checkin.hoursSpent || 0);
+
     const volunteer = await User.findById(checkin.volunteerId);
-    if (volunteer) {
-      volunteer.totalVolunteeringHours += checkin.hoursSpent;
+    if (volunteer && hoursDelta > 0) {
+      volunteer.totalVolunteeringHours += hoursDelta;
       await volunteer.save();
     }
 
@@ -232,11 +235,11 @@ router.put('/:id/approve-checkout', requirePermission('manage_checkins'), async 
       entityType: 'CheckIn',
       entityId: checkin._id,
       targetUserId: checkin.volunteerId,
-      details: { hoursAdded: checkin.hoursSpent },
+      details: { hoursAdded: hoursDelta, previouslyCompleted },
     });
 
     res.status(200).json({
-      message: 'Check-out approved',
+      message: previouslyCompleted ? 'Check-out already approved' : 'Check-out approved',
       checkin,
     });
   } catch (error) {

@@ -58,13 +58,14 @@ export default function InvitationsPanel() {
         prev.map((inv) => (inv.id === id ? { ...inv, status: response } : inv))
       );
       const inv = invitations.find((i) => i.id === id);
+      const eventLabel = inv?.eventName || 'this event';
       if (response === 'accepted') {
-        toast.success(`You're signed up for ${inv?.eventName}!`, {
+        toast.success(`You're signed up for ${eventLabel}!`, {
           description: 'Added to your upcoming events.',
           duration: 4000,
         });
       } else {
-        toast.info(`Declined ${inv?.eventName}`, { duration: 3000 });
+        toast.info(`Declined ${eventLabel}`, { duration: 3000 });
       }
     } catch (error: any) {
       toast.error(error.message || 'Unable to update this invitation.');

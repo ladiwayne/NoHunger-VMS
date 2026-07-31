@@ -85,7 +85,8 @@ export default function ActiveCheckInWidget() {
       setCheckInTime(data.checkin_time || null);
       setCheckOutTime(null);
       setElapsedSeconds(0);
-      toast.success(`✅ Checked in to ${eventDetails.title}.`, {
+      const displayTitle = eventDetails?.title || 'your event';
+      toast.success(`✅ Checked in to ${displayTitle}.`, {
         description: 'Your attendance has been received and is pending admin approval.',
         duration: 4000,
       });

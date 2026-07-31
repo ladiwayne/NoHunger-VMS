@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { connectDB, disconnectDB } = require('./config/database');
 const { autoRejectStaleInvitations } = require('./utils/invitationUtils');
+const { repairCompletedCheckinsAndVolunteerHours } = require('./utils/checkinDataRepair');
 
 // Load environment variables
 dotenv.config();
@@ -133,6 +134,18 @@ const seedSuperAdmin = async () => {
 const startServer = async () => {
   try {
     await connectDB();
+
+    try {
+      const repairResult = await repairCompletedCheckinsAndVolunteerHours();
+      if (repairResult.fixedCheckins > 0) {
+        console.log(
+          `[checkin-repair] Fixed ${repairResult.fixedCheckins} check-in(s) and recalculated ${repairResult.volunteersRecomputed} volunteer total(s)`
+        );
+      }
+    } catch (repairError) {
+      console.error('[checkin-repair] Startup repair failed:', repairError?.message || repairError);
+    }
+
     await seedSuperAdmin();
 
     const server = app.listen(PORT, () => {

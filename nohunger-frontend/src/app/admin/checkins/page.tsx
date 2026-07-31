@@ -108,7 +108,10 @@ export default function AdminCheckinsPage() {
     setActionLoading(checkinId);
     try {
       await rejectCheckin(checkinId);
-      toast.success(`❌ ${volunteerName}'s check-in for "${activityTitle}" declined.`);
+      const checkin = checkins.find((c) => c.id === checkinId);
+      const displayName = volunteerName || checkin?.volunteer?.full_name || 'Volunteer';
+      const displayActivity = activityTitle || checkin?.activity?.title || 'this activity';
+      toast.success(`❌ ${displayName}'s check-in for "${displayActivity}" declined.`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Unable to reject this check-in. Please try again.');
@@ -122,8 +125,9 @@ export default function AdminCheckinsPage() {
     try {
       const record = checkins.find((c) => c.id === checkinId);
       const hours = record?.hours_spent || 0;
+      const displayName = volunteerName || record?.volunteer?.full_name || 'Volunteer';
       await approveCheckout(checkinId, hours);
-      toast.success(`🎉 ${volunteerName} logged ${formatHoursHHMM(hours)} hours`);
+      toast.success(`🎉 ${displayName} logged ${formatHoursHHMM(hours)} hours`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Unable to complete volunteer check-out. Please try again.');

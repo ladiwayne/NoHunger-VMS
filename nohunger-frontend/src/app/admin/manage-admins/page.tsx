@@ -87,7 +87,8 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-approve');
     try {
       await approveAdmin(id);
-      toast.success(`✅ ${name} is now an admin and can manage the dashboard.`);
+      const displayName = name || 'This user';
+      toast.success(`✅ ${displayName} is now an admin and can manage the dashboard.`);
       await loadData();
     } catch (err: any) {
       toast.error(err?.message || 'Unable to approve this admin request. Please try again.');
@@ -100,7 +101,8 @@ export default function ManageAdminsPage() {
     setActionLoading(id + '-reject');
     try {
       await rejectAdmin(id);
-      toast.success(`ℹ️ ${name}'s admin request was declined. They can still volunteer as usual.`);
+      const displayName = name || 'This user';
+      toast.success(`ℹ️ ${displayName}'s admin request was declined. They can still volunteer as usual.`);
       await loadData();
     } catch (err: any) {
       toast.error(err?.message || 'Unable to decline this admin request. Please try again.');
@@ -110,11 +112,12 @@ export default function ManageAdminsPage() {
   };
 
   const handlePromote = async (id: string, name: string) => {
-    if (!confirm(`Promote ${name} to admin? They will gain access to the admin dashboard.`)) return;
+    const displayName = name || 'this volunteer';
+    if (!confirm(`Promote ${displayName} to admin? They will gain access to the admin dashboard.`)) return;
     setActionLoading(id + '-promote');
     try {
       await promoteToAdmin(id);
-      toast.success(`🎉 ${name} has been promoted to admin and can now manage the site.`);
+      toast.success(`🎉 ${displayName} has been promoted to admin and can now manage the site.`);
       await loadData();
       setActiveTab('all');
     } catch (err: any) {
@@ -125,11 +128,12 @@ export default function ManageAdminsPage() {
   };
 
   const handleRevoke = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to revoke admin access for ${name}? They will be downgraded to a volunteer.`)) return;
+    const displayName = name || 'this user';
+    if (!confirm(`Are you sure you want to revoke admin access for ${displayName}? They will be downgraded to a volunteer.`)) return;
     setActionLoading(id + '-revoke');
     try {
       await revokeAdmin(id);
-      toast.success(`✅ Admin access revoked for ${name}. They will still remain a volunteer.`);
+      toast.success(`✅ Admin access revoked for ${displayName}. They will still remain a volunteer.`);
       await loadData();
     } catch (err: any) {
       toast.error(err?.message || 'Unable to revoke admin access. Please try again.');
@@ -139,18 +143,19 @@ export default function ManageAdminsPage() {
   };
 
   const handleResetPassword = async (id: string, name: string) => {
-    if (!confirm(`Reset password for ${name}? A new password will be generated.`)) return;
+    const displayName = name || 'this user';
+    if (!confirm(`Reset password for ${displayName}? A new password will be generated.`)) return;
     setResetLoading(id);
     try {
       const result = await resetVolunteerPassword(id);
       if (result?.newPassword) {
-        setResetModalData({ name, password: result.newPassword });
-        toast.success(`🔒 Password reset for ${name}. Copy the new password from the modal.`);
+        setResetModalData({ name: displayName, password: result.newPassword });
+        toast.success(`🔒 Password reset for ${displayName}. Copy the new password from the modal.`);
       } else {
-        toast.success(`🔒 Password reset for ${name}. The new password is available in the details modal.`);
+        toast.success(`🔒 Password reset for ${displayName}. The new password is available in the details modal.`);
       }
     } catch (err: any) {
-      toast.error(err?.message || `Unable to reset password for ${name}. Please try again.`);
+      toast.error(err?.message || `Unable to reset password for ${displayName}. Please try again.`);
     } finally {
       setResetLoading(null);
     }

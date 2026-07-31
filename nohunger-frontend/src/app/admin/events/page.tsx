@@ -634,7 +634,7 @@ export default function AdminEventsPage() {
                       className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                     <button
-                      onClick={() => searchVolunteers(event.id, event._inviteSearch || '')}
+                      onClick={() => searchVolunteers(event._inviteSearch || '', event.id)}
                       className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-foreground font-700 rounded-2xl border border-border hover:bg-secondary/90 transition-all"
                     >
                       Search

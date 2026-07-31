@@ -43,6 +43,7 @@ export default function AdminVolunteersPage() {
     limit: 20,
   });
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [totalChampions, setTotalChampions] = useState(0);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedVol, setSelectedVol] = useState<any>(null);
   const [bulkApproving, setBulkApproving] = useState(false);
@@ -71,6 +72,9 @@ export default function AdminVolunteersPage() {
       });
       setVolunteers(response.data || []);
       setPagination(response.pagination);
+      if (filters.status === 'all' && typeof response.pagination?.total === 'number') {
+        setTotalChampions(response.pagination.total);
+      }
     } catch (err) {
       console.error('Volunteers fetch error:', err);
       toast.error('Unable to load volunteers. Please refresh the page.');
@@ -210,7 +214,7 @@ export default function AdminVolunteersPage() {
   });
 
   const counts = {
-    all: volunteers.length,
+    all: totalChampions || volunteers.length,
     pending: volunteers.filter((v) => v.volunteer_status === 'pending').length,
     approved: volunteers.filter((v) => v.volunteer_status === 'approved').length,
     rejected: volunteers.filter((v) => v.volunteer_status === 'rejected').length,

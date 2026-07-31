@@ -87,7 +87,10 @@ export default function AdminCheckinsPage() {
     setActionLoading(checkinId);
     try {
       await approveCheckin(checkinId);
-      toast.success(`✅ ${volunteerName} approved for "${activityTitle}"`);
+      const checkin = checkins.find((c) => c.id === checkinId);
+      const displayName = volunteerName || checkin?.volunteer?.full_name || 'Volunteer';
+      const displayActivity = activityTitle || checkin?.activity?.title || 'this activity';
+      toast.success(`✅ ${displayName} approved for "${displayActivity}"`);
       fetchCheckins();
     } catch (err: any) {
       toast.error(err.message || 'Unable to approve this check-in. Please try again.');
